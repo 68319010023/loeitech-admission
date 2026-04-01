@@ -102,7 +102,36 @@ const translations = {
     stepperSelectDepartment: 'เลือกสาขา',
     stepperChooseDepartment: 'เลือกแผนกและสาขาที่ต้องการเรียน',
     stepperConfirmInfo: 'ยืนยันข้อมูล',
-    stepperReviewConfirm: 'ตรวจสอบและยืนยันข้อมูลการสมัคร'
+    stepperReviewConfirm: 'ตรวจสอบและยืนยันข้อมูลการสมัคร',
+    
+    // Status Check Page
+    statusCheck: 'ตรวจสอบสถานะ',
+    enterIdCard: 'กรอกเลขประจำตัวประชาชน',
+    idCardRequired: 'กรุณากรอกเลขประจำตัวประชาชน',
+    checkStatusBtn: 'ตรวจสอบสถานะ',
+    noRegistrationFound: 'ไม่พบข้อมูลการสมัคร',
+    registrationFound: 'พบข้อมูลการสมัคร',
+    applicationStatus: 'สถานะการสมัคร',
+    applicantInfo: 'ข้อมูลส่วนตัว',
+    applicantEducation: 'ข้อมูลการศึกษา',
+    submittedDate: 'วันที่สมัคร',
+    lastUpdated: 'อัพเดตล่าสุด',
+    statusPending: 'รอดำเนินการ',
+    statusApproved: 'อนุมัติ',
+    statusRejected: 'ปฏิเสธ',
+    statusCompleted: 'เสร็จสมบูรณ์',
+    printApplication: 'พิมพ์ใบสมัคร',
+    backToHome: 'กลับหน้าหลัก',
+    
+    // OCR Upload Section
+    uploadIdCardForOcr: 'อัปโหลดรูปบัตรประชาชนเพื่ออ่านข้อมูลอัตโนมัติ',
+    clickToCaptureOrSelect: 'คลิกเพื่อถ่ายรูปหรือเลือกไฟล์',
+    supportFiles: 'รองรับไฟล์ JPG, PNG ขนาดไม่เกิน 5MB',
+    processingOcr: 'กำลังอ่านข้อมูลจากรูปบัตรประชาชน...',
+    ocrSuccess: 'อัปโหลดสำเร็จแล้ว!',
+    ocrCompleted: 'อ่านข้อมูลจากรูปภาพเรียบร้อยแล้ว',
+    clickFrameToChange: 'คลิกที่กรอบเพื่อเลือกรูปใหม่',
+    ocrError: 'การอ่านข้อมูลจากรูปภาพล้มเหลว กรุณาลองใหม่'
   },
   en: {
     // App Header
@@ -204,7 +233,36 @@ const translations = {
     stepperSelectDepartment: 'Select Department',
     stepperChooseDepartment: 'Choose department and major to study',
     stepperConfirmInfo: 'Confirm Information',
-    stepperReviewConfirm: 'Review and confirm application information'
+    stepperReviewConfirm: 'Review and confirm application information',
+    
+    // Status Check Page
+    statusCheck: 'Check Status',
+    enterIdCard: 'Enter ID Card Number',
+    idCardRequired: 'Please enter ID Card Number',
+    checkStatusBtn: 'Check Status',
+    noRegistrationFound: 'No registration found',
+    registrationFound: 'Registration found',
+    applicationStatus: 'Application Status',
+    applicantInfo: 'Personal Information',
+    applicantEducation: 'Education Information',
+    submittedDate: 'Submitted Date',
+    lastUpdated: 'Last Updated',
+    statusPending: 'Pending',
+    statusApproved: 'Approved',
+    statusRejected: 'Rejected',
+    statusCompleted: 'Completed',
+    printApplication: 'Print Application',
+    backToHome: 'Back to Home',
+    
+    // OCR Upload Section
+    uploadIdCardForOcr: 'Upload ID card for automatic data reading',
+    clickToCaptureOrSelect: 'Click to capture or select file',
+    supportFiles: 'Supports JPG, PNG files up to 5MB',
+    processingOcr: 'Reading data from ID card...',
+    ocrSuccess: 'Upload successful!',
+    ocrCompleted: 'Data reading completed',
+    clickFrameToChange: 'Click frame to select new image',
+    ocrError: 'Failed to read data from image, please try again'
   }
 };
 

@@ -36,3 +36,17 @@
     transform: rotate(360deg);
   }
 }
+
+/* Scan line animation for OCR processing */
+@keyframes scan-line {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(400%);
+  }
+}
+
+.animate-scan-line {
+  animation: scan-line 2s ease-in-out infinite;
+}
