@@ -1,6 +1,10 @@
+const dotenv = require('dotenv');
+
+// Load environment variables BEFORE any other imports that may use them
+dotenv.config();
+
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
 const path = require('path');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -10,9 +14,6 @@ const studentRoutes = require('./src/routes/studentRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
 const uploadRoutes = require('./src/routes/uploadRoutes');
 const pdfRoutes = require('./src/routes/pdfRoutes');
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;

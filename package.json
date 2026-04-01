@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@heroicons/vue": "^2.2.0",
+    "jspdf": "^4.2.1"
+  }
+}
