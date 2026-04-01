@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, User, Calendar, GraduationCap, CheckCircle, Clock, XCircle, FileText, Home, Printer } from 'lucide-react';
+import { Search, User, Calendar, GraduationCap, CheckCircle, Clock, XCircle, Home, Printer } from 'lucide-react';
 import { Student } from '../types';
 import { useTranslation } from '../contexts/LanguageContext';
 
