@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
-import { Upload, Camera, FileText, User, Calendar, MapPin, Phone, Mail, GraduationCap, CreditCard, Edit3 } from 'lucide-react';
-import { studentAPI, uploadAPI } from '../utils/api';
-import { RegistrationData, Department, Course, OCRResult } from '../types';
+import React, { useState } from 'react';
+import { User, Calendar, MapPin, Phone, Mail, GraduationCap, CreditCard, BookOpen } from 'lucide-react';
+import { studentAPI } from '../utils/api';
+import { RegistrationData, Department, Course } from '../types';
 import { useTranslation } from '../contexts/LanguageContext';
 
 interface RegistrationFormProps {
@@ -11,14 +11,20 @@ interface RegistrationFormProps {
 }
 
 const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSubmit, currentStep = 1, onStepChange }) => {
-  const { t } = useTranslation();
+  const { t, language, setLanguage } = useTranslation();
   const [formData, setFormData] = useState<RegistrationData>({
+    title: '',
     firstName: '',
     lastName: '',
+    fullName: '',
     idCardNumber: '',
     birthDate: '',
     gender: 'male',
     address: '',
+    province: '',
+    district: '',
+    subDistrict: '',
+    postalCode: '',
     phone: '',
     email: '',
     educationLevel: 'ปวช',
@@ -27,24 +33,12 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSubmit, currentSt
     schoolName: '',
     gpa: undefined,
     parentName: '',
-    parentPhone: '',
-    idCardImages: [],
-    educationImages: [],
-    certificateImages: [],
-    studentCardImages: []
+    parentPhone: ''
   });
 
   const [departments, setDepartments] = useState<Department[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(false);
-  const [ocrLoading, setOcrLoading] = useState(false);
-  const [inputMode, setInputMode] = useState<'manual' | 'ocr'>('manual');
-  const fileInputRefs = {
-    idCard: useRef<HTMLInputElement>(null),
-    education: useRef<HTMLInputElement>(null),
-    certificate: useRef<HTMLInputElement>(null),
-    studentCard: useRef<HTMLInputElement>(null)
-  };
 
   React.useEffect(() => {
     fetchDepartments();
@@ -85,103 +79,6 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSubmit, currentSt
     }));
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: keyof typeof fileInputRefs) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    const file = files[0];
-    const formData = new FormData();
-    formData.append('image', file);
-
-    try {
-      setLoading(true);
-      const response = await uploadAPI.uploadImage(formData);
-      const uploadedFile = {
-        url: response.data.url,
-        fileName: response.data.filename
-      };
-
-      setFormData(prev => ({
-        ...prev,
-        [`${type}Images`]: [...prev[`${type}Images`], uploadedFile]
-      }));
-
-      // If it's an ID card and auto mode is enabled, process it
-      if (type === 'idCard' && inputMode === 'ocr') {
-        await processOCR(file);
-      }
-    } catch (error) {
-      console.error('File upload failed:', error);
-      alert('การอัพโหลดไฟล์ล้มเหลว');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const processOCR = async (file: File) => {
-    try {
-      setOcrLoading(true);
-      const formData = new FormData();
-      formData.append('image', file);
-
-      const response = await uploadAPI.processOCR(formData);
-      const ocrResult: OCRResult = response.data.data;
-
-      if (ocrResult.id_number) {
-        setFormData(prev => ({
-          ...prev,
-          idCardNumber: ocrResult.id_number || ''
-        }));
-      }
-
-      if (ocrResult.name) {
-        setFormData(prev => ({
-          ...prev,
-          firstName: ocrResult.name || ''
-        }));
-      }
-
-      if (ocrResult.last_name) {
-        setFormData(prev => ({
-          ...prev,
-          lastName: ocrResult.last_name || ''
-        }));
-      }
-
-      if (ocrResult.birth_date) {
-        setFormData(prev => ({
-          ...prev,
-          birthDate: ocrResult.birth_date || ''
-        }));
-      }
-
-      if (ocrResult.full_name) {
-        const names = ocrResult.full_name.split(' ');
-        if (names.length >= 2) {
-          setFormData(prev => ({
-            ...prev,
-            firstName: names[0] || '',
-            lastName: names.slice(1).join(' ') || ''
-          }));
-        }
-      }
-
-      alert('OCR อ่านข้อมูลจากบัตรประชาชนเรียบร้อยแล้ว');
-    } catch (error) {
-      console.error('OCR processing failed:', error);
-      alert('การอ่านข้อมูลจากบัตรประชาชนล้มเหลว กรุณากรอกข้อมูลด้วยตนเอง');
-    } finally {
-      setOcrLoading(false);
-    }
-  };
-
-  const removeImage = (type: keyof typeof fileInputRefs, index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      [`${type}Images`]: prev[`${type}Images`].filter((_, i) => i !== index)
-    }));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -189,11 +86,6 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSubmit, currentSt
     if (!formData.firstName || !formData.lastName || !formData.idCardNumber || 
         !formData.birthDate || !formData.phone || !formData.departmentId || !formData.courseId) {
       alert('กรุณากรอกข้อมูลที่จำเป็นทั้งหมด');
-      return;
-    }
-
-    if (formData.idCardImages.length === 0) {
-      alert('กรุณาอัพโหลดรูปบัตรประชาชน');
       return;
     }
 
@@ -219,6 +111,18 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSubmit, currentSt
             <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-3xl shadow-lg mb-4 float-animation">
               <span className="text-white font-bold text-2xl font-thai">TC</span>
             </div>
+            
+            {/* Language Toggle */}
+            <div className="flex justify-center mb-4">
+              <button
+                type="button"
+                onClick={() => setLanguage(language === 'th' ? 'en' : 'th')}
+                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium transition-colors"
+              >
+                {language === 'th' ? 'EN' : 'TH'}
+              </button>
+            </div>
+                        
             <h1 className="text-4xl font-bold text-neutral-800 mb-3 font-thai">
               {t('systemTitle')}
             </h1>
@@ -229,56 +133,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSubmit, currentSt
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Input Mode Selection */}
-            <div className="glass-effect border border-primary-200 rounded-3xl p-8 mb-8">
-              <h3 className="text-xl font-semibold text-primary-700 mb-6 text-center font-thai">
-                {t('selectInputMethod')}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <button
-                  type="button"
-                  onClick={() => setInputMode('manual')}
-                  className={`p-6 rounded-2xl border-2 transition-all duration-300 font-thai ${
-                    inputMode === 'manual'
-                      ? 'border-primary-500 bg-primary-50 shadow-lg'
-                      : 'border-neutral-200 hover:border-primary-300 hover:bg-primary-50/50'
-                  }`}
-                >
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <Edit3 className="w-8 h-8 text-white" />
-                    </div>
-                    <h4 className="font-semibold text-lg mb-2">{t('manualInput')}</h4>
-                    <p className="text-sm text-neutral-600">{t('manualInputDesc')}</p>
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setInputMode('ocr')}
-                  className={`p-6 rounded-2xl border-2 transition-all duration-300 font-thai ${
-                    inputMode === 'ocr'
-                      ? 'border-primary-500 bg-primary-50 shadow-lg'
-                      : 'border-neutral-200 hover:border-primary-300 hover:bg-primary-50/50'
-                  }`}
-                >
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-gradient-to-br from-secondary-500 to-accent-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <Camera className="w-8 h-8 text-white" />
-                    </div>
-                    <h4 className="font-semibold text-lg mb-2">{t('ocrInput')}</h4>
-                    <p className="text-sm text-neutral-600">{t('ocrInputDesc')}</p>
-                  </div>
-                </button>
-              </div>
-              {inputMode === 'ocr' && (
-                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-sm text-yellow-800">
-                    <strong>คำแนะนำ:</strong> {t('ocrTip')}
-                  </p>
-                </div>
-              )}
-            </div>
-
+            
             {/* Personal Information */}
             <div className="card">
               <h3 className="text-lg font-semibold mb-4 flex items-center">
@@ -286,36 +141,41 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSubmit, currentSt
                 {t('personalInfo')}
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('firstName')} *
+                    {t('title')} *
+                  </label>
+                  <select
+                    name="title"
+                    value={formData.title}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    required
+                  >
+                    <option value="">{t('selectTitle')}</option>
+                    <option value="นาย">นาย</option>
+                    <option value="นาง">นาง</option>
+                    <option value="นางสาว">นางสาว</option>
+                  </select>
+                </div>
+                
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t('fullName')} *
                   </label>
                   <input
                     type="text"
-                    name="firstName"
-                    value={formData.firstName}
+                    name="fullName"
+                    value={formData.fullName}
                     onChange={handleInputChange}
                     className="input-field"
+                    placeholder={t('fullNamePlaceholder')}
                     required
                   />
                 </div>
                 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('lastName')} *
-                  </label>
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                    className="input-field"
-                    required
-                  />
-                </div>
-                
-                <div>
+                <div className="md:col-span-3">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     {t('idCardNumber')} *
                   </label>
@@ -327,38 +187,91 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSubmit, currentSt
                     className="input-field"
                     maxLength={13}
                     pattern="[0-9]{13}"
+                    placeholder={t('idCardPlaceholder')}
                     required
                   />
                 </div>
                 
-                <div>
+                <div className="md:col-span-3">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('birthDate')} *
+                    {t('address')} *
                   </label>
                   <input
-                    type="date"
-                    name="birthDate"
-                    value={formData.birthDate}
+                    type="text"
+                    name="address"
+                    value={formData.address}
                     onChange={handleInputChange}
                     className="input-field"
+                    placeholder={t('addressPlaceholder')}
                     required
                   />
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('gender')} *
+                    {t('province')} *
                   </label>
                   <select
-                    name="gender"
-                    value={formData.gender}
+                    name="province"
+                    value={formData.province}
                     onChange={handleInputChange}
                     className="input-field"
                     required
                   >
-                    <option value="male">{t('male')}</option>
-                    <option value="female">{t('female')}</option>
+                    <option value="">เลือกจังหวัด</option>
+                    <option value="เลย">เลย</option>
+                    <option value="กรุงเทพมหานคร">กรุงเทพมหานคร</option>
+                    <option value="นนทบุรี">นนทบุรี</option>
+                    <option value="ปทุมธานี">ปทุมธานี</option>
+                    <option value="สมุทรปราการ">สมุทรปราการ</option>
                   </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t('district')} *
+                  </label>
+                  <input
+                    type="text"
+                    name="district"
+                    value={formData.district}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder={t('districtPlaceholder')}
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t('subDistrict')} *
+                  </label>
+                  <input
+                    type="text"
+                    name="subDistrict"
+                    value={formData.subDistrict}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder={t('subDistrictPlaceholder')}
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t('postalCode')} *
+                  </label>
+                  <input
+                    type="text"
+                    name="postalCode"
+                    value={formData.postalCode}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    maxLength={5}
+                    pattern="[0-9]{5}"
+                    placeholder={t('postalCodePlaceholder')}
+                    required
+                  />
                 </div>
                 
                 <div>
@@ -371,20 +284,8 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSubmit, currentSt
                     value={formData.phone}
                     onChange={handleInputChange}
                     className="input-field"
+                    placeholder={t('phonePlaceholder')}
                     required
-                  />
-                </div>
-                
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('address')}
-                  </label>
-                  <textarea
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    className="input-field"
-                    rows={3}
                   />
                 </div>
                 
@@ -398,6 +299,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSubmit, currentSt
                     value={formData.email}
                     onChange={handleInputChange}
                     className="input-field"
+                    placeholder={t('emailPlaceholder')}
                   />
                 </div>
               </div>
@@ -534,177 +436,55 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSubmit, currentSt
               </div>
             </div>
 
-            {/* File Uploads */}
+            {/* Education History */}
             <div className="card">
               <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <Upload className="mr-2" size={20} />
-                {t('documents')}
+                <BookOpen className="mr-2" size={20} />
+                {t('educationHistory')}
               </h3>
+              <p className="text-gray-600 mb-4">
+                {t('currentlyStudyingOrGraduatedFrom')}
+              </p>
               
-              <div className="space-y-4">
-                {/* ID Card */}
+              <div className="grid grid-cols-1 gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('uploadIdCard')} *
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t('schoolInstitutionName')}
                   </label>
                   <input
-                    ref={fileInputRefs.idCard}
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileUpload(e, 'idCard')}
-                    className="hidden"
+                    type="text"
+                    name="schoolName"
+                    value={formData.schoolName}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder={t('schoolNamePlaceholder')}
                   />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRefs.idCard.current?.click()}
-                    className="btn-outline"
-                    disabled={ocrLoading}
-                  >
-                    <Camera className="mr-2" size={16} />
-                    {ocrLoading ? t('ocrProcessing') : t('uploadIdCard')}
-                  </button>
-                  <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {formData.idCardImages.map((img, index) => (
-                      <div key={index} className="relative">
-                        <img
-                          src={img.url}
-                          alt={`ID Card ${index + 1}`}
-                          className="w-full h-24 object-cover rounded border"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage('idCard', index)}
-                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 text-xs"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
                 </div>
-
-                {/* Education Certificate */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('uploadEducation')}
-                  </label>
-                  <input
-                    ref={fileInputRefs.education}
-                    type="file"
-                    accept="image/*,.pdf"
-                    onChange={(e) => handleFileUpload(e, 'education')}
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRefs.education.current?.click()}
-                    className="btn-outline"
-                  >
-                    <FileText className="mr-2" size={16} />
-                    {t('uploadEducation')}
-                  </button>
-                  <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {formData.educationImages.map((img, index) => (
-                      <div key={index} className="relative">
-                        <img
-                          src={img.url}
-                          alt={`Education ${index + 1}`}
-                          className="w-full h-24 object-cover rounded border"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage('education', index)}
-                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 text-xs"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Certificate */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('uploadCertificate')}
-                  </label>
-                  <input
-                    ref={fileInputRefs.certificate}
-                    type="file"
-                    accept="image/*,.pdf"
-                    onChange={(e) => handleFileUpload(e, 'certificate')}
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRefs.certificate.current?.click()}
-                    className="btn-outline"
-                  >
-                    <FileText className="mr-2" size={16} />
-                    {t('uploadCertificate')}
-                  </button>
-                  <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {formData.certificateImages.map((img, index) => (
-                      <div key={index} className="relative">
-                        <img
-                          src={img.url}
-                          alt={`Certificate ${index + 1}`}
-                          className="w-full h-24 object-cover rounded border"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage('certificate', index)}
-                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 text-xs"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Student Card */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('uploadStudentCard')}
-                  </label>
-                  <input
-                    ref={fileInputRefs.studentCard}
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileUpload(e, 'studentCard')}
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRefs.studentCard.current?.click()}
-                    className="btn-outline"
-                  >
-                    <CreditCard className="mr-2" size={16} />
-                    {t('uploadStudentCard')}
-                  </button>
-                  <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {formData.studentCardImages.map((img, index) => (
-                      <div key={index} className="relative">
-                        <img
-                          src={img.url}
-                          alt={`Student Card ${index + 1}`}
-                          className="w-full h-24 object-cover rounded border"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage('studentCard', index)}
-                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 text-xs"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+              </div>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('educationLevelClass')}
+                </label>
+                <div className="flex flex-wrap gap-4">
+                  {['ม.3', 'ม.6', 'ปวช', 'ปวส'].map((level) => (
+                    <label key={level} className="inline-flex items-center">
+                      <input
+                        type="radio"
+                        name="educationLevel"
+                        value={level}
+                        checked={formData.educationLevel === level}
+                        onChange={handleInputChange}
+                        className="form-radio h-4 w-4 text-blue-600"
+                      />
+                      <span className="ml-2 text-gray-700">{level}</span>
+                    </label>
+                  ))}
                 </div>
               </div>
             </div>
 
+            
             {/* Navigation Buttons */}
             <div className="flex justify-between mt-8">
               <button

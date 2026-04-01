@@ -1,5 +1,6 @@
 import React from 'react';
 import { Check, User, BookOpen, FileCheck } from 'lucide-react';
+import { useTranslation } from '../contexts/LanguageContext';
 
 interface Step {
   id: number;
@@ -9,23 +10,25 @@ interface Step {
 }
 
 const Stepper = ({ currentStep }: { currentStep: number }) => {
+  const { t } = useTranslation();
+  
   const steps: Step[] = [
     {
       id: 1,
-      title: 'ข้อมูลผู้สมัคร',
-      description: 'กรอกข้อมูลส่วนตัวและอัปโหลดเอกสาร',
+      title: t('stepperPersonalInfo'),
+      description: t('stepperFillPersonalInfo'),
       icon: User,
     },
     {
       id: 2,
-      title: 'เลือกสาขา',
-      description: 'เลือกแผนกและสาขาที่ต้องการเรียน',
+      title: t('stepperSelectDepartment'),
+      description: t('stepperChooseDepartment'),
       icon: BookOpen,
     },
     {
       id: 3,
-      title: 'ยืนยันข้อมูล',
-      description: 'ตรวจสอบและยืนยันข้อมูลการสมัคร',
+      title: t('stepperConfirmInfo'),
+      description: t('stepperReviewConfirm'),
       icon: FileCheck,
     },
   ];

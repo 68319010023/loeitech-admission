@@ -23,21 +23,27 @@ const translations = {
     selectInputMethod: 'เลือกวิธีการกรอกข้อมูล',
     manualInput: 'กรอกข้อมูลด้วยตนเอง',
     manualInputDesc: 'กรอกข้อมูลส่วนตัวผ่านฟอร์ม',
-    ocrInput: 'ถ่ายรูปบัตรประชาชน',
+    ocrInput: 'กรอกข้อมูลอัตโนมัติ',
     ocrInputDesc: 'อัตโนมัติด้วย OCR',
-    ocrTip: 'คำแนะนำ: อัปโหลดรูปบัตรประชาชนที่ชัดเจน ระบบจะอ่านข้อมูลและกรอกให้โดยอัตโนมัติ',
+    ocrTip: 'อัปโหลดรูปบัตรประชาชนที่ชัดเจน ระบบจะอ่านข้อมูลและกรอกให้โดยอัตโนมัติ',
     
     // Personal Info
     personalInfo: 'ข้อมูลส่วนตัว',
+    title: 'คำนำหน้าชื่อ',
+    fullName: 'ชื่อ - สกุล ผู้สมัคร',
+    idCardNumber: 'เลขประจำตัวประชาชน',
+    address: 'ที่อยู่',
+    province: 'จังหวัด',
+    district: 'อำเภอ/เขต',
+    subDistrict: 'ตำบล/แขวง',
+    postalCode: 'รหัสไปรษณีย์',
+    phone: 'เบอร์โทรศัพท์',
     firstName: 'ชื่อ',
     lastName: 'นามสกุล',
-    idCardNumber: 'เลขบัตรประชาชน',
     birthDate: 'วันเกิด',
     gender: 'เพศ',
     male: 'ชาย',
     female: 'หญิง',
-    address: 'ที่อยู่',
-    phone: 'เบอร์โทรศัพท์',
     email: 'อีเมล',
     
     // Education
@@ -52,6 +58,24 @@ const translations = {
     parentInfo: 'ข้อมูลผู้ปกครอง',
     parentName: 'ชื่อผู้ปกครอง',
     parentPhone: 'เบอร์โทรศัพท์ผู้ปกครอง',
+    
+    // Education History
+    educationHistory: 'ข้อมูลประวัติการศึกษา',
+    currentlyStudyingOrGraduatedFrom: 'ปัจจุบันกำลังศึกษาอยู่ หรือสำเร็จการศึกษาจาก',
+    schoolInstitutionName: 'ชื่อสถานศึกษา',
+    educationLevelClass: 'ระดับชั้น',
+    
+    // Placeholders
+    selectTitle: 'เลือกคำนำหน้า',
+    fullNamePlaceholder: 'ชื่อ - นามสกุล',
+    idCardPlaceholder: 'เลขประจำตัวประชาชน 13 หลัก',
+    addressPlaceholder: 'บ้านเลขที่ หมู่ที่ ถนน',
+    districtPlaceholder: 'อำเภอ/เขต',
+    subDistrictPlaceholder: 'ตำบล/แขวง',
+    postalCodePlaceholder: 'รหัสไปรษณีย์',
+    phonePlaceholder: 'เบอร์โทรศัพท์',
+    emailPlaceholder: 'อีเมล',
+    schoolNamePlaceholder: 'กรอกชื่อสถานศึกษา',
     
     // Documents
     documents: 'เอกสารแนบ',
@@ -70,7 +94,15 @@ const translations = {
     registrationFailed: 'การสมัครล้มเหลว',
     uploadFailed: 'การอัพโหลดไฟล์ล้มเหลว',
     processing: 'กำลังดำเนินการ...',
-    ocrProcessing: 'กำลังประมวลผล OCR...'
+    ocrProcessing: 'กำลังประมวลผล OCR...',
+    
+    // Stepper
+    stepperPersonalInfo: 'ข้อมูลผู้สมัคร',
+    stepperFillPersonalInfo: 'กรอกข้อมูลส่วนตัวและอัปโหลดเอกสาร',
+    stepperSelectDepartment: 'เลือกสาขา',
+    stepperChooseDepartment: 'เลือกแผนกและสาขาที่ต้องการเรียน',
+    stepperConfirmInfo: 'ยืนยันข้อมูล',
+    stepperReviewConfirm: 'ตรวจสอบและยืนยันข้อมูลการสมัคร'
   },
   en: {
     // App Header
@@ -93,21 +125,27 @@ const translations = {
     selectInputMethod: 'Select Input Method',
     manualInput: 'Manual Input',
     manualInputDesc: 'Fill personal information through form',
-    ocrInput: 'Scan ID Card',
+    ocrInput: 'Automatic Input',
     ocrInputDesc: 'Automatic with OCR',
-    ocrTip: 'Tip: Upload a clear ID card image, the system will read and fill the data automatically',
+    ocrTip: 'Upload a clear ID card image, the system will read and fill the data automatically',
     
     // Personal Info
     personalInfo: 'Personal Information',
+    title: 'Title',
+    fullName: 'Full Name',
+    idCardNumber: 'ID Card Number',
+    address: 'Address',
+    province: 'Province',
+    district: 'District/Area',
+    subDistrict: 'Sub-district/Sub-area',
+    postalCode: 'Postal Code',
+    phone: 'Phone Number',
     firstName: 'First Name',
     lastName: 'Last Name',
-    idCardNumber: 'ID Card Number',
     birthDate: 'Birth Date',
     gender: 'Gender',
     male: 'Male',
     female: 'Female',
-    address: 'Address',
-    phone: 'Phone Number',
     email: 'Email',
     
     // Education
@@ -122,6 +160,24 @@ const translations = {
     parentInfo: 'Parent Information',
     parentName: 'Parent Name',
     parentPhone: 'Parent Phone',
+    
+    // Education History
+    educationHistory: 'Education History',
+    currentlyStudyingOrGraduatedFrom: 'Currently studying or graduated from',
+    schoolInstitutionName: 'School/Institution Name',
+    educationLevelClass: 'Education Level',
+    
+    // Placeholders
+    selectTitle: 'Select Title',
+    fullNamePlaceholder: 'First Name - Last Name',
+    idCardPlaceholder: '13-digit ID Card Number',
+    addressPlaceholder: 'House Number, Village, Street',
+    districtPlaceholder: 'District/Area',
+    subDistrictPlaceholder: 'Sub-district/Sub-area',
+    postalCodePlaceholder: 'Postal Code',
+    phonePlaceholder: 'Phone Number',
+    emailPlaceholder: 'Email',
+    schoolNamePlaceholder: 'Enter school name',
     
     // Documents
     documents: 'Documents',
@@ -140,7 +196,15 @@ const translations = {
     registrationFailed: 'Registration failed',
     uploadFailed: 'File upload failed',
     processing: 'Processing...',
-    ocrProcessing: 'Processing OCR...'
+    ocrProcessing: 'Processing OCR...',
+    
+    // Stepper
+    stepperPersonalInfo: 'Applicant Information',
+    stepperFillPersonalInfo: 'Fill personal information and upload documents',
+    stepperSelectDepartment: 'Select Department',
+    stepperChooseDepartment: 'Choose department and major to study',
+    stepperConfirmInfo: 'Confirm Information',
+    stepperReviewConfirm: 'Review and confirm application information'
   }
 };
 
@@ -171,6 +235,12 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   const [language, setLanguage] = useState<Language>('th');
 
   const t = (key: TranslationKey): string => {
+    // Handle dynamic academic year
+    if (key === 'academicYear') {
+      const currentYear = new Date().getFullYear();
+      return language === 'th' ? (currentYear + 543).toString() : currentYear.toString();
+    }
+    
     return translations[language][key] || key;
   };
 

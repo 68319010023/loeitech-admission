@@ -124,12 +124,18 @@ export interface OCRResult {
 }
 
 export interface RegistrationData {
-  firstName: string;
-  lastName: string;
+  title?: string;
+  firstName?: string;
+  lastName?: string;
+  fullName?: string;
   idCardNumber: string;
-  birthDate: string;
-  gender: 'male' | 'female';
+  birthDate?: string;
+  gender?: 'male' | 'female';
   address?: string;
+  province?: string;
+  district?: string;
+  subDistrict?: string;
+  postalCode?: string;
   phone?: string;
   email?: string;
   educationLevel: 'ปวช' | 'ปวส';
@@ -139,10 +145,6 @@ export interface RegistrationData {
   gpa?: number;
   parentName?: string;
   parentPhone?: string;
-  idCardImages: Array<{ url: string; fileName: string }>;
-  educationImages: Array<{ url: string; fileName: string }>;
-  certificateImages: Array<{ url: string; fileName: string }>;
-  studentCardImages: Array<{ url: string; fileName: string }>;
 }
 
 export interface ApiResponse<T> {

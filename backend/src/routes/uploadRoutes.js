@@ -9,8 +9,8 @@ router.post('/image', authMiddleware, upload.single('image'), uploadController.u
 router.post('/document', authMiddleware, upload.single('document'), uploadController.uploadDocument);
 router.post('/multiple', authMiddleware, upload.array('files', 5), uploadController.uploadMultiple);
 
-// OCR processing
-router.post('/ocr/id-card', uploadController.processIdCardOCR);
+// OCR processing (public - no auth required for initial registration)
+router.post('/ocr/id-card', upload.single('image'), uploadController.processIdCardOCR);
 
 // File serving
 router.get('/:filename', uploadController.getFile);
