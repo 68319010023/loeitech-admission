@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Calendar, MapPin, Phone, Mail, GraduationCap, CreditCard, BookOpen, Upload, FileImage, CheckCircle, AlertCircle, Camera, Scan } from 'lucide-react';
+import { User, GraduationCap, CreditCard, BookOpen, Upload, FileImage, CheckCircle, AlertCircle, Camera, Scan } from 'lucide-react';
 import { studentAPI } from '../utils/api';
 import { RegistrationData, Department, Course } from '../types';
 import { useTranslation } from '../contexts/LanguageContext';
@@ -11,7 +11,7 @@ interface RegistrationFormProps {
 }
 
 const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSubmit, currentStep = 1, onStepChange }) => {
-  const { t, language, setLanguage } = useTranslation();
+  const { t } = useTranslation();
   const [inputMethod, setInputMethod] = useState<'manual' | 'ocr'>('manual');
   const [formData, setFormData] = useState<RegistrationData>({
     title: '',
@@ -44,8 +44,8 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSubmit, currentSt
   const [ocrProcessing, setOcrProcessing] = useState(false);
 
   React.useEffect(() => {
-    fetchDepartments();
-  }, []);
+  fetchDepartments();
+}, []);
 
   React.useEffect(() => {
     if (formData.educationLevel && formData.departmentId) {
