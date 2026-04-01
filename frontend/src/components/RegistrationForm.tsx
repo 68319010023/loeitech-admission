@@ -47,11 +47,12 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSubmit, currentSt
   fetchDepartments();
 }, []);
 
-  React.useEffect(() => {
-    if (formData.educationLevel && formData.departmentId) {
-      fetchCourses();
-    }
-  }, [formData.educationLevel, formData.departmentId]);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+React.useEffect(() => {
+  if (formData.educationLevel && formData.departmentId) {
+    fetchCourses();
+  }
+}, [formData.educationLevel, formData.departmentId]);
 
   const fetchDepartments = async () => {
     try {
@@ -74,13 +75,16 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSubmit, currentSt
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+const handleInputChange = (
+  e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+) => {
+  const { name, value } = e.target;
+
+  setFormData(prev => ({
+    ...prev,
+    [name]: name === 'gpa' ? (value ? parseFloat(value) : undefined) : value
+  }));
+};
 
   const handleOcrFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
