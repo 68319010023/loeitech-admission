@@ -93,8 +93,8 @@ export async function exportPaymentPDF(data: PaymentPDFData) {
   doc.setFontSize(13)
   const bankInfo = [
     ['ธนาคาร', 'กรุงไทย สาขาเลย'],
-    ['เลขบัญชี', '545-5-55555-5'],
-    ['ชื่อบัญชี', 'ร้านสหการการค้า วิทยาลัยเทคนิคเลย'],
+    ['เลขบัญชี', '403-0-87831-8'],
+    ['ชื่อบัญชี', 'ร้านค้าสวัสดิการวิทยาลัยเทคนิคเลย'],
   ]
   bankInfo.forEach(([label, value]) => {
     doc.setFont('THSarabun', 'bold')

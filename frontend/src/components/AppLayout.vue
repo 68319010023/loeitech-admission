@@ -37,7 +37,7 @@
           :class="$route.path === '/status' ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'"
         >
           <CheckCircleIcon class="w-5 h-5" />
-          ตรวจสอบสถานะ
+          มอบตัว
         </RouterLink>
 
         <p class="text-white/50 text-xs font-medium px-3 py-2 mt-4">เจ้าหน้าที่</p>
