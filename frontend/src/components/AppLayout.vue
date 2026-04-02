@@ -20,46 +20,40 @@
 
       <!-- Menu -->
       <nav class="flex-1 p-4 space-y-1">
-        <p class="text-white/50 text-xs font-medium px-3 py-2">เมนูหลัก</p>
+  <p class="text-white/50 text-xs font-medium px-3 py-2">เมนูหลัก</p>
 
-        <RouterLink
-          to="/register"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
-          :class="$route.path === '/register' ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'"
-        >
-          <DocumentTextIcon class="w-5 h-5" />
-          กรอกใบสมัคร
-        </RouterLink>
+  <RouterLink to="/register"
+    class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+    :class="$route.path === '/register' ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'">
+    <DocumentTextIcon class="w-5 h-5" /> กรอกใบสมัคร
+  </RouterLink>
 
-        <RouterLink
-          to="/status"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
-          :class="$route.path === '/status' ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'"
-        >
-          <CheckCircleIcon class="w-5 h-5" />
-          ตรวจสอบสถานะ
-        </RouterLink>
+  <RouterLink to="/check-status"
+    class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+    :class="$route.path === '/check-status' ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'">
+    <MagnifyingGlassIcon class="w-5 h-5" /> ตรวจสอบสถานะ
+  </RouterLink>
 
-        <p class="text-white/50 text-xs font-medium px-3 py-2 mt-4">เจ้าหน้าที่</p>
+  <RouterLink to="/enrollment"
+    class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+    :class="$route.path === '/enrollment' ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'">
+    <ClipboardDocumentCheckIcon class="w-5 h-5" /> มอบตัว
+  </RouterLink>
 
-        <RouterLink
-          to="/admin/users"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
-          :class="$route.path.startsWith('/admin/users') ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'"
-        >
-          <UserGroupIcon class="w-5 h-5" />
-          จัดการผู้ใช้
-        </RouterLink>
+  <p class="text-white/50 text-xs font-medium px-3 py-2 mt-4">เจ้าหน้าที่</p>
 
-        <RouterLink
-          to="/admin/settings"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
-          :class="$route.path.startsWith('/admin/settings') ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'"
-        >
-          <Cog6ToothIcon class="w-5 h-5" />
-          ตั้งค่าระบบ
-        </RouterLink>
-      </nav>
+  <RouterLink to="/admin/users"
+    class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+    :class="$route.path.startsWith('/admin/users') ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'">
+    <UserGroupIcon class="w-5 h-5" /> จัดการผู้ใช้
+  </RouterLink>
+
+  <RouterLink to="/admin/settings"
+    class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+    :class="$route.path.startsWith('/admin/settings') ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'">
+    <Cog6ToothIcon class="w-5 h-5" /> ตั้งค่าระบบ
+  </RouterLink>
+</nav>
 
       <!-- Footer -->
       <div class="p-4 border-t border-white/20">
@@ -100,5 +94,6 @@ import {
   UserGroupIcon,
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
+  MagnifyingGlassIcon, ClipboardDocumentCheckIcon,
 } from '@heroicons/vue/24/outline'
 </script>
