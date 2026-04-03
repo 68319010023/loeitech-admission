@@ -51,7 +51,13 @@
         <RouterLink to="/admin/settings"
           class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
           :class="$route.path.startsWith('/admin/settings') ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'">
-          <Cog6ToothIcon class="w-5 h-5" /> ตั้งค่าระบบ
+          <Cog6ToothIcon class="w-5 h-5" /> เเผนการรับสมัครนักศึกษา
+        </RouterLink>
+
+        <RouterLink to="/admin/expenses"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+          :class="$route.path.startsWith('/admin/expenses') ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'">
+          <ReceiptPercentIcon class="w-5 h-5" /> ค่าใช้จ่าย
         </RouterLink>
       </nav>
 
@@ -68,7 +74,7 @@
     <!-- Main Content -->
     <div class="flex-1 flex flex-col overflow-hidden">
       <!-- Header -->
-      <header class="bg-white border-b border-gray-200 px-8 py-4 flex items-center gap-4 shadow-2xl">
+      <header class="bg-white border-b border-gray-200 px-8 py-3 flex items-center gap-4 shadow-2xl">
         <div class="w-20 h-20 bg-emerald-500 rounded-xl flex items-center justify-center">
           <span class="text-white font-bold text-sm">TC</span>
         </div>
@@ -95,5 +101,6 @@ import {
   ArrowRightOnRectangleIcon,
   MagnifyingGlassIcon,
   ClipboardDocumentCheckIcon,
+  ReceiptPercentIcon,
 } from '@heroicons/vue/24/outline'
 </script>

@@ -13,6 +13,7 @@ const router = createRouter({
     // --------------------------------------------------------------------------
     { path: '/admin/users', component: () => import('../views/AdminUsersView.vue') },
     { path: '/admin/settings', component: () => import('../views/AdminSettingsView.vue') },
+    { path: '/admin/expenses', component: () => import('../views/AdminExpensesView.vue') },
   ],
 })
 
