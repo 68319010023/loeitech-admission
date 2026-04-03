@@ -1,21 +1,27 @@
 import { Pool } from 'pg'
 import dotenv from 'dotenv'
+
 dotenv.config()
 
 const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT),
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
+  host: 'docker3.loeitech.org',
+ port: 56442,
+  database: 'ltc_admission_db',
+  user: 'admin_ltc',
   password: process.env.DB_PASSWORD,
-  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+  ssl: false,
   max: 10,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
 })
 
-pool.on('error', (err) => {
-  console.error('Unexpected error on idle client', err)
+pool.connect((err, _client, release) => {
+  if (err) {
+    console.error('❌ DB Error:', err.message)
+  } else {
+    console.log('✅ DB Connected!')
+    release()
+  }
 })
 
 export default pool
