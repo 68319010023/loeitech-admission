@@ -51,10 +51,11 @@
       <transition name="modal">
         <div v-if="showAddModal || showEditModal" class="fixed inset-0 z-[9999] overflow-y-auto">
           <!-- Backdrop -->
-          <div
-            class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-            @click="closeModal"
-          ></div>
+        <div
+  class="fixed inset-0 transition-opacity z-[9998]"
+  style="background-color: rgba(0, 0, 0, 0.3);"
+  @click="closeModal"
+></div>
 
           <!-- Modal Container -->
           <div class="flex items-center justify-center min-h-screen px-4 py-8">
