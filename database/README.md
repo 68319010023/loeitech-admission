@@ -60,7 +60,7 @@ The following tables should be created:
 ### 8. Default Data
 The schema includes:
 - 1 admin user (username: `admin`, password: `admin123`)
-- Sample departments and courses
+- Sample  and courses
 - Sample inventory items
 - System settings
 

@@ -1,140 +1,69 @@
 const { v4: uuidv4 } = require('uuid');
-const { supabase } = require('../config/database');
+const { pool } = require('../config/database');
 const jwt = require('jsonwebtoken');
 
 const studentController = {
-  // Register new student
+
+  // ============================================================
+  // REGISTER
+  // ============================================================
   register: async (req, res) => {
     try {
       const {
-        firstName,
-        lastName,
-        idCardNumber,
-        birthDate,
-        gender,
-        address,
-        phone,
-        email,
-        educationLevel,
-        departmentId,
-        courseId,
-        schoolName,
-        gpa,
-        parentName,
-        parentPhone,
-        idCardImages = [],
-        educationImages = [],
-        certificateImages = [],
-        studentCardImages = []
+        firstName, lastName, idCardNumber, birthDate, gender,
+        address, phone, email,
+        cur_id, div_id,           // แทน educationLevel, departmentId, courseId เดิม
+        schoolName, gpa, parentName, parentPhone,
+        idCardImages = [], educationImages = [], certificateImages = [], studentCardImages = []
       } = req.body;
 
-      // Validate required fields
-      if (!firstName || !lastName || !idCardNumber || !birthDate || !gender || !phone || !educationLevel || !departmentId || !courseId) {
+      if (!firstName || !lastName || !idCardNumber || !birthDate || !gender || !phone || !cur_id || !div_id) {
         return res.status(400).json({ error: 'Missing required fields' });
       }
 
-      // Check if student already exists
-      const { data: existingStudent, error: checkError } = await supabase
-        .from('students')
-        .select('id')
-        .eq('id_card_number', idCardNumber)
-        .single();
+      // ตรวจสอบว่า cur_id และ div_id มีอยู่จริง
+      const curCheck = await pool.query('SELECT cur_id FROM curriculums WHERE cur_id=$1', [cur_id]);
+      if (curCheck.rows.length === 0) return res.status(400).json({ error: 'Invalid curriculum (cur_id)' });
 
-      if (existingStudent) {
-        return res.status(400).json({ error: 'Student with this ID card number already exists' });
-      }
+      const divCheck = await pool.query('SELECT div_id FROM divisions WHERE div_id=$1 AND cur_id=$2', [div_id, cur_id]);
+      if (divCheck.rows.length === 0) return res.status(400).json({ error: 'Invalid division (div_id) for this curriculum' });
 
-      // Create new student
+      // ตรวจสอบเลขบัตรประชาชนซ้ำ
+      const existing = await pool.query('SELECT id FROM students WHERE id_card_number=$1', [idCardNumber]);
+      if (existing.rows.length > 0) return res.status(400).json({ error: 'Student with this ID card number already exists' });
+
+      // Insert student
       const studentId = uuidv4();
-      const { data: student, error: insertError } = await supabase
-        .from('students')
-        .insert({
-          id: studentId,
-          first_name: firstName,
-          last_name: lastName,
-          id_card_number: idCardNumber,
-          birth_date: birthDate,
-          gender,
-          address,
-          phone,
-          email,
-          education_level: educationLevel,
-          department_id: departmentId,
-          course_id: courseId,
-          school_name: schoolName,
-          gpa,
-          parent_name: parentName,
-          parent_phone: parentPhone,
-          status: 'pending',
-          created_at: new Date().toISOString()
-        })
-        .select()
-        .single();
+      const result = await pool.query(`
+        INSERT INTO students (
+          id, first_name, last_name, id_card_number, birth_date, gender,
+          address, phone, email,
+          cur_id, div_id,
+          school_name, gpa, parent_name, parent_phone, status
+        )
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,'pending')
+        RETURNING *
+      `, [studentId, firstName, lastName, idCardNumber, birthDate, gender,
+          address, phone, email, cur_id, div_id, schoolName, gpa, parentName, parentPhone]);
 
-      if (insertError) {
-        console.error('Insert error:', insertError);
-        return res.status(500).json({ error: 'Failed to register student' });
-      }
+      const student = result.rows[0];
 
-      // Store uploaded images
-      if (idCardImages.length > 0) {
-        await Promise.all(idCardImages.map(async (image) => {
-          await supabase
-            .from('student_images')
-            .insert({
-              student_id: studentId,
-              image_type: 'id_card',
-              image_url: image.url,
-              created_at: new Date().toISOString()
-            });
-        }));
-      }
+      // Insert images
+      const allImages = [
+        ...idCardImages.map(img    => ({ type: 'id_card',      url: img.url })),
+        ...educationImages.map(img => ({ type: 'education',    url: img.url })),
+        ...certificateImages.map(img => ({ type: 'certificate', url: img.url })),
+        ...studentCardImages.map(img => ({ type: 'student_card', url: img.url }))
+      ];
 
-      if (educationImages.length > 0) {
-        await Promise.all(educationImages.map(async (image) => {
-          await supabase
-            .from('student_images')
-            .insert({
-              student_id: studentId,
-              image_type: 'education',
-              image_url: image.url,
-              created_at: new Date().toISOString()
-            });
-        }));
-      }
+      await Promise.all(allImages.map(img =>
+        pool.query(
+          'INSERT INTO student_images (student_id, image_type, image_url) VALUES ($1,$2,$3)',
+          [studentId, img.type, img.url]
+        )
+      ));
 
-      if (certificateImages.length > 0) {
-        await Promise.all(certificateImages.map(async (image) => {
-          await supabase
-            .from('student_images')
-            .insert({
-              student_id: studentId,
-              image_type: 'certificate',
-              image_url: image.url,
-              created_at: new Date().toISOString()
-            });
-        }));
-      }
-
-      if (studentCardImages.length > 0) {
-        await Promise.all(studentCardImages.map(async (image) => {
-          await supabase
-            .from('student_images')
-            .insert({
-              student_id: studentId,
-              image_type: 'student_card',
-              image_url: image.url,
-              created_at: new Date().toISOString()
-            });
-        }));
-      }
-
-      // Generate JWT token
-      const token = jwt.sign(
-        { userId: studentId, role: 'student' },
-        process.env.JWT_SECRET,
-        { expiresIn: '7d' }
-      );
+      const token = jwt.sign({ userId: studentId, role: 'student' }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
       res.status(201).json({
         message: 'Student registered successfully',
@@ -153,29 +82,31 @@ const studentController = {
     }
   },
 
-  // Verify student status by ID card number
+  // ============================================================
+  // VERIFY STATUS
+  // ============================================================
   verifyStatus: async (req, res) => {
     try {
       const { idCardNumber } = req.body;
+      if (!idCardNumber) return res.status(400).json({ error: 'ID card number is required' });
 
-      if (!idCardNumber) {
-        return res.status(400).json({ error: 'ID card number is required' });
-      }
+      const result = await pool.query(`
+        SELECT s.*,
+          c.cur_name, c.cur_shortname,
+          d.div_name
+        FROM students s
+        LEFT JOIN curriculums c ON c.cur_id = s.cur_id
+        LEFT JOIN divisions d   ON d.div_id = s.div_id
+        WHERE s.id_card_number=$1
+      `, [idCardNumber]);
 
-      const { data: student, error } = await supabase
-        .from('students')
-        .select(`
-          *,
-          departments(name),
-          courses(name),
-          student_images(image_type, image_url)
-        `)
-        .eq('id_card_number', idCardNumber)
-        .single();
+      if (result.rows.length === 0) return res.status(404).json({ error: 'Student not found' });
 
-      if (error || !student) {
-        return res.status(404).json({ error: 'Student not found' });
-      }
+      const student = result.rows[0];
+      const images = await pool.query(
+        'SELECT image_type, image_url FROM student_images WHERE student_id=$1',
+        [student.id]
+      );
 
       res.json({
         status: student.status,
@@ -184,9 +115,9 @@ const studentController = {
           firstName: student.first_name,
           lastName: student.last_name,
           idCardNumber: student.id_card_number,
-          department: student.departments?.name,
-          course: student.courses?.name,
-          images: student.student_images
+          curriculum: student.cur_shortname,   // แทน department เดิม
+          division: student.div_name,           // แทน course เดิม
+          images: images.rows
         }
       });
     } catch (error) {
@@ -195,259 +126,216 @@ const studentController = {
     }
   },
 
-  // Get all departments
-  getDepartments: async (req, res) => {
+
+  getCurriculums: async (req, res) => {
     try {
-      const { data: departments, error } = await supabase
-        .from('departments')
-        .select('*')
-        .order('name');
-
-      if (error) {
-        return res.status(500).json({ error: 'Failed to fetch departments' });
-      }
-
-      res.json(departments);
+      const result = await pool.query('SELECT * FROM curriculums ORDER BY cur_id');
+      res.json(result.rows);
     } catch (error) {
-      console.error('Departments error:', error);
+      console.error('Curriculums error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },
 
-  // Get all courses
-  getCourses: async (req, res) => {
+
+  getDivisions: async (req, res) => {
     try {
-      const { departmentId, educationLevel } = req.query;
+      const { cur_id } = req.query;
+      const params = [];
+      let where = 'WHERE 1=1';
 
-      let query = supabase.from('courses').select('*');
+      if (cur_id) { params.push(cur_id); where += ` AND d.cur_id=$${params.length}`; }
 
-      if (departmentId) {
-        query = query.eq('department_id', departmentId);
-      }
+      const result = await pool.query(`
+        SELECT d.*, c.cur_name, c.cur_shortname
+        FROM divisions d
+        LEFT JOIN curriculums c ON c.cur_id = d.cur_id
+        ${where}
+        ORDER BY d.div_name
+      `, params);
 
-      if (educationLevel) {
-        query = query.eq('education_level', educationLevel);
-      }
-
-      const { data: courses, error } = await query.order('name');
-
-      if (error) {
-        return res.status(500).json({ error: 'Failed to fetch courses' });
-      }
-
-      res.json(courses);
+      res.json(result.rows);
     } catch (error) {
-      console.error('Courses error:', error);
+      console.error('Divisions error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },
 
-  // Get student profile
-  getProfile: async (req, res) => {
+  // ============================================================
+  // GET EXPENSE DETAILS (ใหม่ — ให้นักศึกษาดูค่าใช้จ่ายของตัวเอง)
+  // ============================================================
+  getExpenseDetails: async (req, res) => {
     try {
       const studentId = req.user.id;
 
-      const { data: student, error } = await supabase
-        .from('students')
-        .select(`
-          *,
-          departments(name),
-          courses(name),
-          student_images(image_type, image_url),
-          orders(id, order_items, total_amount, status, created_at),
-          payments(id, amount, status, slip_url, created_at)
-        `)
-        .eq('id', studentId)
-        .single();
+      // ดึง cur_id ของนักศึกษาก่อน
+      const stuResult = await pool.query('SELECT cur_id FROM students WHERE id=$1', [studentId]);
+      if (stuResult.rows.length === 0) return res.status(404).json({ error: 'Student not found' });
 
-      if (error || !student) {
-        return res.status(404).json({ error: 'Student not found' });
-      }
+      const { cur_id } = stuResult.rows[0];
 
-      res.json(student);
+      const result = await pool.query(`
+        SELECT e.*, c.cur_shortname
+        FROM expense_detail e
+        LEFT JOIN curriculums c ON c.cur_id = e.cur_id
+        WHERE e.cur_id=$1
+        ORDER BY e.exp_name
+      `, [cur_id]);
+
+      res.json(result.rows);
+    } catch (error) {
+      console.error('Expense details error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
+  // ============================================================
+  // GET PROFILE
+  // ============================================================
+  getProfile: async (req, res) => {
+    try {
+      const studentId = req.user.id;
+      const result = await pool.query(`
+        SELECT s.*,
+          c.cur_name, c.cur_shortname,
+          d.div_name
+        FROM students s
+        LEFT JOIN curriculums c ON c.cur_id = s.cur_id
+        LEFT JOIN divisions d   ON d.div_id = s.div_id
+        WHERE s.id=$1
+      `, [studentId]);
+
+      if (result.rows.length === 0) return res.status(404).json({ error: 'Student not found' });
+
+      const student = result.rows[0];
+      const images   = await pool.query('SELECT * FROM student_images WHERE student_id=$1', [studentId]);
+      const orders   = await pool.query('SELECT * FROM orders   WHERE student_id=$1 ORDER BY created_at DESC', [studentId]);
+      const payments = await pool.query('SELECT * FROM payments WHERE student_id=$1 ORDER BY created_at DESC', [studentId]);
+
+      res.json({ ...student, images: images.rows, orders: orders.rows, payments: payments.rows });
     } catch (error) {
       console.error('Profile error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },
 
-  // Update student profile
+  // ============================================================
+  // UPDATE PROFILE
+  // ============================================================
   updateProfile: async (req, res) => {
     try {
       const studentId = req.user.id;
-      const updates = req.body;
+      const { address, phone, email, parent_name, parent_phone } = req.body;
 
-      const { data: student, error } = await supabase
-        .from('students')
-        .update(updates)
-        .eq('id', studentId)
-        .select()
-        .single();
+      const result = await pool.query(
+        'UPDATE students SET address=$1, phone=$2, email=$3, parent_name=$4, parent_phone=$5, updated_at=NOW() WHERE id=$6 RETURNING *',
+        [address, phone, email, parent_name, parent_phone, studentId]
+      );
 
-      if (error) {
-        return res.status(500).json({ error: 'Failed to update profile' });
-      }
-
-      res.json({
-        message: 'Profile updated successfully',
-        student
-      });
+      res.json({ message: 'Profile updated successfully', student: result.rows[0] });
     } catch (error) {
       console.error('Update profile error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },
 
-  // Create order
+  // ============================================================
+  // ORDERS
+  // ============================================================
   createOrder: async (req, res) => {
     try {
       const studentId = req.user.id;
       const { items } = req.body;
+      if (!items || items.length === 0) return res.status(400).json({ error: 'Order items are required' });
 
-      if (!items || items.length === 0) {
-        return res.status(400).json({ error: 'Order items are required' });
-      }
-
-      const orderId = uuidv4();
       const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const result = await pool.query(
+        "INSERT INTO orders (id, student_id, order_items, total_amount, status) VALUES ($1,$2,$3,$4,'pending') RETURNING *",
+        [uuidv4(), studentId, JSON.stringify(items), totalAmount]
+      );
 
-      const { data: order, error } = await supabase
-        .from('orders')
-        .insert({
-          id: orderId,
-          student_id: studentId,
-          order_items: items,
-          total_amount: totalAmount,
-          status: 'pending',
-          created_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (error) {
-        return res.status(500).json({ error: 'Failed to create order' });
-      }
-
-      res.status(201).json({
-        message: 'Order created successfully',
-        order
-      });
+      res.status(201).json({ message: 'Order created successfully', order: result.rows[0] });
     } catch (error) {
       console.error('Create order error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },
 
-  // Get student orders
   getOrders: async (req, res) => {
     try {
       const studentId = req.user.id;
-
-      const { data: orders, error } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('student_id', studentId)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        return res.status(500).json({ error: 'Failed to fetch orders' });
-      }
-
-      res.json(orders);
+      const result = await pool.query(
+        'SELECT * FROM orders WHERE student_id=$1 ORDER BY created_at DESC',
+        [studentId]
+      );
+      res.json(result.rows);
     } catch (error) {
       console.error('Orders error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },
 
-  // Upload payment slip
+  // ============================================================
+  // PAYMENTS
+  // ============================================================
   uploadPaymentSlip: async (req, res) => {
     try {
       const studentId = req.user.id;
       const { orderId, slipUrl, amount } = req.body;
-
-      if (!orderId || !slipUrl || !amount) {
+      if (!orderId || !slipUrl || !amount)
         return res.status(400).json({ error: 'Order ID, slip URL, and amount are required' });
-      }
 
-      const paymentId = uuidv4();
+      const result = await pool.query(
+        "INSERT INTO payments (id, student_id, order_id, amount, slip_url, status) VALUES ($1,$2,$3,$4,$5,'pending') RETURNING *",
+        [uuidv4(), studentId, orderId, amount, slipUrl]
+      );
 
-      const { data: payment, error } = await supabase
-        .from('payments')
-        .insert({
-          id: paymentId,
-          student_id: studentId,
-          order_id: orderId,
-          amount,
-          slip_url: slipUrl,
-          status: 'pending',
-          created_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (error) {
-        return res.status(500).json({ error: 'Failed to upload payment slip' });
-      }
-
-      res.status(201).json({
-        message: 'Payment slip uploaded successfully',
-        payment
-      });
+      res.status(201).json({ message: 'Payment slip uploaded successfully', payment: result.rows[0] });
     } catch (error) {
       console.error('Payment slip error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },
 
-  // Get payment status
   getPaymentStatus: async (req, res) => {
     try {
       const studentId = req.user.id;
+      const result = await pool.query(`
+        SELECT p.*, o.order_items, o.total_amount as order_total
+        FROM payments p
+        LEFT JOIN orders o ON o.id = p.order_id
+        WHERE p.student_id=$1
+        ORDER BY p.created_at DESC
+      `, [studentId]);
 
-      const { data: payments, error } = await supabase
-        .from('payments')
-        .select(`
-          *,
-          orders(order_items, total_amount)
-        `)
-        .eq('student_id', studentId)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        return res.status(500).json({ error: 'Failed to fetch payment status' });
-      }
-
-      res.json(payments);
+      res.json(result.rows);
     } catch (error) {
       console.error('Payment status error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },
 
-  // Get application PDF
+  // ============================================================
+  // PDF
+  // ============================================================
   getApplicationPDF: async (req, res) => {
     try {
       const { id } = req.params;
+      const result = await pool.query(`
+        SELECT s.*,
+          c.cur_name, c.cur_shortname,
+          d.div_name
+        FROM students s
+        LEFT JOIN curriculums c ON c.cur_id = s.cur_id
+        LEFT JOIN divisions d   ON d.div_id = s.div_id
+        WHERE s.id=$1
+      `, [id]);
 
-      const { data: student, error } = await supabase
-        .from('students')
-        .select(`
-          *,
-          departments(name),
-          courses(name),
-          student_images(image_type, image_url)
-        `)
-        .eq('id', id)
-        .single();
+      if (result.rows.length === 0) return res.status(404).json({ error: 'Student not found' });
 
-      if (error || !student) {
-        return res.status(404).json({ error: 'Student not found' });
-      }
-
-      // This would generate PDF - for now return data
+      const images = await pool.query('SELECT * FROM student_images WHERE student_id=$1', [id]);
       res.json({
-        student,
+        student: { ...result.rows[0], images: images.rows },
         pdfUrl: `/api/pdf/download/application/${id}`
       });
     } catch (error) {
@@ -456,30 +344,20 @@ const studentController = {
     }
   },
 
-  // Get payment PDF
   getPaymentPDF: async (req, res) => {
     try {
       const { id } = req.params;
+      const result = await pool.query(`
+        SELECT p.*, s.first_name, s.last_name, s.id_card_number,
+          o.order_items, o.total_amount as order_total
+        FROM payments p
+        LEFT JOIN students s ON s.id = p.student_id
+        LEFT JOIN orders o   ON o.id = p.order_id
+        WHERE p.id=$1
+      `, [id]);
 
-      const { data: payment, error } = await supabase
-        .from('payments')
-        .select(`
-          *,
-          students(first_name, last_name, id_card_number),
-          orders(order_items, total_amount)
-        `)
-        .eq('id', id)
-        .single();
-
-      if (error || !payment) {
-        return res.status(404).json({ error: 'Payment not found' });
-      }
-
-      // This would generate PDF - for now return data
-      res.json({
-        payment,
-        pdfUrl: `/api/pdf/download/payment/${id}`
-      });
+      if (result.rows.length === 0) return res.status(404).json({ error: 'Payment not found' });
+      res.json({ payment: result.rows[0], pdfUrl: `/api/pdf/download/payment/${id}` });
     } catch (error) {
       console.error('Payment PDF error:', error);
       res.status(500).json({ error: 'Internal server error' });

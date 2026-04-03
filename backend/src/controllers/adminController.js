@@ -1,270 +1,323 @@
-const { supabase } = require('../config/database');
+const { pool } = require('../config/database');
+const bcrypt = require('bcryptjs');
 
 const adminController = {
-  // Department management
-  createDepartment: async (req, res) => {
+
+  // ============================================================
+  // CURRICULUM MANAGEMENT (แทน Department เดิม)
+  // ============================================================
+  createCurriculum: async (req, res) => {
     try {
-      const { name, description } = req.body;
+      const { cur_name, cur_shortname } = req.body;
+      if (!cur_name || !cur_shortname)
+        return res.status(400).json({ error: 'cur_name and cur_shortname are required' });
 
-      if (!name) {
-        return res.status(400).json({ error: 'Department name is required' });
-      }
-
-      const { data: department, error } = await supabase
-        .from('departments')
-        .insert({
-          name,
-          description,
-          created_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (error) {
-        return res.status(500).json({ error: 'Failed to create department' });
-      }
-
-      res.status(201).json({
-        message: 'Department created successfully',
-        department
-      });
+      const result = await pool.query(
+        'INSERT INTO curriculums (cur_name, cur_shortname) VALUES ($1, $2) RETURNING *',
+        [cur_name, cur_shortname]
+      );
+      res.status(201).json({ message: 'Curriculum created successfully', curriculum: result.rows[0] });
     } catch (error) {
-      console.error('Create department error:', error);
+      console.error('Create curriculum error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },
 
-  getDepartments: async (req, res) => {
+  getCurriculums: async (req, res) => {
     try {
-      const { data: departments, error } = await supabase
-        .from('departments')
-        .select(`
-          *,
-          courses(id, name, education_level)
-        `)
-        .order('name');
-
-      if (error) {
-        return res.status(500).json({ error: 'Failed to fetch departments' });
-      }
-
-      res.json(departments);
+      const result = await pool.query(`
+        SELECT c.*,
+          json_agg(
+            json_build_object('div_id', d.div_id, 'div_name', d.div_name)
+          ) FILTER (WHERE d.div_id IS NOT NULL) as divisions
+        FROM curriculums c
+        LEFT JOIN divisions d ON d.cur_id = c.cur_id
+        GROUP BY c.cur_id
+        ORDER BY c.cur_id
+      `);
+      res.json(result.rows);
     } catch (error) {
-      console.error('Get departments error:', error);
+      console.error('Get curriculums error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },
 
-  updateDepartment: async (req, res) => {
+  updateCurriculum: async (req, res) => {
     try {
       const { id } = req.params;
-      const updates = req.body;
+      const { cur_name, cur_shortname } = req.body;
 
-      const { data: department, error } = await supabase
-        .from('departments')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) {
-        return res.status(500).json({ error: 'Failed to update department' });
-      }
-
-      if (!department) {
-        return res.status(404).json({ error: 'Department not found' });
-      }
-
-      res.json({
-        message: 'Department updated successfully',
-        department
-      });
+      const result = await pool.query(
+        'UPDATE curriculums SET cur_name=$1, cur_shortname=$2, updated_at=NOW() WHERE cur_id=$3 RETURNING *',
+        [cur_name, cur_shortname, id]
+      );
+      if (result.rows.length === 0)
+        return res.status(404).json({ error: 'Curriculum not found' });
+      res.json({ message: 'Curriculum updated successfully', curriculum: result.rows[0] });
     } catch (error) {
-      console.error('Update department error:', error);
+      console.error('Update curriculum error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },
 
-  deleteDepartment: async (req, res) => {
+  deleteCurriculum: async (req, res) => {
     try {
       const { id } = req.params;
-
-      const { error } = await supabase
-        .from('departments')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        return res.status(500).json({ error: 'Failed to delete department' });
-      }
-
-      res.json({ message: 'Department deleted successfully' });
+      await pool.query('DELETE FROM curriculums WHERE cur_id=$1', [id]);
+      res.json({ message: 'Curriculum deleted successfully' });
     } catch (error) {
-      console.error('Delete department error:', error);
+      console.error('Delete curriculum error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },
 
-  // Course management
-  createCourse: async (req, res) => {
+  // ============================================================
+  // DIVISION MANAGEMENT (แทน Course เดิม)
+  // ============================================================
+  createDivision: async (req, res) => {
     try {
-      const { name, departmentId, educationLevel, description } = req.body;
+      const { div_name, cur_id } = req.body;
+      if (!div_name || !cur_id)
+        return res.status(400).json({ error: 'div_name and cur_id are required' });
 
-      if (!name || !departmentId || !educationLevel) {
-        return res.status(400).json({ error: 'Name, department ID, and education level are required' });
-      }
-
-      const { data: course, error } = await supabase
-        .from('courses')
-        .insert({
-          name,
-          department_id: departmentId,
-          education_level: educationLevel,
-          description,
-          created_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (error) {
-        return res.status(500).json({ error: 'Failed to create course' });
-      }
-
-      res.status(201).json({
-        message: 'Course created successfully',
-        course
-      });
+      const result = await pool.query(
+        'INSERT INTO divisions (div_name, cur_id) VALUES ($1, $2) RETURNING *',
+        [div_name, cur_id]
+      );
+      res.status(201).json({ message: 'Division created successfully', division: result.rows[0] });
     } catch (error) {
-      console.error('Create course error:', error);
+      console.error('Create division error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },
 
-  getCourses: async (req, res) => {
+  getDivisions: async (req, res) => {
     try {
-      const { departmentId, educationLevel } = req.query;
+      const { cur_id } = req.query;
+      let query = `
+        SELECT d.*, c.cur_name, c.cur_shortname
+        FROM divisions d
+        LEFT JOIN curriculums c ON c.cur_id = d.cur_id
+        WHERE 1=1
+      `;
+      const params = [];
+      if (cur_id) { params.push(cur_id); query += ` AND d.cur_id=$${params.length}`; }
+      query += ' ORDER BY d.div_name';
 
-      let query = supabase
-        .from('courses')
-        .select(`
-          *,
-          departments(name)
-        `);
-
-      if (departmentId) {
-        query = query.eq('department_id', departmentId);
-      }
-
-      if (educationLevel) {
-        query = query.eq('education_level', educationLevel);
-      }
-
-      const { data: courses, error } = await query.order('name');
-
-      if (error) {
-        return res.status(500).json({ error: 'Failed to fetch courses' });
-      }
-
-      res.json(courses);
+      const result = await pool.query(query, params);
+      res.json(result.rows);
     } catch (error) {
-      console.error('Get courses error:', error);
+      console.error('Get divisions error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },
 
-  updateCourse: async (req, res) => {
+  updateDivision: async (req, res) => {
     try {
       const { id } = req.params;
-      const updates = req.body;
+      const { div_name, cur_id } = req.body;
 
-      const { data: course, error } = await supabase
-        .from('courses')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) {
-        return res.status(500).json({ error: 'Failed to update course' });
-      }
-
-      if (!course) {
-        return res.status(404).json({ error: 'Course not found' });
-      }
-
-      res.json({
-        message: 'Course updated successfully',
-        course
-      });
+      const result = await pool.query(
+        'UPDATE divisions SET div_name=$1, cur_id=$2, updated_at=NOW() WHERE div_id=$3 RETURNING *',
+        [div_name, cur_id, id]
+      );
+      if (result.rows.length === 0)
+        return res.status(404).json({ error: 'Division not found' });
+      res.json({ message: 'Division updated successfully', division: result.rows[0] });
     } catch (error) {
-      console.error('Update course error:', error);
+      console.error('Update division error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },
 
-  deleteCourse: async (req, res) => {
+  deleteDivision: async (req, res) => {
     try {
       const { id } = req.params;
-
-      const { error } = await supabase
-        .from('courses')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        return res.status(500).json({ error: 'Failed to delete course' });
-      }
-
-      res.json({ message: 'Course deleted successfully' });
+      await pool.query('DELETE FROM divisions WHERE div_id=$1', [id]);
+      res.json({ message: 'Division deleted successfully' });
     } catch (error) {
-      console.error('Delete course error:', error);
+      console.error('Delete division error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },
 
-  // Student management
+  // ============================================================
+  // ADMISSION PLAN MANAGEMENT
+  // ============================================================
+  createAdmissionPlan: async (req, res) => {
+    try {
+      const { ap_years, div_id, cur_id, plan_num } = req.body;
+      if (!ap_years || !div_id || !cur_id || !plan_num)
+        return res.status(400).json({ error: 'ap_years, div_id, cur_id and plan_num are required' });
+
+      const result = await pool.query(
+        'INSERT INTO admission_plan (ap_years, div_id, cur_id, plan_num) VALUES ($1, $2, $3, $4) RETURNING *',
+        [ap_years, div_id, cur_id, plan_num]
+      );
+      res.status(201).json({ message: 'Admission plan created successfully', plan: result.rows[0] });
+    } catch (error) {
+      console.error('Create admission plan error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
+  getAdmissionPlans: async (req, res) => {
+    try {
+      const { ap_years } = req.query;
+      let query = `
+        SELECT ap.*, d.div_name, c.cur_name, c.cur_shortname
+        FROM admission_plan ap
+        LEFT JOIN divisions d ON d.div_id = ap.div_id
+        LEFT JOIN curriculums c ON c.cur_id = ap.cur_id
+        WHERE 1=1
+      `;
+      const params = [];
+      if (ap_years) { params.push(ap_years); query += ` AND ap.ap_years=$${params.length}`; }
+      query += ' ORDER BY ap.ap_years DESC, d.div_name';
+
+      const result = await pool.query(query, params);
+      res.json(result.rows);
+    } catch (error) {
+      console.error('Get admission plans error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
+  updateAdmissionPlan: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { ap_years, div_id, cur_id, plan_num } = req.body;
+
+      const result = await pool.query(
+        'UPDATE admission_plan SET ap_years=$1, div_id=$2, cur_id=$3, plan_num=$4, updated_at=NOW() WHERE ap_id=$5 RETURNING *',
+        [ap_years, div_id, cur_id, plan_num, id]
+      );
+      if (result.rows.length === 0)
+        return res.status(404).json({ error: 'Admission plan not found' });
+      res.json({ message: 'Admission plan updated successfully', plan: result.rows[0] });
+    } catch (error) {
+      console.error('Update admission plan error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
+  deleteAdmissionPlan: async (req, res) => {
+    try {
+      const { id } = req.params;
+      await pool.query('DELETE FROM admission_plan WHERE ap_id=$1', [id]);
+      res.json({ message: 'Admission plan deleted successfully' });
+    } catch (error) {
+      console.error('Delete admission plan error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
+  // ============================================================
+  // EXPENSE DETAIL MANAGEMENT
+  // ============================================================
+  createExpenseDetail: async (req, res) => {
+    try {
+      const { exp_name, exp_detail, exp_img, cur_id, exp_cost } = req.body;
+      if (!exp_name || !exp_detail || !cur_id || !exp_cost)
+        return res.status(400).json({ error: 'exp_name, exp_detail, cur_id and exp_cost are required' });
+
+      const result = await pool.query(
+        'INSERT INTO expense_detail (exp_name, exp_detail, exp_img, cur_id, exp_cost) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+        [exp_name, exp_detail, exp_img || null, cur_id, exp_cost]
+      );
+      res.status(201).json({ message: 'Expense detail created successfully', expense: result.rows[0] });
+    } catch (error) {
+      console.error('Create expense detail error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
+  getExpenseDetails: async (req, res) => {
+    try {
+      const { cur_id } = req.query;
+      let query = `
+        SELECT e.*, c.cur_name, c.cur_shortname
+        FROM expense_detail e
+        LEFT JOIN curriculums c ON c.cur_id = e.cur_id
+        WHERE 1=1
+      `;
+      const params = [];
+      if (cur_id) { params.push(cur_id); query += ` AND e.cur_id=$${params.length}`; }
+      query += ' ORDER BY e.exp_name';
+
+      const result = await pool.query(query, params);
+      res.json(result.rows);
+    } catch (error) {
+      console.error('Get expense details error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
+  updateExpenseDetail: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { exp_name, exp_detail, exp_img, cur_id, exp_cost } = req.body;
+
+      const result = await pool.query(
+        'UPDATE expense_detail SET exp_name=$1, exp_detail=$2, exp_img=$3, cur_id=$4, exp_cost=$5, updated_at=NOW() WHERE exp_id=$6 RETURNING *',
+        [exp_name, exp_detail, exp_img || null, cur_id, exp_cost, id]
+      );
+      if (result.rows.length === 0)
+        return res.status(404).json({ error: 'Expense detail not found' });
+      res.json({ message: 'Expense detail updated successfully', expense: result.rows[0] });
+    } catch (error) {
+      console.error('Update expense detail error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
+  deleteExpenseDetail: async (req, res) => {
+    try {
+      const { id } = req.params;
+      await pool.query('DELETE FROM expense_detail WHERE exp_id=$1', [id]);
+      res.json({ message: 'Expense detail deleted successfully' });
+    } catch (error) {
+      console.error('Delete expense detail error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
+  // ============================================================
+  // STUDENT MANAGEMENT
+  // ============================================================
   getStudents: async (req, res) => {
     try {
-      const { page = 1, limit = 50, status, educationLevel, departmentId } = req.query;
+      const { page = 1, limit = 50, status, cur_id, div_id } = req.query;
       const offset = (page - 1) * limit;
+      const params = [];
+      let where = 'WHERE 1=1';
 
-      let query = supabase
-        .from('students')
-        .select(`
-          *,
-          departments(name),
-          courses(name),
-          payments(amount, status, created_at)
-        `, { count: 'exact' });
+      if (status)  { params.push(status);  where += ` AND s.status=$${params.length}`; }
+      if (cur_id)  { params.push(cur_id);  where += ` AND s.cur_id=$${params.length}`; }
+      if (div_id)  { params.push(div_id);  where += ` AND s.div_id=$${params.length}`; }
 
-      if (status) {
-        query = query.eq('status', status);
-      }
+      params.push(limit, offset);
+      const result = await pool.query(`
+        SELECT s.*,
+          c.cur_name, c.cur_shortname,
+          d.div_name
+        FROM students s
+        LEFT JOIN curriculums c ON c.cur_id = s.cur_id
+        LEFT JOIN divisions d   ON d.div_id = s.div_id
+        ${where}
+        ORDER BY s.created_at DESC
+        LIMIT $${params.length - 1} OFFSET $${params.length}
+      `, params);
 
-      if (educationLevel) {
-        query = query.eq('education_level', educationLevel);
-      }
-
-      if (departmentId) {
-        query = query.eq('department_id', departmentId);
-      }
-
-      const { data: students, error, count } = await query
-        .order('created_at', { ascending: false })
-        .range(offset, offset + limit - 1);
-
-      if (error) {
-        return res.status(500).json({ error: 'Failed to fetch students' });
-      }
+      const countResult = await pool.query(
+        `SELECT COUNT(*) FROM students s ${where}`,
+        params.slice(0, -2)
+      );
+      const total = parseInt(countResult.rows[0].count);
 
       res.json({
-        students,
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total: count,
-          totalPages: Math.ceil(count / limit)
-        }
+        students: result.rows,
+        pagination: { page: parseInt(page), limit: parseInt(limit), total, totalPages: Math.ceil(total / limit) }
       });
     } catch (error) {
       console.error('Get students error:', error);
@@ -275,25 +328,19 @@ const adminController = {
   getStudentById: async (req, res) => {
     try {
       const { id } = req.params;
+      const result = await pool.query(`
+        SELECT s.*,
+          c.cur_name, c.cur_shortname,
+          d.div_name
+        FROM students s
+        LEFT JOIN curriculums c ON c.cur_id = s.cur_id
+        LEFT JOIN divisions d   ON d.div_id = s.div_id
+        WHERE s.id=$1
+      `, [id]);
 
-      const { data: student, error } = await supabase
-        .from('students')
-        .select(`
-          *,
-          departments(name),
-          courses(name),
-          student_images(image_type, image_url),
-          orders(id, order_items, total_amount, status, created_at),
-          payments(id, amount, status, slip_url, created_at)
-        `)
-        .eq('id', id)
-        .single();
-
-      if (error || !student) {
+      if (result.rows.length === 0)
         return res.status(404).json({ error: 'Student not found' });
-      }
-
-      res.json(student);
+      res.json(result.rows[0]);
     } catch (error) {
       console.error('Get student error:', error);
       res.status(500).json({ error: 'Internal server error' });
@@ -304,73 +351,44 @@ const adminController = {
     try {
       const { id } = req.params;
       const { status } = req.body;
+      if (!status) return res.status(400).json({ error: 'Status is required' });
 
-      if (!status) {
-        return res.status(400).json({ error: 'Status is required' });
-      }
-
-      const { data: student, error } = await supabase
-        .from('students')
-        .update({ status, updated_at: new Date().toISOString() })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) {
-        return res.status(500).json({ error: 'Failed to update student status' });
-      }
-
-      if (!student) {
+      const result = await pool.query(
+        'UPDATE students SET status=$1, updated_at=NOW() WHERE id=$2 RETURNING *',
+        [status, id]
+      );
+      if (result.rows.length === 0)
         return res.status(404).json({ error: 'Student not found' });
-      }
-
-      res.json({
-        message: 'Student status updated successfully',
-        student
-      });
+      res.json({ message: 'Student status updated successfully', student: result.rows[0] });
     } catch (error) {
       console.error('Update student status error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },
 
-  // Reports and summaries
+  // ============================================================
+  // SUMMARIES
+  // ============================================================
   getApplicantSummary: async (req, res) => {
     try {
-      const { data: summary, error } = await supabase
-        .from('students')
-        .select('education_level, departments(name), status')
-        .select(`
-          education_level,
-          departments(name),
-          status
-        `);
+      const result = await pool.query(`
+        SELECT
+          s.status,
+          c.cur_shortname,
+          d.div_name
+        FROM students s
+        LEFT JOIN curriculums c ON c.cur_id = s.cur_id
+        LEFT JOIN divisions d   ON d.div_id = s.div_id
+      `);
 
-      if (error) {
-        return res.status(500).json({ error: 'Failed to fetch applicant summary' });
-      }
-
-      // Process summary data
-      const summaryData = {
-        total: summary.length,
-        byEducationLevel: {},
-        byDepartment: {},
-        byStatus: {}
-      };
-
-      summary.forEach(student => {
-        // Count by education level
-        summaryData.byEducationLevel[student.education_level] = 
-          (summaryData.byEducationLevel[student.education_level] || 0) + 1;
-
-        // Count by department
-        const deptName = student.departments?.name || 'Unknown';
-        summaryData.byDepartment[deptName] = 
-          (summaryData.byDepartment[deptName] || 0) + 1;
-
-        // Count by status
-        summaryData.byStatus[student.status] = 
-          (summaryData.byStatus[student.status] || 0) + 1;
+      const summaryData = { total: result.rows.length, byCurriculum: {}, byDivision: {}, byStatus: {} };
+      result.rows.forEach(s => {
+        const cur  = s.cur_shortname || 'Unknown';
+        const div  = s.div_name      || 'Unknown';
+        const stat = s.status        || 'Unknown';
+        summaryData.byCurriculum[cur]  = (summaryData.byCurriculum[cur]  || 0) + 1;
+        summaryData.byDivision[div]    = (summaryData.byDivision[div]    || 0) + 1;
+        summaryData.byStatus[stat]     = (summaryData.byStatus[stat]     || 0) + 1;
       });
 
       res.json(summaryData);
@@ -382,31 +400,14 @@ const adminController = {
 
   getPaymentSummary: async (req, res) => {
     try {
-      const { data: payments, error } = await supabase
-        .from('payments')
-        .select('amount, status, created_at');
+      const result = await pool.query('SELECT amount, status, created_at FROM payments');
+      const summaryData = { totalAmount: 0, totalPayments: result.rows.length, byStatus: {}, monthlyTotals: {} };
 
-      if (error) {
-        return res.status(500).json({ error: 'Failed to fetch payment summary' });
-      }
-
-      // Process payment data
-      const summaryData = {
-        totalAmount: payments.reduce((sum, p) => sum + (p.amount || 0), 0),
-        totalPayments: payments.length,
-        byStatus: {},
-        monthlyTotals: {}
-      };
-
-      payments.forEach(payment => {
-        // Count by status
-        summaryData.byStatus[payment.status] = 
-          (summaryData.byStatus[payment.status] || 0) + 1;
-
-        // Monthly totals
-        const month = new Date(payment.created_at).toISOString().substring(0, 7);
-        summaryData.monthlyTotals[month] = 
-          (summaryData.monthlyTotals[month] || 0) + (payment.amount || 0);
+      result.rows.forEach(p => {
+        summaryData.totalAmount += parseFloat(p.amount || 0);
+        summaryData.byStatus[p.status] = (summaryData.byStatus[p.status] || 0) + 1;
+        const month = new Date(p.created_at).toISOString().substring(0, 7);
+        summaryData.monthlyTotals[month] = (summaryData.monthlyTotals[month] || 0) + parseFloat(p.amount || 0);
       });
 
       res.json(summaryData);
@@ -418,32 +419,15 @@ const adminController = {
 
   getOrderSummary: async (req, res) => {
     try {
-      const { data: orders, error } = await supabase
-        .from('orders')
-        .select('order_items, total_amount, status, created_at');
+      const result = await pool.query('SELECT order_items, total_amount, status, created_at FROM orders');
+      const summaryData = { totalOrders: result.rows.length, totalAmount: 0, byStatus: {}, itemCounts: {} };
 
-      if (error) {
-        return res.status(500).json({ error: 'Failed to fetch order summary' });
-      }
-
-      // Process order data
-      const summaryData = {
-        totalOrders: orders.length,
-        totalAmount: orders.reduce((sum, o) => sum + (o.total_amount || 0), 0),
-        byStatus: {},
-        itemCounts: {}
-      };
-
-      orders.forEach(order => {
-        // Count by status
-        summaryData.byStatus[order.status] = 
-          (summaryData.byStatus[order.status] || 0) + 1;
-
-        // Count items
-        if (order.order_items) {
-          order.order_items.forEach(item => {
-            summaryData.itemCounts[item.name] = 
-              (summaryData.itemCounts[item.name] || 0) + (item.quantity || 1);
+      result.rows.forEach(o => {
+        summaryData.totalAmount += parseFloat(o.total_amount || 0);
+        summaryData.byStatus[o.status] = (summaryData.byStatus[o.status] || 0) + 1;
+        if (o.order_items) {
+          o.order_items.forEach(item => {
+            summaryData.itemCounts[item.name] = (summaryData.itemCounts[item.name] || 0) + (item.quantity || 1);
           });
         }
       });
@@ -455,80 +439,55 @@ const adminController = {
     }
   },
 
-  // Export students to Excel (placeholder)
   exportStudents: async (req, res) => {
     try {
-      const { format = 'json', departmentId, educationLevel, status } = req.query;
+      const { format = 'json', cur_id, div_id, status } = req.query;
+      const params = [];
+      let where = 'WHERE 1=1';
 
-      let query = supabase
-        .from('students')
-        .select(`
-          *,
-          departments(name),
-          courses(name)
-        `);
+      if (cur_id) { params.push(cur_id); where += ` AND s.cur_id=$${params.length}`; }
+      if (div_id) { params.push(div_id); where += ` AND s.div_id=$${params.length}`; }
+      if (status) { params.push(status); where += ` AND s.status=$${params.length}`; }
 
-      if (departmentId) {
-        query = query.eq('department_id', departmentId);
-      }
+      const result = await pool.query(`
+        SELECT s.*,
+          c.cur_name, c.cur_shortname,
+          d.div_name
+        FROM students s
+        LEFT JOIN curriculums c ON c.cur_id = s.cur_id
+        LEFT JOIN divisions d   ON d.div_id = s.div_id
+        ${where}
+        ORDER BY s.created_at DESC
+      `, params);
 
-      if (educationLevel) {
-        query = query.eq('education_level', educationLevel);
-      }
-
-      if (status) {
-        query = query.eq('status', status);
-      }
-
-      const { data: students, error } = await query.order('created_at', { ascending: false });
-
-      if (error) {
-        return res.status(500).json({ error: 'Failed to export students' });
-      }
-
-      // For now, return JSON data
-      res.json({
-        message: 'Students exported successfully',
-        data: students,
-        format
-      });
+      res.json({ message: 'Students exported successfully', data: result.rows, format });
     } catch (error) {
       console.error('Export students error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },
 
-  // User management
+  // ============================================================
+  // USER MANAGEMENT (ไม่เปลี่ยน)
+  // ============================================================
   getUsers: async (req, res) => {
     try {
       const { page = 1, limit = 50, role } = req.query;
       const offset = (page - 1) * limit;
+      const params = [];
+      let where = 'WHERE 1=1';
 
-      let query = supabase
-        .from('users')
-        .select('*', { count: 'exact' });
+      if (role) { params.push(role); where += ` AND role=$${params.length}`; }
+      params.push(limit, offset);
 
-      if (role) {
-        query = query.eq('role', role);
-      }
+      const result = await pool.query(
+        `SELECT * FROM users ${where} ORDER BY created_at DESC LIMIT $${params.length - 1} OFFSET $${params.length}`,
+        params
+      );
+      const countResult = await pool.query(`SELECT COUNT(*) FROM users ${where}`, params.slice(0, -2));
+      const total = parseInt(countResult.rows[0].count);
 
-      const { data: users, error, count } = await query
-        .order('created_at', { ascending: false })
-        .range(offset, offset + limit - 1);
-
-      if (error) {
-        return res.status(500).json({ error: 'Failed to fetch users' });
-      }
-
-      res.json({
-        users,
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total: count,
-          totalPages: Math.ceil(count / limit)
-        }
-      });
+      res.json({ users: result.rows, pagination: { page: parseInt(page), limit: parseInt(limit), total, totalPages: Math.ceil(total / limit) } });
     } catch (error) {
       console.error('Get users error:', error);
       res.status(500).json({ error: 'Internal server error' });
@@ -538,41 +497,18 @@ const adminController = {
   createUser: async (req, res) => {
     try {
       const { username, email, password, role = 'admin', fullName } = req.body;
-
-      if (!username || !email || !password) {
+      if (!username || !email || !password)
         return res.status(400).json({ error: 'Username, email, and password are required' });
-      }
 
-      // Hash password (simplified - use bcrypt in production)
-      const bcrypt = require('bcryptjs');
       const hashedPassword = await bcrypt.hash(password, 10);
-
-      const { data: user, error } = await supabase
-        .from('users')
-        .insert({
-          username,
-          email,
-          password: hashedPassword,
-          role,
-          full_name: fullName,
-          created_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (error) {
-        return res.status(500).json({ error: 'Failed to create user' });
-      }
-
+      const result = await pool.query(
+        'INSERT INTO users (username, email, password, role, full_name) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+        [username, email, hashedPassword, role, fullName]
+      );
+      const user = result.rows[0];
       res.status(201).json({
         message: 'User created successfully',
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          role: user.role,
-          full_name: user.full_name
-        }
+        user: { id: user.id, username: user.username, email: user.email, role: user.role, full_name: user.full_name }
       });
     } catch (error) {
       console.error('Create user error:', error);
@@ -583,33 +519,16 @@ const adminController = {
   updateUser: async (req, res) => {
     try {
       const { id } = req.params;
-      const updates = req.body;
+      const { username, email, password, role, full_name } = req.body;
+      const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
 
-      // Hash password if provided
-      if (updates.password) {
-        const bcrypt = require('bcryptjs');
-        updates.password = await bcrypt.hash(updates.password, 10);
-      }
-
-      const { data: user, error } = await supabase
-        .from('users')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) {
-        return res.status(500).json({ error: 'Failed to update user' });
-      }
-
-      if (!user) {
+      const result = await pool.query(
+        `UPDATE users SET username=$1, email=$2, ${hashedPassword ? 'password=$3,' : ''} role=$${hashedPassword ? 4 : 3}, full_name=$${hashedPassword ? 5 : 4}, updated_at=NOW() WHERE id=$${hashedPassword ? 6 : 5} RETURNING *`,
+        hashedPassword ? [username, email, hashedPassword, role, full_name, id] : [username, email, role, full_name, id]
+      );
+      if (result.rows.length === 0)
         return res.status(404).json({ error: 'User not found' });
-      }
-
-      res.json({
-        message: 'User updated successfully',
-        user
-      });
+      res.json({ message: 'User updated successfully', user: result.rows[0] });
     } catch (error) {
       console.error('Update user error:', error);
       res.status(500).json({ error: 'Internal server error' });
@@ -619,16 +538,7 @@ const adminController = {
   deleteUser: async (req, res) => {
     try {
       const { id } = req.params;
-
-      const { error } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        return res.status(500).json({ error: 'Failed to delete user' });
-      }
-
+      await pool.query('DELETE FROM users WHERE id=$1', [id]);
       res.json({ message: 'User deleted successfully' });
     } catch (error) {
       console.error('Delete user error:', error);
