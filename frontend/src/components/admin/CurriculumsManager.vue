@@ -39,7 +39,7 @@
             v-model="selectedAbbreviation"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
           >
-            <option value="">ค้นหาด้วยชื่อย่อ</option>
+            <option value="">ทั้งหมด</option>
             <option value="ปวช">ปวช</option>
             <option value="ปวส">ปวส</option>
           </select>
