@@ -4,13 +4,11 @@
       <h2 class="text-xl font-semibold text-gray-800">จัดการแผนรับสมัคร</h2>
       <button
         @click="showAddModal = true"
-        class="bg-emerald-500 text-white px-4 py-2 rounded-lg hover:bg-emerald-600 transition-colors"
-      >
+        class="bg-emerald-500 text-white px-4 py-2 rounded-lg hover:bg-emerald-600 transition-colors">
         <PlusIcon class="w-5 h-5 inline-block mr-1" />
         เพิ่มแผนรับสมัคร
       </button>
     </div>
-
     <!-- Table -->
     <div class="overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-200">

@@ -8,8 +8,8 @@
       <!-- Logo -->
       <div class="p-6 border-b border-white/20">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-            <AcademicCapIcon class="w-6 h-6 text-white" />
+          <div class="w-10 h-10 bg-white/20 rounded flex items-center justify-center">
+                        <AcademicCapIcon class="w-7 h-7 text-white" />
           </div>
           <div>
             <p class="text-white font-semibold text-sm">วิทยาลัยเทคนิคเลย</p>
@@ -75,8 +75,8 @@
     <div class="flex-1 flex flex-col overflow-hidden">
       <!-- Header -->
       <header class="bg-white border-b border-gray-200 px-8 py-3 flex items-center gap-4 shadow-2xl">
-        <div class="w-20 h-20 bg-emerald-500 rounded-xl flex items-center justify-center">
-          <span class="text-white font-bold text-sm">TC</span>
+        <div class="w-20 h-20 rounded-xl flex items-center justify-center">
+          <img src="@/assets/loeitech-logo.png" alt="LoeiTech Logo" class="w-20 h-20" />
         </div>
         <div>
           <h1 class="text-xl font-semibold text-gray-800">ระบบรับสมัครนักเรียนนักศึกษา</h1>
@@ -98,7 +98,6 @@ import {
   DocumentTextIcon,
   UserGroupIcon,
   Cog6ToothIcon,
-  ArrowRightOnRectangleIcon,
   MagnifyingGlassIcon,
   ClipboardDocumentCheckIcon,
   ReceiptPercentIcon,
