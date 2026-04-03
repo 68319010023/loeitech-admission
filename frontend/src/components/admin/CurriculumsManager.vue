@@ -29,10 +29,20 @@
             <input
               v-model="searchQuery"
               type="text"
-              placeholder="ค้นหาชื่อหลักสูตรหรือชื่อย่อ..."
+              placeholder="ค้นหาชื่อหลักสูตร"
               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
             />
           </div>
+        </div>
+        <div class="sm:w-48">
+          <select
+            v-model="selectedAbbreviation"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+          >
+            <option value="">ค้นหาด้วยชื่อย่อ</option>
+            <option value="ปวช">ปวช</option>
+            <option value="ปวส">ปวส</option>
+          </select>
         </div>
         <div class="flex items-center space-x-2 text-sm text-gray-600">
           <span>พบ {{ filteredCurriculums.length }} รายการ</span>
@@ -46,15 +56,9 @@
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                <div class="flex items-center">
-                  <HashtagIcon class="w-4 h-4 mr-1" />
-                  ID
-                </div>
-              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อหลักสูตร</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อย่อ</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สร้างเมื่อ</th>
               <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">จัดการ</th>
             </tr>
           </thead>
@@ -70,28 +74,22 @@
                 <div class="text-sm font-medium text-gray-900">{{ curriculum.cur_name }}</div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <span class="inline-flex px-2 py-1 text-xs font-medium bg-emerald-100 text-emerald-800 rounded-full">
+                <span class="inline-flex px-2 py-1 text-xs font-medium text-gray-800 rounded-full">
                   {{ curriculum.cur_shortname }}
                 </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                <div class="flex items-center">
-                  <CalendarIcon class="w-4 h-4 mr-1" />
-                  {{ formatDate(curriculum.created_at) }}
-                </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-center">
                 <div class="flex items-center justify-center space-x-2">
                   <button
                     @click="editCurriculum(curriculum)"
-                    class="inline-flex items-center px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                    class="inline-flex items-center px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors"
                     title="แก้ไข"
                   >
                     <PencilIcon class="w-4 h-4" />
                   </button>
                   <button
                     @click="deleteCurriculum(curriculum.cur_id)"
-                    class="inline-flex items-center px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                    class="inline-flex items-center px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-emerald-100 transition-colors"
                     title="ลบ"
                   >
                     <TrashIcon class="w-4 h-4" />
@@ -199,8 +197,7 @@ import {
   TrashIcon, 
   AcademicCapIcon,
   MagnifyingGlassIcon,
-  HashtagIcon,
-  CalendarIcon
+  HashtagIcon
 } from '@heroicons/vue/24/outline'
 
 interface Curriculum {
@@ -214,6 +211,7 @@ const curriculums = ref<Curriculum[]>([])
 const showAddModal = ref(false)
 const showEditModal = ref(false)
 const searchQuery = ref('')
+const selectedAbbreviation = ref('')
 const formData = ref({
   cur_id: 0,
   cur_name: '',
@@ -221,12 +219,31 @@ const formData = ref({
 })
 
 const filteredCurriculums = computed(() => {
-  if (!searchQuery.value) return curriculums.value
-  const query = searchQuery.value.toLowerCase()
-  return curriculums.value.filter(curriculum => 
-    curriculum.cur_name.toLowerCase().includes(query) ||
-    curriculum.cur_shortname.toLowerCase().includes(query)
-  )
+  let filtered = curriculums.value
+  
+  // Filter by abbreviation
+  if (selectedAbbreviation.value) {
+    if (selectedAbbreviation.value === 'อื่นๆ') {
+      filtered = filtered.filter(curriculum => 
+        !curriculum.cur_shortname.includes('ปวส') && 
+        !curriculum.cur_shortname.includes('ปวช')
+      )
+    } else {
+      filtered = filtered.filter(curriculum => 
+        curriculum.cur_shortname.includes(selectedAbbreviation.value)
+      )
+    }
+  }
+  
+  // Filter by search query (only curriculum name)
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    filtered = filtered.filter(curriculum => 
+      curriculum.cur_name.toLowerCase().includes(query)
+    )
+  }
+  
+  return filtered
 })
 
 const fetchCurriculums = async () => {

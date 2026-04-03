@@ -29,10 +29,20 @@
             <input
               v-model="searchQuery"
               type="text"
-              placeholder="ค้นหาชื่อสาขาวิชา..."
+              placeholder="ค้นหาชื่อสาขาวิชา"
               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
             />
           </div>
+        </div>
+        <div class="sm:w-48">
+          <select
+            v-model="selectedAbbreviation"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+          >
+            <option value="">ค้นหาด้วยชื่อย่อ</option>
+            <option value="ปวช">ปวช</option>
+            <option value="ปวส">ปวส</option>
+          </select>
         </div>
         <div class="flex items-center space-x-2 text-sm text-gray-600">
           <span>พบ {{ filteredDivisions.length }} รายการ</span>
@@ -46,15 +56,9 @@
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                <div class="flex items-center">
-                  <HashtagIcon class="w-4 h-4 mr-1" />
-                  ID
-                </div>
-              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อสาขาวิชา</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">หลักสูตร</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สร้างเมื่อ</th>
               <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">จัดการ</th>
             </tr>
           </thead>
@@ -70,16 +74,10 @@
                 <div class="text-sm font-medium text-gray-900">{{ division.div_name }}</div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <span class="inline-flex px-2 py-1 text-xs font-medium bg-emerald-100 text-emerald-800 rounded-full">
+                <span class="inline-flex px-2 py-1 text-xs font-medium text-gray-800 rounded-full">
                   {{ division.curriculum?.cur_shortname }}
                 </span>
                 <div class="text-xs text-gray-500 mt-1">{{ division.curriculum?.cur_name }}</div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                <div class="flex items-center">
-                  <CalendarIcon class="w-4 h-4 mr-1" />
-                  {{ formatDate(division.created_at) }}
-                </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-center">
                 <div class="flex items-center justify-center space-x-2">
@@ -226,6 +224,7 @@ const curriculums = ref<Curriculum[]>([])
 const showAddModal = ref(false)
 const showEditModal = ref(false)
 const searchQuery = ref('')
+const selectedAbbreviation = ref('')
 const formData = ref({
   div_id: 0,
   div_name: '',
@@ -233,13 +232,24 @@ const formData = ref({
 })
 
 const filteredDivisions = computed(() => {
-  if (!searchQuery.value) return divisions.value
-  const query = searchQuery.value.toLowerCase()
-  return divisions.value.filter(division => 
-    division.div_name.toLowerCase().includes(query) ||
-    division.curriculum?.cur_name.toLowerCase().includes(query) ||
-    division.curriculum?.cur_shortname.toLowerCase().includes(query)
-  )
+  let filtered = divisions.value
+  
+  // Filter by abbreviation
+  if (selectedAbbreviation.value) {
+    filtered = filtered.filter(division => 
+      division.curriculum?.cur_shortname === selectedAbbreviation.value
+    )
+  }
+  
+  // Filter by search query (only division name)
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    filtered = filtered.filter(division => 
+      division.div_name.toLowerCase().includes(query)
+    )
+  }
+  
+  return filtered
 })
 
 const fetchDivisions = async () => {

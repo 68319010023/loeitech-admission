@@ -21,25 +21,29 @@
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">หลักสูตร</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สาขาวิชา</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จำนวนรับ</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สร้างเมื่อ</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จัดการ</th>
+            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">จัดการ</th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
           <tr v-for="plan in admissionPlans" :key="plan.ap_id">
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ plan.ap_id }}</td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-800 rounded-full text-sm font-medium">
+                {{ plan.ap_id }}
+              </span>
+            </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ plan.ap_years }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ plan.curriculum?.cur_name }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ plan.division?.div_name }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ plan.plan_num }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(plan.created_at) }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-              <button @click="editAdmissionPlan(plan)" class="text-emerald-600 hover:text-emerald-900 mr-3">
-                <PencilIcon class="w-4 h-4" />
-              </button>
-              <button @click="deleteAdmissionPlan(plan.ap_id)" class="text-red-600 hover:text-red-900">
-                <TrashIcon class="w-4 h-4" />
-              </button>
+            <td class="px-6 py-4 whitespace-nowrap text-center">
+              <div class="flex items-center justify-center space-x-2">
+                <button @click="editAdmissionPlan(plan)" class="inline-flex items-center px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors">
+                  <PencilIcon class="w-4 h-4" />
+                </button>
+                <button @click="deleteAdmissionPlan(plan.ap_id)" class="inline-flex items-center px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-emerald-100 transition-colors">
+                  <TrashIcon class="w-4 h-4" />
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>
