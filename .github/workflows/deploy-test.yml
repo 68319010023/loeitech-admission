@@ -1,0 +1,52 @@
+name: CI/CD Test Environment
+
+on:
+  push:
+    branches:
+      - test
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Login to Private Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.REGISTRY_URL }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and Push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ secrets.REGISTRY_URL }}/loeitech-backend:test
+
+      - name: Build and Push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ secrets.REGISTRY_URL }}/loeitech-frontend:test
+
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /path/to/app  # Adjust as needed on server
+            STACK_NAME=ltc-admission-test \
+            IMAGE_TAG=test \
+            BACKEND_PORT=3002 \
+            FRONTEND_PORT=5174 \
+            REGISTRY_URL=${{ secrets.REGISTRY_URL }} \
+            DATABASE_URL=${{ secrets.DATABASE_URL_TEST }} \
+            JWT_SECRET=${{ secrets.JWT_SECRET_TEST }} \
+            FRONTEND_URL=http://${{ secrets.SERVER_IP }}:5174 \
+            ./deploy.sh
