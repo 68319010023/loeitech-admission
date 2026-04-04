@@ -48,5 +48,5 @@ jobs:
             REGISTRY_URL=${{ secrets.REGISTRY_URL }} \
             DATABASE_URL=${{ secrets.DATABASE_URL_TEST }} \
             JWT_SECRET=${{ secrets.JWT_SECRET_TEST }} \
-            FRONTEND_URL=http://${{ secrets.SERVER_IP }}:5174 \
+            FRONTEND_URL=https://test-admission.loeitech.ac.th \
             ./deploy.sh

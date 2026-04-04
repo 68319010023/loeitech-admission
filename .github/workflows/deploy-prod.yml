@@ -48,5 +48,5 @@ jobs:
             REGISTRY_URL=${{ secrets.REGISTRY_URL }} \
             DATABASE_URL=${{ secrets.DATABASE_URL_PROD }} \
             JWT_SECRET=${{ secrets.JWT_SECRET_PROD }} \
-            FRONTEND_URL=http://${{ secrets.SERVER_IP }}:5173 \
+            FRONTEND_URL=https://admission.loeitech.ac.th \
             ./deploy.sh
