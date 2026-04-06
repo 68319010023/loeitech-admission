@@ -10,7 +10,7 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - FRONTEND_URL=${FRONTEND_URL}
     ports:
-      - "${BACKEND_PORT:-3001}:3001"
+      - "${BACKEND_PORT:-13001}:3001"
     volumes:
       - backend_uploads:/app/uploads
 
@@ -18,7 +18,7 @@ services:
     image: ${REGISTRY_URL}/loeitech-frontend:${IMAGE_TAG:-latest}
     restart: always
     ports:
-      - "${FRONTEND_PORT:-5173}:80"
+      - "${FRONTEND_PORT:-13000}:80"
     depends_on:
       - backend
 
