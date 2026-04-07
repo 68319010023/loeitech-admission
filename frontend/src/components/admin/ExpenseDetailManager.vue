@@ -16,28 +16,28 @@
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
-            <th class="w-20 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลำดับ</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อรายการ</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">หลักสูตร</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ราคา</th>
-            <th class="w-24 px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">รูปภาพ</th>
-            <th class="w-32 px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">จัดการ</th>
+            <th class="w-16 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลำดับ</th>
+            <th class="w-64 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อรายการ</th>
+            <th class="w-48 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">หลักสูตร</th>
+            <th class="w-32 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ราคา</th>
+            <th class="w-32 px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">รูปภาพ</th>
+            <th class="w-36 px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">จัดการ</th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
           <tr v-for="expense in expenses" :key="expense.exp_id">
-            <td class="px-6 py-4 text-sm text-gray-900 text-center">
+            <td class="px-4 py-3 text-sm text-gray-900 text-center">
               <div class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-800 rounded-full text-sm font-medium">{{ expenses.indexOf(expense) + 1 }}</div>
             </td>
-            <td class="px-6 py-4 text-sm text-gray-900">
+            <td class="px-4 py-3 text-sm text-gray-900">
               <div>
                 <div class="font-medium">{{ expense.exp_name }}</div>
                 <div class="text-gray-500 text-xs">{{ expense.exp_detail.substring(0, 50) }}...</div>
               </div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ expense.curriculum?.cur_name }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">฿{{ expense.exp_cost.toLocaleString() }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{{ expense.curriculum?.cur_name }}</td>
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{{ expense.exp_cost.toLocaleString() }} บาท</td>
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
               <div v-if="expense.exp_img" class="text-center">
                 <button @click="viewImage(expense.exp_img)" 
                    class="inline-flex items-center px-3 py-1 bg-emerald-500 text-white text-xs rounded hover:bg-emerald-600 transition-colors">
@@ -50,13 +50,15 @@
               </div>
               <span v-else class="text-gray-400">ไม่มีรูป</span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
-              <button @click="editExpense(expense)" class="inline-flex items-center px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors mr-2">
-                <PencilIcon class="w-4 h-4" />
-              </button>
-              <button @click="deleteExpense(expense.exp_id)" class="inline-flex items-center px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
-                <TrashIcon class="w-4 h-4" />
-              </button>
+            <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-center">
+              <div class="flex justify-center items-center gap-1">
+                <button @click="editExpense(expense)" class="inline-flex items-center px-2 py-1.5 bg-emerald-50 text-emerald-600 rounded hover:bg-emerald-100 transition-colors">
+                  <PencilIcon class="w-3.5 h-3.5" />
+                </button>
+                <button @click="deleteExpense(expense.exp_id)" class="inline-flex items-center px-2 py-1.5 bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors">
+                  <TrashIcon class="w-3.5 h-3.5" />
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -113,6 +115,19 @@
                         <option v-for="curriculum in curriculums" :key="curriculum.cur_id" :value="curriculum.cur_id">
                           {{ curriculum.cur_name }}
                         </option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label class="block text-gray-700 text-sm font-bold mb-2">ประเภทการชำระเงิน</label>
+                      <select
+                        v-model="formData.payment_type"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                        required
+                      >
+                        <option value="">เลือกประเภทการชำระเงิน</option>
+                        <option value="mandatory">บังคับชำระ</option>
+                        <option value="optional">ไม่บังคับชำระ</option>
                       </select>
                     </div>
 
@@ -239,6 +254,7 @@ interface ExpenseDetail {
   exp_img?: string
   cur_id: number
   exp_cost: number
+  payment_type?: string
   curriculum?: Curriculum
   created_at: string
 }
@@ -257,7 +273,8 @@ const formData = ref({
   exp_detail: '',
   exp_cost: 0,
   exp_img: '',
-  cur_id: 0
+  cur_id: 0,
+  payment_type: ''
 })
 
 const fetchExpenses = async () => {
@@ -300,7 +317,8 @@ const editExpense = (expense: ExpenseDetail) => {
     exp_detail: expense.exp_detail,
     exp_img: expense.exp_img || '',
     cur_id: expense.cur_id,
-    exp_cost: expense.exp_cost
+    exp_cost: expense.exp_cost,
+    payment_type: expense.payment_type || ''
   }
   showEditModal.value = true
 }
@@ -399,7 +417,8 @@ const closeModal = () => {
     exp_detail: '',
     exp_cost: 0,
     exp_img: '',
-    cur_id: 0
+    cur_id: 0,
+    payment_type: ''
   }
 }
 
