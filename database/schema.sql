@@ -243,22 +243,7 @@ CREATE TRIGGER update_payments_updated_at       BEFORE UPDATE ON payments       
 CREATE TRIGGER update_inventory_items_updated_at BEFORE UPDATE ON inventory_items FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_system_settings_updated_at BEFORE UPDATE ON system_settings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- ============================================================
--- ROW LEVEL SECURITY (RLS)
--- ============================================================
-ALTER TABLE students       ENABLE ROW LEVEL SECURITY;
-ALTER TABLE student_images ENABLE ROW LEVEL SECURITY;
-ALTER TABLE orders         ENABLE ROW LEVEL SECURITY;
-ALTER TABLE payments       ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Students can view own data"    ON students       FOR SELECT USING (auth.uid()::text = id::text);
-CREATE POLICY "Students can update own data"  ON students       FOR UPDATE USING (auth.uid()::text = id::text);
-CREATE POLICY "Students can view own images"  ON student_images FOR SELECT USING (auth.uid()::text = student_id::text);
-CREATE POLICY "Students can insert own images" ON student_images FOR INSERT WITH CHECK (auth.uid()::text = student_id::text);
-CREATE POLICY "Students can view own orders"  ON orders         FOR SELECT USING (auth.uid()::text = student_id::text);
-CREATE POLICY "Students can create own orders" ON orders        FOR INSERT WITH CHECK (auth.uid()::text = student_id::text);
-CREATE POLICY "Students can view own payments" ON payments      FOR SELECT USING (auth.uid()::text = student_id::text);
-CREATE POLICY "Students can create own payments" ON payments    FOR INSERT WITH CHECK (auth.uid()::text = student_id::text);
 
 -- ============================================================
 -- VALIDATE THAI ID
