@@ -40,8 +40,9 @@
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
           >
             <option value="">ทั้งหมด</option>
-            <option value="ปวช">ปวช</option>
-            <option value="ปวส">ปวส</option>
+            <option v-for="abbreviation in curriculumAbbreviations" :key="abbreviation" :value="abbreviation">
+              {{ abbreviation }}
+            </option>
           </select>
         </div>
         <div class="flex items-center text-sm text-gray-600">
@@ -56,7 +57,7 @@
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลำดับ</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อหลักสูตร</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อย่อ</th>
               <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">จัดการ</th>
@@ -67,7 +68,7 @@
                 class="hover:bg-gray-50 transition-colors">
               <td class="px-6 py-4 whitespace-nowrap">
                 <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-800 rounded-full text-sm font-medium">
-                  {{ curriculum.cur_id }}
+                  {{ filteredCurriculums.indexOf(curriculum) + 1 }}
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
@@ -292,6 +293,8 @@ import {
 } from '@heroicons/vue/24/outline'
 import { apiService } from '@/utils/api'
 
+const emit = defineEmits(['refresh'])
+
 interface Curriculum {
   cur_id: number
   cur_name: string
@@ -428,6 +431,7 @@ const confirmDelete = async () => {
 
 onMounted(() => {
   fetchCurriculums()
+  fetchCurriculumAbbreviations()
 })
 </script>
 

@@ -38,8 +38,9 @@
           <select v-model="selectedAbbreviation"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors">
             <option value="">ทั้งหมด</option>
-            <option value="ปวช">ปวช</option>
-            <option value="ปวส">ปวส</option>
+            <option v-for="curriculum in curriculumOptions" :key="curriculum.cur_id" :value="curriculum.cur_id">
+              {{ curriculum.cur_shortname }}
+            </option>
           </select>
         </div>
         <div class="flex items-center space-x-2 text-sm text-gray-600">
@@ -54,9 +55,9 @@
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลำดับ</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อสาขาวิชา</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">หลักสูตร</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อย่อ</th>
               <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">จัดการ</th>
             </tr>
           </thead>
@@ -64,7 +65,7 @@
             <tr v-for="division in filteredDivisions" :key="division.div_id" class="hover:bg-gray-50 transition-colors">
               <td class="px-6 py-4 whitespace-nowrap">
                 <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-800 rounded-full text-sm font-medium">
-                  {{ division.div_id }}
+                  {{ filteredDivisions.indexOf(division) + 1 }}
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
@@ -74,7 +75,6 @@
                 <span class="inline-flex px-2 py-1 text-xs font-medium text-gray-800 rounded-full">
                   {{ division.curriculum?.cur_shortname }}
                 </span>
-                <div class="text-xs text-gray-500 mt-1">{{ division.curriculum?.cur_name }}</div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-center">
                 <div class="flex items-center justify-center space-x-2">
@@ -270,6 +270,8 @@ import {
 } from '@heroicons/vue/24/outline'
 import { apiService } from '@/utils/api'
 
+const emit = defineEmits(['refresh'])
+
 interface Curriculum {
   cur_id: number
   cur_name: string
@@ -335,6 +337,8 @@ const fetchDivisions = async () => {
   try {
     const response = await apiService.getDivisions()
     divisions.value = response.data
+    // Fetch curriculum data for each division
+    await fetchCurriculums()
   } catch (error) {
     showToast('error', 'โหลดข้อมูลไม่สำเร็จ', 'ไม่สามารถดึงข้อมูลสาขาวิชาได้')
   }
@@ -426,6 +430,7 @@ const confirmDelete = async () => {
 onMounted(() => {
   fetchCurriculums()
   fetchDivisions()
+  fetchCurriculumOptions()
 })
 </script>
 

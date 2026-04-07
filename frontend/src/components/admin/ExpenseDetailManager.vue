@@ -16,7 +16,7 @@
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
-            <th class="w-20 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+            <th class="w-20 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลำดับ</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อรายการ</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">หลักสูตร</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ราคา</th>
@@ -27,7 +27,7 @@
         <tbody class="bg-white divide-y divide-gray-200">
           <tr v-for="expense in expenses" :key="expense.exp_id">
             <td class="px-6 py-4 text-sm text-gray-900 text-center">
-              <div class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-800 rounded-full text-sm font-medium">{{ expense.exp_id }}</div>
+              <div class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-800 rounded-full text-sm font-medium">{{ expenses.indexOf(expense) + 1 }}</div>
             </td>
             <td class="px-6 py-4 text-sm text-gray-900">
               <div>
@@ -39,14 +39,14 @@
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">฿{{ expense.exp_cost.toLocaleString() }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
               <div v-if="expense.exp_img" class="text-center">
-                <a :href="expense.exp_img" target="_blank" rel="noopener noreferrer"
+                <button @click="viewImage(expense.exp_img)"
                    class="inline-flex items-center px-3 py-1 bg-emerald-500 text-white text-xs rounded hover:bg-emerald-600 transition-colors">
                   <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                   </svg>
                   ดูรูปภาพ
-                </a>
+                </button>
               </div>
               <span v-else class="text-gray-400">ไม่มีรูป</span>
             </td>
@@ -202,9 +202,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import { apiService } from '@/utils/api'
+
+const emit = defineEmits(['refresh'])
+
+// Function to generate cache-busting URL
+const getImageUrl = (imageUrl: string) => {
+  if (!imageUrl) return imageUrl
+  const timestamp = Date.now()
+  const separator = imageUrl.includes('?') ? '&' : '?'
+  return `${imageUrl}${separator}_t=${timestamp}`
+}
 
 interface Curriculum {
   cur_id: number
@@ -237,6 +247,7 @@ const formData = ref({
   exp_id: 0,
   exp_name: '',
   exp_detail: '',
+  exp_cost: 0,
   exp_img: '',
   cur_id: 0,
   exp_cost: 0

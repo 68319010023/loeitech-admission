@@ -1,4 +1,29 @@
 <template>
+
+  <div class="bg-white shadow-lg border-b border-emerald-100">
+      <div class="max-w-7xl mx-auto px-6 py-8">
+        <div class="flex items-center justify-between">
+
+          <div>
+            <h1 class="text-4xl font-bold text-gray-900 flex items-center">
+              <div class="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
+                <User class="w-6 h-6 text-white" />
+              </div>
+              จัดการผู้ใช้งาน
+            </h1>
+            <p class="text-gray-600 mt-3 text-lg">จัดการข้อมูลผู้ใช้งานในระบบรับสมัครนักเรียนนักศึกษา</p>
+          </div>
+
+          <div class="flex items-center space-x-3">
+            <div class="flex items-center bg-emerald-50 px-4 py-2 rounded-lg">
+              <div class="w-3 h-3 bg-emerald-500 rounded-full mr-2 animate-pulse"></div>
+              <span class="text-emerald-700 font-medium">ระบบพร้อมใช้งาน</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   <div class="p-4 space-y-4">
 
     <!-- Header -->
@@ -144,7 +169,7 @@
 import { ref, computed } from 'vue'
 import {
   Download, CreditCard, ShoppingBag,
-  Users, Search, Filter, ChevronDown, X,
+  Users, Search, Filter, ChevronDown, X, User,
 } from 'lucide-vue-next'
 import * as XLSX from 'xlsx'
 
