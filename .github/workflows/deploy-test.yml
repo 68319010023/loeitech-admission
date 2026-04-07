@@ -32,6 +32,8 @@ jobs:
           context: ./frontend
           push: true
           tags: ${{ secrets.REGISTRY_URL }}/loeitech-frontend:test
+          build-args: |
+            VITE_API_URL=https://test-api-admission.loeitech.ac.th
 
       - name: Deploy to Server
         uses: appleboy/ssh-action@v1.0.3

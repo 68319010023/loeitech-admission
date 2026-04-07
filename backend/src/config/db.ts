@@ -5,7 +5,7 @@ dotenv.config()
 
 const pool = new Pool({
   host: 'docker3.loeitech.org',
- port: 56442,
+  port: 56442,
   database: 'ltc_admission_db',
   user: 'admin_ltc',
   password: process.env.DB_PASSWORD,
