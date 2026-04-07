@@ -293,8 +293,6 @@ import {
 } from '@heroicons/vue/24/outline'
 import { apiService } from '@/utils/api'
 
-const emit = defineEmits(['refresh'])
-
 interface Curriculum {
   cur_id: number
   cur_name: string
@@ -431,7 +429,6 @@ const confirmDelete = async () => {
 
 onMounted(() => {
   fetchCurriculums()
-  fetchCurriculumAbbreviations()
 })
 </script>
 
