@@ -41,7 +41,7 @@
           >
             <option value="">ทั้งหมด</option>
             <option v-for="curriculum in curriculumOptions" :key="curriculum.cur_id" :value="curriculum.cur_id">
-              {{ curriculum.cur_name }}
+              {{ curriculum.cur_shortname }}
             </option>
           </select>
         </div>
@@ -57,9 +57,9 @@
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลำดับ</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อสาขาวิชา</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">หลักสูตร</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อย่อ</th>
               <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">จัดการ</th>
             </tr>
           </thead>
@@ -68,7 +68,7 @@
                 class="hover:bg-gray-50 transition-colors">
               <td class="px-6 py-4 whitespace-nowrap">
                 <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-800 rounded-full text-sm font-medium">
-                  {{ division.div_id }}
+                  {{ filteredDivisions.indexOf(division) + 1 }}
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
@@ -78,7 +78,6 @@
                 <span class="inline-flex px-2 py-1 text-xs font-medium text-gray-800 rounded-full">
                   {{ division.curriculum?.cur_shortname }}
                 </span>
-                <div class="text-xs text-gray-500 mt-1">{{ division.curriculum?.cur_name }}</div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-center">
                 <div class="flex items-center justify-center space-x-2">
@@ -237,7 +236,10 @@ const formData = ref({
 })
 
 const filteredDivisions = computed(() => {
-  let filtered = divisions.value
+  let filtered = divisions.value.map(division => ({
+    ...division,
+    curriculum: curriculums.value.find(cur => cur.cur_id === division.cur_id)
+  }))
   
   // Filter by curriculum
   if (selectedCurriculum.value) {
@@ -261,6 +263,8 @@ const fetchDivisions = async () => {
   try {
     const response = await apiService.getDivisions()
     divisions.value = response.data
+    // Fetch curriculum data for each division
+    await fetchCurriculums()
   } catch (error) {
     console.error('Error fetching divisions:', error)
   }

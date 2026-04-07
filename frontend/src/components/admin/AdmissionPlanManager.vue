@@ -1,20 +1,63 @@
 <template>
   <div>
     <div class="flex justify-between items-center mb-6">
-      <h2 class="text-xl font-semibold text-gray-800">จัดการแผนรับสมัคร</h2>
+      <div>
+        <h2 class="text-2xl font-bold text-gray-900 flex items-center">
+          <div class="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center mr-3">
+            <CalendarDaysIcon class="w-5 h-5 text-emerald-600" />
+          </div>
+          จัดการเเผนรับสมัคร
+        </h2>
+        <p class="text-gray-600 mt-1">เพิ่ม แก้ไข หรือลบข้อมูลเเผนการรับสมัครต่างๆ</p>
+      </div>
       <button
         @click="showAddModal = true"
         class="bg-emerald-500 text-white px-4 py-2 rounded-lg hover:bg-emerald-600 transition-colors">
         <PlusIcon class="w-5 h-5 inline-block mr-1" />
         เพิ่มแผนรับสมัคร
       </button>
+
+      
+
     </div>
+
+    <!-- Filter by Curriculum and Division -->
+    <div class="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+      <div class="flex flex-col sm:flex-row gap-4">
+        <div class="flex items-center gap-4">
+          <select
+            v-model="selectedCurriculum"
+            class="w-115 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+          >
+            <option value="">ค้นหาตามหลักสูตรทั้งหมด</option>
+            <option v-for="curriculum in curriculums" :key="curriculum.cur_id" :value="curriculum.cur_id">
+              {{ curriculum.cur_name }}
+            </option>
+          </select>
+        </div>
+        <div class="flex items-center gap-4">
+          <select
+            v-model="selectedDivision"
+            class="w-115 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+          >
+            <option value="">ค้นหาตามสาขาวิชาทั้งหมด</option>
+            <option v-for="division in filteredDivisions" :key="division.div_id" :value="division.div_id">
+              {{ division.div_name }}
+            </option>
+          </select>
+        </div>
+        <div class="flex items-center space-x-2 text-sm text-gray-600">
+          <span>พบ {{ filteredAdmissionPlans.length }} รายการ</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Table -->
     <div class="overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลำดับ</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ปีการศึกษา</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">หลักสูตร</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สาขาวิชา</th>
@@ -23,15 +66,17 @@
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          <tr v-for="plan in admissionPlans" :key="plan.ap_id">
-            <td class="px-6 py-4 whitespace-nowrap">
-              <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-800 rounded-full text-sm font-medium">
-                {{ plan.ap_id }}
-              </span>
+          <tr v-for="(plan, index) in filteredAdmissionPlans" :key="plan.ap_id">
+            <td class="px-6 py-4 text-sm text-gray-900 text-center">
+              <div class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-800 rounded-full text-sm font-medium">{{ index + 1 }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ plan.ap_years }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ plan.curriculum?.cur_name }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ plan.division?.div_name }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              {{ plan.curriculum?.cur_shortname || plan.curriculum?.cur_name || 'N/A' }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              {{ plan.division?.div_name || 'N/A' }}
+            </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ plan.plan_num }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-center">
               <div class="flex items-center justify-center space-x-2">
@@ -46,6 +91,21 @@
           </tr>
         </tbody>
       </table>
+      
+      <!-- No data found message -->
+      <div v-if="filteredAdmissionPlans.length === 0" class="text-center py-12">
+        <div class="w-20 h-20 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
+          <CalendarDaysIcon class="w-10 h-10 text-gray-400" />
+        </div>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">ไม่พบข้อมูลแผนรับสมัคร</h3>
+        <p class="text-gray-500 mb-6">ไม่พบข้อมูลที่ตรงกับเงื่อนไขการค้นหา หรือยังไม่มีข้อมูลในระบบ</p>
+        <button
+          @click="showAddModal = true"
+          class="bg-emerald-500 text-white px-6 py-2 rounded-lg hover:bg-emerald-600 transition-colors inline-flex items-center">
+          <PlusIcon class="w-5 h-5 mr-2" />
+          เพิ่มแผนรับสมัครแรก
+        </button>
+      </div>
     </div>
 
     <!-- ✅ แก้ไข: ใช้ Teleport เพื่อ render modal ออกไปที่ body โดยตรง -->
@@ -149,7 +209,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/vue/24/outline'
+import { PlusIcon, PencilIcon, TrashIcon, CalendarDaysIcon } from '@heroicons/vue/24/outline'
 import { apiService } from '@/utils/api'
 
 const emit = defineEmits(['refresh'])
@@ -182,6 +242,8 @@ const curriculums = ref<Curriculum[]>([])
 const divisions = ref<Division[]>([])
 const showAddModal = ref(false)
 const showEditModal = ref(false)
+const selectedCurriculum = ref<string>('')
+const selectedDivision = ref<string>('')
 const formData = ref({
   ap_id: 0,
   ap_years: '',
@@ -191,14 +253,60 @@ const formData = ref({
 })
 
 const filteredDivisions = computed(() => {
-  if (!formData.value.cur_id) return []
-  return divisions.value.filter(division => division.cur_id === formData.value.cur_id)
+  if (!selectedCurriculum.value) return divisions.value
+  return divisions.value.filter(division => division.cur_id === parseInt(selectedCurriculum.value))
+})
+
+const filteredAdmissionPlans = computed(() => {
+  let filtered = admissionPlans.value.map(plan => {
+    // Debug full plan structure
+    console.log('Full plan object keys:', Object.keys(plan))
+    console.log('Full plan object:', plan)
+    console.log('Plan curriculum:', plan.curriculum)
+    console.log('Plan division:', plan.division)
+    
+    // The curriculum and division are already nested in the plan object
+    const curriculum = plan.curriculum
+    const division = plan.division
+    
+    return {
+      ...plan,
+      curriculum,
+      division
+    }
+  })
+  
+  // Filter by curriculum
+  if (selectedCurriculum.value) {
+    const curId = Number(selectedCurriculum.value)
+    filtered = filtered.filter(plan => 
+      plan.curriculum && Number(plan.curriculum.cur_id) === curId
+    )
+  }
+  
+  // Filter by division
+  if (selectedDivision.value) {
+    const divId = Number(selectedDivision.value)
+    filtered = filtered.filter(plan => 
+      plan.division && Number(plan.division.div_id) === divId
+    )
+  }
+  
+  return filtered
 })
 
 const fetchAdmissionPlans = async () => {
   try {
-    const response = await apiService.getAdmissionPlans()
-    admissionPlans.value = response.data
+    // Fetch all data first
+    const [plansResponse, curriculumsResponse, divisionsResponse] = await Promise.all([
+      apiService.getAdmissionPlans(),
+      apiService.getCurriculums(),
+      apiService.getDivisions()
+    ])
+    
+    admissionPlans.value = plansResponse.data
+    curriculums.value = curriculumsResponse.data
+    divisions.value = divisionsResponse.data
   } catch (error) {
     console.error('Error fetching admission plans:', error)
   }
