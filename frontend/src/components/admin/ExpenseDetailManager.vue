@@ -39,14 +39,14 @@
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">฿{{ expense.exp_cost.toLocaleString() }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
               <div v-if="expense.exp_img" class="text-center">
-                <a :href="expense.exp_img" target="_blank" rel="noopener noreferrer" 
+                <button @click="viewImage(expense.exp_img)" 
                    class="inline-flex items-center px-3 py-1 bg-emerald-500 text-white text-xs rounded hover:bg-emerald-600 transition-colors">
                   <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                   </svg>
                   ดูรูปภาพ
-                </a>
+                </button>
               </div>
               <span v-else class="text-gray-400">ไม่มีรูป</span>
             </td>
@@ -164,13 +164,67 @@
         </div>
       </transition>
     </Teleport>
+
+    <!-- Image Preview Modal -->
+    <Teleport to="body">
+      <transition name="modal">
+        <div v-if="showImageModal" class="fixed inset-0 z-[9999] overflow-y-auto">
+          <!-- Backdrop -->
+          <div class="fixed inset-0 transition-opacity z-[9998]" style="background-color: rgba(0, 0, 0, 0.8);"
+               @click="closeImageModal"></div>
+
+          <!-- Modal Container -->
+          <div class="flex items-center justify-center min-h-screen px-4 py-8">
+            <!-- Modal Panel -->
+            <div class="relative bg-white rounded-lg text-left shadow-xl transform transition-all w-full sm:max-w-4xl z-[10000]">
+              <div class="bg-white rounded-lg overflow-hidden">
+                <!-- Header -->
+                <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                  <h3 class="text-lg font-medium text-gray-900">ดูรูปภาพ</h3>
+                  <button @click="closeImageModal" class="text-gray-400 hover:text-gray-500">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                  </button>
+                </div>
+                
+                <!-- Image Content -->
+                <div class="p-6">
+                  <div class="flex justify-center">
+                    <img :src="selectedImageUrl" alt="รูปภาพ" class="max-w-full max-h-96 object-contain rounded-lg shadow-lg">
+                  </div>
+                </div>
+                
+                <!-- Footer -->
+                <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end">
+                  <button @click="closeImageModal" 
+                          class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
+                    ปิด
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import { apiService } from '@/utils/api'
+
+const emit = defineEmits(['refresh'])
+
+// Function to generate cache-busting URL
+const getImageUrl = (imageUrl: string) => {
+  if (!imageUrl) return imageUrl
+  const timestamp = Date.now()
+  const separator = imageUrl.includes('?') ? '&' : '?'
+  return `${imageUrl}${separator}_t=${timestamp}`
+}
 
 interface Curriculum {
   cur_id: number
@@ -193,14 +247,17 @@ const expenses = ref<ExpenseDetail[]>([])
 const curriculums = ref<Curriculum[]>([])
 const showAddModal = ref(false)
 const showEditModal = ref(false)
-const imagePreview = ref<string>('')
+const showImageModal = ref(false)
+const selectedImageUrl = ref('')
+const imagePreview = ref('')
+const searchQuery = ref('')
 const formData = ref({
   exp_id: 0,
   exp_name: '',
   exp_detail: '',
+  exp_cost: 0,
   exp_img: '',
-  cur_id: 0,
-  exp_cost: 0
+  cur_id: 0
 })
 
 const fetchExpenses = async () => {
@@ -230,6 +287,7 @@ const handleSubmit = async () => {
     }
     await fetchExpenses()
     closeModal()
+    emit('refresh')
   } catch (error) {
     console.error('Error saving expense:', error)
   }
@@ -283,6 +341,7 @@ const deleteExpense = async (id: number) => {
       }
       
       await fetchExpenses()
+      emit('refresh')
     } catch (error: any) {
       console.error('Error deleting expense:', error)
       
@@ -318,10 +377,8 @@ const deleteExpense = async (id: number) => {
   }
 }
 
-const handleImageUpload = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-  
+const handleImageUpload = (e: Event) => {
+  const file = (e.target as HTMLInputElement).files?.[0]
   if (file) {
     const reader = new FileReader()
     reader.onload = (e) => {
@@ -340,10 +397,20 @@ const closeModal = () => {
     exp_id: 0,
     exp_name: '',
     exp_detail: '',
+    exp_cost: 0,
     exp_img: '',
-    cur_id: 0,
-    exp_cost: 0
+    cur_id: 0
   }
+}
+
+const closeImageModal = () => {
+  showImageModal.value = false
+  selectedImageUrl.value = ''
+}
+
+const viewImage = (imageUrl: string) => {
+  selectedImageUrl.value = imageUrl
+  showImageModal.value = true
 }
 
 const formatDate = (dateString: string) => {

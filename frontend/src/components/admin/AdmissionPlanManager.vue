@@ -152,6 +152,8 @@ import { ref, computed, onMounted } from 'vue'
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import { apiService } from '@/utils/api'
 
+const emit = defineEmits(['refresh'])
+
 interface Curriculum {
   cur_id: number
   cur_name: string
@@ -233,6 +235,7 @@ const handleSubmit = async () => {
     }
     await fetchAdmissionPlans()
     closeModal()
+    emit('refresh')
   } catch (error) {
     console.error('Error saving admission plan:', error)
   }
@@ -285,6 +288,7 @@ const deleteAdmissionPlan = async (id: number) => {
       }
       
       await fetchAdmissionPlans()
+      emit('refresh')
     } catch (error: any) {
       console.error('Error deleting admission plan:', error)
       

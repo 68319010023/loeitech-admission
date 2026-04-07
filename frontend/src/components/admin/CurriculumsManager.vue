@@ -40,8 +40,9 @@
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
           >
             <option value="">ทั้งหมด</option>
-            <option value="ปวช">ปวช</option>
-            <option value="ปวส">ปวส</option>
+            <option v-for="abbreviation in curriculumAbbreviations" :key="abbreviation" :value="abbreviation">
+              {{ abbreviation }}
+            </option>
           </select>
         </div>
         <div class="flex items-center space-x-2 text-sm text-gray-600">
@@ -201,6 +202,8 @@ import {
 } from '@heroicons/vue/24/outline'
 import { apiService } from '@/utils/api'
 
+const emit = defineEmits(['refresh'])
+
 interface Curriculum {
   cur_id: number
   cur_name: string
@@ -213,6 +216,7 @@ const showAddModal = ref(false)
 const showEditModal = ref(false)
 const searchQuery = ref('')
 const selectedAbbreviation = ref('')
+const curriculumAbbreviations = ref<string[]>([])
 const formData = ref({
   cur_id: 0,
   cur_name: '',
@@ -256,6 +260,17 @@ const fetchCurriculums = async () => {
   }
 }
 
+const fetchCurriculumAbbreviations = async () => {
+  try {
+    const response = await apiService.getCurriculums()
+    // ดึงชื่อย่อที่ไม่ซ้ำกันจากข้อมูลหลักสูตร
+    const abbreviations = [...new Set(response.data.map((cur: any) => cur.cur_shortname))]
+    curriculumAbbreviations.value = abbreviations
+  } catch (error) {
+    console.error('เกิดข้อผิดพลาดในการดึงข้อมูลชื่อย่อ:', error)
+  }
+}
+
 const handleSubmit = async () => {
   try {
     if (showAddModal.value) {
@@ -265,6 +280,7 @@ const handleSubmit = async () => {
     }
     await fetchCurriculums()
     closeModal()
+    emit('refresh')
   } catch (error) {
     console.error('Error saving curriculum:', error)
   }
@@ -311,6 +327,7 @@ const deleteCurriculum = async (id: number) => {
       }
       
       await fetchCurriculums()
+      emit('refresh')
     } catch (error: any) {
       console.error('Error deleting curriculum:', error)
       
@@ -362,6 +379,7 @@ const formatDate = (dateString: string) => {
 
 onMounted(() => {
   fetchCurriculums()
+  fetchCurriculumAbbreviations()
 })
 </script>
 

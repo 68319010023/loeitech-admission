@@ -36,12 +36,13 @@
         </div>
         <div class="sm:w-48">
           <select
-            v-model="selectedAbbreviation"
+            v-model="selectedCurriculum"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
           >
             <option value="">ทั้งหมด</option>
-            <option value="ปวช">ปวช</option>
-            <option value="ปวส">ปวส</option>
+            <option v-for="curriculum in curriculumOptions" :key="curriculum.cur_id" :value="curriculum.cur_id">
+              {{ curriculum.cur_name }}
+            </option>
           </select>
         </div>
         <div class="flex items-center space-x-2 text-sm text-gray-600">
@@ -160,7 +161,7 @@
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
                         required
                       >
-                        <option value="">เลือกหลักสูตร</option>
+                        <option :value="null">เลือกหลักสูตร</option>
                         <option v-for="curriculum in curriculums" :key="curriculum.cur_id" :value="curriculum.cur_id">
                           {{ curriculum.cur_name }} ({{ curriculum.cur_shortname }})
                         </option>
@@ -206,6 +207,8 @@ import {
 } from '@heroicons/vue/24/outline'
 import { apiService } from '@/utils/api'
 
+const emit = defineEmits(['refresh'])
+
 interface Curriculum {
   cur_id: number
   cur_name: string
@@ -225,7 +228,8 @@ const curriculums = ref<Curriculum[]>([])
 const showAddModal = ref(false)
 const showEditModal = ref(false)
 const searchQuery = ref('')
-const selectedAbbreviation = ref('')
+const selectedCurriculum = ref<string>('')
+const curriculumOptions = ref<Curriculum[]>([])
 const formData = ref({
   div_id: 0,
   div_name: '',
@@ -235,10 +239,10 @@ const formData = ref({
 const filteredDivisions = computed(() => {
   let filtered = divisions.value
   
-  // Filter by abbreviation
-  if (selectedAbbreviation.value) {
+  // Filter by curriculum
+  if (selectedCurriculum.value) {
     filtered = filtered.filter(division => 
-      division.curriculum?.cur_shortname === selectedAbbreviation.value
+      division.curriculum?.cur_id === parseInt(selectedCurriculum.value)
     )
   }
   
@@ -271,6 +275,15 @@ const fetchCurriculums = async () => {
   }
 }
 
+const fetchCurriculumOptions = async () => {
+  try {
+    const response = await apiService.getCurriculums()
+    curriculumOptions.value = response.data
+  } catch (error) {
+    console.error('เกิดข้อผิดพลาดในการดึงข้อมูลหลักสูตร:', error)
+  }
+}
+
 const handleSubmit = async () => {
   try {
     if (showAddModal.value) {
@@ -280,6 +293,7 @@ const handleSubmit = async () => {
     }
     await fetchDivisions()
     closeModal()
+    emit('refresh')
   } catch (error) {
     console.error('Error saving division:', error)
   }
@@ -330,6 +344,7 @@ const deleteDivision = async (id: number) => {
       }
       
       await fetchDivisions()
+      emit('refresh')
     } catch (error: any) {
       console.error('Error deleting division:', error)
       
@@ -382,6 +397,7 @@ const formatDate = (dateString: string) => {
 onMounted(() => {
   fetchCurriculums()
   fetchDivisions()
+  fetchCurriculumOptions()
 })
 </script>
 
