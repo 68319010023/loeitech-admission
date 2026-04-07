@@ -9,6 +9,7 @@
         เพิ่มแผนรับสมัคร
       </button>
     </div>
+
     <!-- Table -->
     <div class="overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-200">
@@ -38,7 +39,7 @@
                 <button @click="editAdmissionPlan(plan)" class="inline-flex items-center px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors">
                   <PencilIcon class="w-4 h-4" />
                 </button>
-                <button @click="deleteAdmissionPlan(plan.ap_id)" class="inline-flex items-center px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-emerald-100 transition-colors">
+                <button @click="openDeleteModal(plan)" class="inline-flex items-center px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
                   <TrashIcon class="w-4 h-4" />
                 </button>
               </div>
@@ -48,98 +49,137 @@
       </table>
     </div>
 
-    <!-- ✅ แก้ไข: ใช้ Teleport เพื่อ render modal ออกไปที่ body โดยตรง -->
+    <!-- Toast -->
+    <Teleport to="body">
+      <transition name="toast">
+        <div v-if="toast.show"
+          class="fixed top-4 right-4 z-[99999] flex items-center space-x-3 px-6 py-4 rounded-xl shadow-2xl text-white"
+          :class="toast.type === 'success' ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gradient-to-r from-red-500 to-pink-600'">
+          <svg v-if="toast.type === 'success'" class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          <svg v-else class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          <div>
+            <p class="font-semibold">{{ toast.title }}</p>
+            <p class="text-sm opacity-90">{{ toast.message }}</p>
+          </div>
+        </div>
+      </transition>
+    </Teleport>
+
+    <!-- Add / Edit Modal -->
     <Teleport to="body">
       <transition name="modal">
         <div v-if="showAddModal || showEditModal" class="fixed inset-0 z-[9999] overflow-y-auto">
-          <!-- Backdrop -->
-        <div
-  class="fixed inset-0 transition-opacity z-[9998]"
-  style="background-color: rgba(0, 0, 0, 0.3);"
-  @click="closeModal"
-></div>
-
-          <!-- Modal Container -->
+          <div class="fixed inset-0 z-[9998]" style="background-color: rgba(0,0,0,0.3);" @click="closeModal"></div>
           <div class="flex items-center justify-center min-h-screen px-4 py-8">
-            <!-- Modal Panel -->
-            <div class="relative bg-white rounded-lg text-left shadow-xl transform transition-all w-full sm:max-w-md z-[10000]">
+            <div class="relative bg-white rounded-lg shadow-xl w-full sm:max-w-md z-[10000]">
               <form @submit.prevent="handleSubmit">
                 <div class="bg-white px-6 pt-6 pb-4 rounded-t-lg">
                   <h3 class="text-lg font-bold text-gray-900 mb-4">
                     {{ showAddModal ? 'เพิ่มแผนรับสมัคร' : 'แก้ไขแผนรับสมัคร' }}
                   </h3>
-
                   <div class="space-y-4">
                     <div>
                       <label class="block text-gray-700 text-sm font-bold mb-2">ปีการศึกษา</label>
-                      <input
-                        v-model="formData.ap_years"
-                        type="text"
-                        placeholder="เช่น 2568"
+                      <input v-model="formData.ap_years" type="text" placeholder="เช่น 2568"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-                        required
-                      />
+                        required />
                     </div>
-
                     <div>
                       <label class="block text-gray-700 text-sm font-bold mb-2">หลักสูตร</label>
-                      <select
-                        v-model="formData.cur_id"
-                        @change="onCurriculumChange"
+                      <select v-model="formData.cur_id" @change="onCurriculumChange"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-                        required
-                      >
+                        required>
                         <option value="">เลือกหลักสูตร</option>
                         <option v-for="curriculum in curriculums" :key="curriculum.cur_id" :value="curriculum.cur_id">
                           {{ curriculum.cur_name }}
                         </option>
                       </select>
                     </div>
-
                     <div>
                       <label class="block text-gray-700 text-sm font-bold mb-2">สาขาวิชา</label>
-                      <select
-                        v-model="formData.div_id"
+                      <select v-model="formData.div_id"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-                        required
-                      >
+                        required>
                         <option value="">เลือกสาขาวิชา</option>
                         <option v-for="division in filteredDivisions" :key="division.div_id" :value="division.div_id">
                           {{ division.div_name }}
                         </option>
                       </select>
                     </div>
-
                     <div>
                       <label class="block text-gray-700 text-sm font-bold mb-2">จำนวนที่เปิดรับสมัคร</label>
-                      <input
-                        v-model.number="formData.plan_num"
-                        type="number"
-                        min="1"
+                      <input v-model.number="formData.plan_num" type="number" min="1"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-                        required
-                      />
+                        required />
                     </div>
                   </div>
                 </div>
-
                 <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex flex-row-reverse gap-3">
-                  <button
-                    type="submit"
-                    class="inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-emerald-500 text-sm font-medium text-white hover:bg-emerald-600 transition-colors"
-                  >
-                    {{ showAddModal ? 'เพิ่ม' : 'บันทึก' }}
+                  <button type="submit" :disabled="isSubmitting"
+                    class="inline-flex justify-center rounded-lg px-4 py-2 bg-emerald-500 text-sm font-medium text-white hover:bg-emerald-600 transition-colors disabled:opacity-50">
+                    {{ isSubmitting ? 'กำลังบันทึก...' : (showAddModal ? 'เพิ่ม' : 'บันทึก') }}
                   </button>
-                  <button
-                    type="button"
-                    @click="closeModal"
-                    class="inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
+                  <button type="button" @click="closeModal"
+                    class="inline-flex justify-center rounded-lg border border-gray-300 px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                     ยกเลิก
                   </button>
                 </div>
               </form>
             </div>
+          </div>
+        </div>
+      </transition>
+    </Teleport>
+
+    <!-- Delete Modal -->
+    <Teleport to="body">
+      <transition name="modal">
+        <div v-if="showDeleteModal" class="fixed inset-0 z-[9999] flex items-center justify-center px-4">
+          <div class="fixed inset-0 bg-black/40" @click="closeDeleteModal"></div>
+          <div class="relative bg-white rounded-xl shadow-xl w-full max-w-md z-[10000]">
+
+            <!-- Header -->
+            <div class="p-6 border-b border-gray-100">
+              <div class="flex items-center">
+                <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                  <TrashIcon class="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 class="text-lg font-bold text-gray-900">ยืนยันการลบแผนรับสมัคร</h3>
+                  <p class="text-sm text-gray-500 mt-0.5">
+                    ปีการศึกษา {{ deletingPlan?.ap_years }} — {{ deletingPlan?.curriculum?.cur_name }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Body -->
+            <div class="p-6 border-b border-gray-100">
+              <p class="text-gray-600 text-sm">
+                คุณต้องการลบแผนรับสมัครของ
+                <span class="font-semibold text-gray-900">{{ deletingPlan?.division?.div_name }}</span>
+                ปีการศึกษา <span class="font-semibold text-gray-900">{{ deletingPlan?.ap_years }}</span>
+                ใช่หรือไม่? การดำเนินการนี้ไม่สามารถย้อนกลับได้
+              </p>
+            </div>
+
+            <!-- Footer -->
+            <div class="p-4 flex justify-end gap-3">
+              <button @click="closeDeleteModal"
+                class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                ยกเลิก
+              </button>
+              <button @click="confirmDelete" :disabled="isDeleting"
+                class="px-4 py-2 text-sm text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors flex items-center disabled:opacity-50">
+                <TrashIcon class="w-4 h-4 mr-2" />
+                {{ isDeleting ? 'กำลังลบ...' : 'ยืนยันการลบ' }}
+              </button>
+            </div>
+
           </div>
         </div>
       </transition>
@@ -175,30 +215,45 @@ interface AdmissionPlan {
   created_at: string
 }
 
+const emit = defineEmits(['refresh'])
+
+// ── State ──────────────────────────────────────────────
 const admissionPlans = ref<AdmissionPlan[]>([])
 const curriculums = ref<Curriculum[]>([])
 const divisions = ref<Division[]>([])
+const isSubmitting = ref(false)
+
 const showAddModal = ref(false)
 const showEditModal = ref(false)
-const formData = ref({
-  ap_id: 0,
-  ap_years: '',
-  div_id: 0,
-  cur_id: 0,
-  plan_num: 0
-})
+const formData = ref({ ap_id: 0, ap_years: '', div_id: 0, cur_id: 0, plan_num: 0 })
 
+const showDeleteModal = ref(false)
+const isDeleting = ref(false)
+const deletingPlan = ref<AdmissionPlan | null>(null)
+
+const toast = ref({ show: false, type: 'success' as 'success' | 'error', title: '', message: '' })
+let toastTimer: ReturnType<typeof setTimeout> | null = null
+
+// ── Computed ───────────────────────────────────────────
 const filteredDivisions = computed(() => {
   if (!formData.value.cur_id) return []
-  return divisions.value.filter(division => division.cur_id === formData.value.cur_id)
+  return divisions.value.filter(d => d.cur_id === formData.value.cur_id)
 })
 
+// ── Toast ──────────────────────────────────────────────
+const showToast = (type: 'success' | 'error', title: string, message: string) => {
+  if (toastTimer) clearTimeout(toastTimer)
+  toast.value = { show: true, type, title, message }
+  toastTimer = setTimeout(() => { toast.value.show = false }, 4000)
+}
+
+// ── Fetch ──────────────────────────────────────────────
 const fetchAdmissionPlans = async () => {
   try {
     const response = await apiService.getAdmissionPlans()
     admissionPlans.value = response.data
   } catch (error) {
-    console.error('Error fetching admission plans:', error)
+    showToast('error', 'โหลดข้อมูลไม่สำเร็จ', 'ไม่สามารถดึงข้อมูลแผนรับสมัครได้')
   }
 }
 
@@ -220,26 +275,33 @@ const fetchDivisions = async () => {
   }
 }
 
+// ── Add / Edit ─────────────────────────────────────────
 const onCurriculumChange = () => {
   formData.value.div_id = 0
 }
 
 const handleSubmit = async () => {
+  isSubmitting.value = true
   try {
     if (showAddModal.value) {
       await apiService.createAdmissionPlan(formData.value)
+      showToast('success', 'เพิ่มแผนรับสมัครสำเร็จ', 'ข้อมูลถูกบันทึกเรียบร้อยแล้ว')
     } else {
-      await apiService.updateAdmissionPlan(formData.value.ap_id!, formData.value)
+      await apiService.updateAdmissionPlan(formData.value.ap_id, formData.value)
+      showToast('success', 'แก้ไขแผนรับสมัครสำเร็จ', 'ข้อมูลถูกอัปเดตเรียบร้อยแล้ว')
     }
     await fetchAdmissionPlans()
+    emit('refresh')
     closeModal()
-  } catch (error) {
-    console.error('Error saving admission plan:', error)
+  } catch (error: any) {
+    showToast('error', 'บันทึกไม่สำเร็จ', error?.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่')
+  } finally {
+    isSubmitting.value = false
   }
 }
 
 const editAdmissionPlan = (plan: AdmissionPlan) => {
-  formData.value = { 
+  formData.value = {
     ap_id: plan.ap_id,
     ap_years: plan.ap_years,
     div_id: plan.div_id,
@@ -249,91 +311,37 @@ const editAdmissionPlan = (plan: AdmissionPlan) => {
   showEditModal.value = true
 }
 
-const deleteAdmissionPlan = async (id: number) => {
-  if (confirm('คุณต้องการลบแผนรับสมัครนี้ใช่หรือไม่?')) {
-    try {
-      const response = await apiService.deleteAdmissionPlan(id)
-      
-      if (response.success) {
-        // Success toast
-        const toast = document.createElement('div')
-        toast.className = 'fixed top-4 right-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl z-50 flex items-center space-x-3 transform translate-x-full transition-all duration-500 ease-out'
-        toast.innerHTML = `
-          <div class="flex-shrink-0">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-            </svg>
-          </div>
-          <div class="flex-1">
-            <p class="font-semibold">ลบแผนรับสมัครสำเร็จแล้ว</p>
-            <p class="text-sm opacity-90">ข้อมูลถูกลบจากระบบเรียบร้อย</p>
-          </div>
-        `
-        document.body.appendChild(toast)
-        
-        // Animate in
-        setTimeout(() => {
-          toast.classList.remove('translate-x-full')
-          toast.classList.add('translate-x-0')
-        }, 100)
-        
-        // Remove after delay
-        setTimeout(() => {
-          toast.classList.add('translate-x-full', 'opacity-0')
-          setTimeout(() => toast.remove(), 500)
-        }, 4000)
-      }
-      
-      await fetchAdmissionPlans()
-    } catch (error: any) {
-      console.error('Error deleting admission plan:', error)
-      
-      // Error toast
-      const errorMessage = error?.message || 'เกิดข้อผิดพลาดในการลบแผนรับสมัคร'
-      const toast = document.createElement('div')
-      toast.className = 'fixed top-4 right-4 bg-gradient-to-r from-red-500 to-pink-600 text-white px-6 py-4 rounded-xl shadow-2xl z-50 flex items-center space-x-3 transform translate-x-full transition-all duration-500 ease-out'
-      toast.innerHTML = `
-        <div class="flex-shrink-0">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
-        </div>
-        <div class="flex-1">
-          <p class="font-semibold">ไม่สามารถลบแผนรับสมัครได้</p>
-          <p class="text-sm opacity-90">${errorMessage}</p>
-        </div>
-      `
-      document.body.appendChild(toast)
-      
-      // Animate in
-      setTimeout(() => {
-        toast.classList.remove('translate-x-full')
-        toast.classList.add('translate-x-0')
-      }, 100)
-      
-      // Remove after delay
-      setTimeout(() => {
-        toast.classList.add('translate-x-full', 'opacity-0')
-        setTimeout(() => toast.remove(), 500)
-      }, 6000)
-    }
-  }
-}
-
 const closeModal = () => {
   showAddModal.value = false
   showEditModal.value = false
-  formData.value = {
-    ap_id: 0,
-    ap_years: '',
-    div_id: 0,
-    cur_id: 0,
-    plan_num: 0
-  }
+  formData.value = { ap_id: 0, ap_years: '', div_id: 0, cur_id: 0, plan_num: 0 }
 }
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('th-TH')
+// ── Delete ─────────────────────────────────────────────
+const openDeleteModal = (plan: AdmissionPlan) => {
+  deletingPlan.value = plan
+  showDeleteModal.value = true
+}
+
+const closeDeleteModal = () => {
+  showDeleteModal.value = false
+  deletingPlan.value = null
+}
+
+const confirmDelete = async () => {
+  if (!deletingPlan.value) return
+  isDeleting.value = true
+  try {
+    await apiService.deleteAdmissionPlan(deletingPlan.value.ap_id)
+    showToast('success', 'ลบแผนรับสมัครสำเร็จ', 'ข้อมูลถูกลบจากระบบเรียบร้อยแล้ว')
+    await fetchAdmissionPlans()
+    emit('refresh')
+    closeDeleteModal()
+  } catch (error: any) {
+    showToast('error', 'ลบไม่สำเร็จ', error?.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่')
+  } finally {
+    isDeleting.value = false
+  }
 }
 
 onMounted(() => {
@@ -344,14 +352,8 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.modal-enter-active,
-.modal-leave-active {
-  transition: all 0.3s ease;
-}
-
-.modal-enter-from,
-.modal-leave-to {
-  opacity: 0;
-  transform: scale(0.95);
-}
+.modal-enter-active, .modal-leave-active { transition: all 0.25s ease; }
+.modal-enter-from, .modal-leave-to { opacity: 0; transform: scale(0.96); }
+.toast-enter-active, .toast-leave-active { transition: all 0.4s ease; }
+.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateX(100%); }
 </style>

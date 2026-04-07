@@ -79,8 +79,11 @@
             >
               <component :is="tab.icon" class="w-5 h-5 mr-2" />
               {{ tab.label }}
-              <span v-if="tab.count" class="ml-2 px-2 py-1 text-xs rounded-full" 
-                :class="activeTab === tab.key ? 'bg-emerald-200 text-emerald-800' : 'bg-gray-200 text-gray-600'">
+              <span
+                v-if="tab.count !== undefined"
+                class="ml-2 px-2 py-1 text-xs rounded-full"
+                :class="activeTab === tab.key ? 'bg-emerald-200 text-emerald-800' : 'bg-gray-200 text-gray-600'"
+              >
                 {{ tab.count }}
               </span>
             </button>
@@ -90,7 +93,8 @@
         <!-- Tab Content -->
         <div class="p-6">
           <transition name="fade" mode="out-in">
-            <component :is="getTabComponent()" @refresh="fetchStats" />
+            <!-- ✅ ใช้ computed แทน function -->
+            <component :is="currentTabComponent" :key="activeTab" @refresh="fetchStats" />
           </transition>
         </div>
       </div>
@@ -125,18 +129,15 @@ const tabs = computed(() => [
   { key: 'admission_plan', label: 'แผนรับสมัคร', icon: CalendarDaysIcon, count: stats.value.totalAdmissionPlans }
 ])
 
-const getTabComponent = () => {
+// ✅ computed แทน function — re-render เฉพาะเมื่อ activeTab เปลี่ยน
+const currentTabComponent = computed(() => {
   switch (activeTab.value) {
-    case 'curriculums':
-      return CurriculumsManager
-    case 'divisions':
-      return DivisionsManager
-    case 'admission_plan':
-      return AdmissionPlanManager
-    default:
-      return CurriculumsManager
+    case 'curriculums': return CurriculumsManager
+    case 'divisions': return DivisionsManager
+    case 'admission_plan': return AdmissionPlanManager
+    default: return CurriculumsManager
   }
-}
+})
 
 const fetchStats = async () => {
   try {
@@ -145,7 +146,6 @@ const fetchStats = async () => {
       apiService.getDivisions(),
       apiService.getAdmissionPlans()
     ])
-    
     stats.value = {
       totalCurriculums: curriculumsRes.data.length,
       totalDivisions: divisionsRes.data.length,
@@ -166,7 +166,6 @@ onMounted(() => {
 .fade-leave-active {
   transition: opacity 0.3s ease;
 }
-
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;

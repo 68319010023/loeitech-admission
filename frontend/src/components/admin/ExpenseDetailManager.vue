@@ -39,7 +39,7 @@
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">฿{{ expense.exp_cost.toLocaleString() }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
               <div v-if="expense.exp_img" class="text-center">
-                <a :href="expense.exp_img" target="_blank" rel="noopener noreferrer" 
+                <a :href="expense.exp_img" target="_blank" rel="noopener noreferrer"
                    class="inline-flex items-center px-3 py-1 bg-emerald-500 text-white text-xs rounded hover:bg-emerald-600 transition-colors">
                   <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -54,7 +54,7 @@
               <button @click="editExpense(expense)" class="inline-flex items-center px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors mr-2">
                 <PencilIcon class="w-4 h-4" />
               </button>
-              <button @click="deleteExpense(expense.exp_id)" class="inline-flex items-center px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
+              <button @click="openDeleteModal(expense)" class="inline-flex items-center px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
                 <TrashIcon class="w-4 h-4" />
               </button>
             </td>
@@ -63,103 +63,137 @@
       </table>
     </div>
 
-    <!-- ✅ แก้ไข: ใช้ Teleport เพื่อ render modal ออกไปที่ body โดยตรง -->
+    <!-- Toast -->
+    <Teleport to="body">
+      <transition name="toast">
+        <div v-if="toast.show"
+          class="fixed top-4 right-4 z-[99999] flex items-center space-x-3 px-6 py-4 rounded-xl shadow-2xl text-white"
+          :class="toast.type === 'success' ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gradient-to-r from-red-500 to-pink-600'">
+          <svg v-if="toast.type === 'success'" class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          <svg v-else class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          <div>
+            <p class="font-semibold">{{ toast.title }}</p>
+            <p class="text-sm opacity-90">{{ toast.message }}</p>
+          </div>
+        </div>
+      </transition>
+    </Teleport>
+
+    <!-- Add / Edit Modal -->
     <Teleport to="body">
       <transition name="modal">
         <div v-if="showAddModal || showEditModal" class="fixed inset-0 z-[9999] overflow-y-auto">
-          <!-- Backdrop -->
-            <div class="fixed inset-0 transition-opacity z-[9998]" style="background-color: rgba(0, 0, 0, 0.3);"
-            @click="closeModal"></div>
-
-          <!-- Modal Container -->
+          <div class="fixed inset-0 z-[9998]" style="background-color: rgba(0,0,0,0.3);" @click="closeModal"></div>
           <div class="flex items-center justify-center min-h-screen px-4 py-8">
-            <!-- Modal Panel -->
-            <div class="relative bg-white rounded-lg text-left shadow-xl transform transition-all w-full sm:max-w-lg z-[10000]">
+            <div class="relative bg-white rounded-lg shadow-xl w-full sm:max-w-lg z-[10000]">
               <form @submit.prevent="handleSubmit">
                 <div class="bg-white px-6 pt-6 pb-4 rounded-t-lg">
                   <h3 class="text-lg font-bold text-gray-900 mb-4">
                     {{ showAddModal ? 'เพิ่มรายการค่าใช้จ่าย' : 'แก้ไขรายการค่าใช้จ่าย' }}
                   </h3>
-
                   <div class="space-y-4">
                     <div>
                       <label class="block text-gray-700 text-sm font-bold mb-2">ชื่อรายการค่าใช้จ่าย</label>
-                      <input
-                        v-model="formData.exp_name"
-                        type="text"
+                      <input v-model="formData.exp_name" type="text"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-                        required
-                      />
+                        required />
                     </div>
-
                     <div>
                       <label class="block text-gray-700 text-sm font-bold mb-2">รายละเอียด</label>
-                      <textarea
-                        v-model="formData.exp_detail"
-                        rows="3"
+                      <textarea v-model="formData.exp_detail" rows="3"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-                        required
-                      ></textarea>
+                        required></textarea>
                     </div>
-
                     <div>
                       <label class="block text-gray-700 text-sm font-bold mb-2">หลักสูตร</label>
-                      <select
-                        v-model="formData.cur_id"
+                      <select v-model="formData.cur_id"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-                        required
-                      >
+                        required>
                         <option value="">เลือกหลักสูตร</option>
                         <option v-for="curriculum in curriculums" :key="curriculum.cur_id" :value="curriculum.cur_id">
                           {{ curriculum.cur_name }}
                         </option>
                       </select>
                     </div>
-
                     <div>
                       <label class="block text-gray-700 text-sm font-bold mb-2">ราคาต่อหน่วย</label>
-                      <input
-                        v-model.number="formData.exp_cost"
-                        type="number"
-                        step="0.01"
-                        min="0"
+                      <input v-model.number="formData.exp_cost" type="number" step="0.01" min="0"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-                        required
-                      />
+                        required />
                     </div>
-
                     <div>
                       <label class="block text-gray-700 text-sm font-bold mb-2">รูปภาพ</label>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        @change="handleImageUpload"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-                      />
+                      <input type="file" accept="image/*" @change="handleImageUpload"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors" />
                       <div v-if="formData.exp_img || imagePreview" class="mt-2">
                         <img :src="imagePreview || formData.exp_img" alt="รูปภาพ" class="w-20 h-20 object-cover rounded" />
                       </div>
                     </div>
                   </div>
                 </div>
-
                 <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex flex-row-reverse gap-3">
-                  <button
-                    type="submit"
-                    class="inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-emerald-500 text-sm font-medium text-white hover:bg-emerald-600 transition-colors"
-                  >
-                    {{ showAddModal ? 'เพิ่ม' : 'บันทึก' }}
+                  <button type="submit" :disabled="isSubmitting"
+                    class="inline-flex justify-center rounded-lg px-4 py-2 bg-emerald-500 text-sm font-medium text-white hover:bg-emerald-600 transition-colors disabled:opacity-50">
+                    {{ isSubmitting ? 'กำลังบันทึก...' : (showAddModal ? 'เพิ่ม' : 'บันทึก') }}
                   </button>
-                  <button
-                    type="button"
-                    @click="closeModal"
-                    class="inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
+                  <button type="button" @click="closeModal"
+                    class="inline-flex justify-center rounded-lg border border-gray-300 px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                     ยกเลิก
                   </button>
                 </div>
               </form>
             </div>
+          </div>
+        </div>
+      </transition>
+    </Teleport>
+
+    <!-- Delete Modal -->
+    <Teleport to="body">
+      <transition name="modal">
+        <div v-if="showDeleteModal" class="fixed inset-0 z-[9999] flex items-center justify-center px-4">
+          <div class="fixed inset-0 bg-black/40" @click="closeDeleteModal"></div>
+          <div class="relative bg-white rounded-xl shadow-xl w-full max-w-md z-[10000]">
+
+            <!-- Header -->
+            <div class="p-6 border-b border-gray-100">
+              <div class="flex items-center">
+                <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                  <TrashIcon class="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 class="text-lg font-bold text-gray-900">ยืนยันการลบรายการค่าใช้จ่าย</h3>
+                  <p class="text-sm text-gray-500 mt-0.5">{{ deletingExpense?.exp_name }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Body -->
+            <div class="p-6 border-b border-gray-100">
+              <p class="text-gray-600 text-sm">
+                คุณต้องการลบรายการ
+                <span class="font-semibold text-gray-900">{{ deletingExpense?.exp_name }}</span>
+                ใช่หรือไม่? การดำเนินการนี้ไม่สามารถย้อนกลับได้
+              </p>
+            </div>
+
+            <!-- Footer -->
+            <div class="p-4 flex justify-end gap-3">
+              <button @click="closeDeleteModal"
+                class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                ยกเลิก
+              </button>
+              <button @click="confirmDelete" :disabled="isDeleting"
+                class="px-4 py-2 text-sm text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors flex items-center disabled:opacity-50">
+                <TrashIcon class="w-4 h-4 mr-2" />
+                {{ isDeleting ? 'กำลังลบ...' : 'ยืนยันการลบ' }}
+              </button>
+            </div>
+
           </div>
         </div>
       </transition>
@@ -189,11 +223,16 @@ interface ExpenseDetail {
   created_at: string
 }
 
+const emit = defineEmits(['refresh'])
+
+// ── State ──────────────────────────────────────────────
 const expenses = ref<ExpenseDetail[]>([])
 const curriculums = ref<Curriculum[]>([])
+const isSubmitting = ref(false)
+const imagePreview = ref<string>('')
+
 const showAddModal = ref(false)
 const showEditModal = ref(false)
-const imagePreview = ref<string>('')
 const formData = ref({
   exp_id: 0,
   exp_name: '',
@@ -203,12 +242,27 @@ const formData = ref({
   exp_cost: 0
 })
 
+const showDeleteModal = ref(false)
+const isDeleting = ref(false)
+const deletingExpense = ref<ExpenseDetail | null>(null)
+
+const toast = ref({ show: false, type: 'success' as 'success' | 'error', title: '', message: '' })
+let toastTimer: ReturnType<typeof setTimeout> | null = null
+
+// ── Toast ──────────────────────────────────────────────
+const showToast = (type: 'success' | 'error', title: string, message: string) => {
+  if (toastTimer) clearTimeout(toastTimer)
+  toast.value = { show: true, type, title, message }
+  toastTimer = setTimeout(() => { toast.value.show = false }, 4000)
+}
+
+// ── Fetch ──────────────────────────────────────────────
 const fetchExpenses = async () => {
   try {
     const response = await apiService.getExpenseDetails()
     expenses.value = response.data
   } catch (error) {
-    console.error('Error fetching expenses:', error)
+    showToast('error', 'โหลดข้อมูลไม่สำเร็จ', 'ไม่สามารถดึงข้อมูลค่าใช้จ่ายได้')
   }
 }
 
@@ -221,22 +275,29 @@ const fetchCurriculums = async () => {
   }
 }
 
+// ── Add / Edit ─────────────────────────────────────────
 const handleSubmit = async () => {
+  isSubmitting.value = true
   try {
     if (showAddModal.value) {
       await apiService.createExpenseDetail(formData.value)
+      showToast('success', 'เพิ่มรายการสำเร็จ', 'ข้อมูลถูกบันทึกเรียบร้อยแล้ว')
     } else {
-      await apiService.updateExpenseDetail(formData.value.exp_id!, formData.value)
+      await apiService.updateExpenseDetail(formData.value.exp_id, formData.value)
+      showToast('success', 'แก้ไขรายการสำเร็จ', 'ข้อมูลถูกอัปเดตเรียบร้อยแล้ว')
     }
     await fetchExpenses()
+    emit('refresh')
     closeModal()
-  } catch (error) {
-    console.error('Error saving expense:', error)
+  } catch (error: any) {
+    showToast('error', 'บันทึกไม่สำเร็จ', error?.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่')
+  } finally {
+    isSubmitting.value = false
   }
 }
 
 const editExpense = (expense: ExpenseDetail) => {
-  formData.value = { 
+  formData.value = {
     exp_id: expense.exp_id,
     exp_name: expense.exp_name,
     exp_detail: expense.exp_detail,
@@ -247,81 +308,16 @@ const editExpense = (expense: ExpenseDetail) => {
   showEditModal.value = true
 }
 
-const deleteExpense = async (id: number) => {
-  if (confirm('คุณต้องการลบรายการค่าใช้จ่ายนี้ใช่หรือไม่?')) {
-    try {
-      const response = await apiService.deleteExpenseDetail(id)
-      
-      if (response.success) {
-        // Success toast
-        const toast = document.createElement('div')
-        toast.className = 'fixed top-4 right-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl z-50 flex items-center space-x-3 transform translate-x-full transition-all duration-500 ease-out'
-        toast.innerHTML = `
-          <div class="flex-shrink-0">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-            </svg>
-          </div>
-          <div class="flex-1">
-            <p class="font-semibold">ลบรายการค่าใช้จ่ายสำเร็จแล้ว</p>
-            <p class="text-sm opacity-90">ข้อมูลถูกลบจากระบบเรียบร้อย</p>
-          </div>
-        `
-        document.body.appendChild(toast)
-        
-        // Animate in
-        setTimeout(() => {
-          toast.classList.remove('translate-x-full')
-          toast.classList.add('translate-x-0')
-        }, 100)
-        
-        // Remove after delay
-        setTimeout(() => {
-          toast.classList.add('translate-x-full', 'opacity-0')
-          setTimeout(() => toast.remove(), 500)
-        }, 4000)
-      }
-      
-      await fetchExpenses()
-    } catch (error: any) {
-      console.error('Error deleting expense:', error)
-      
-      // Error toast
-      const errorMessage = error?.message || 'เกิดข้อผิดพลาดในการลบรายการค่าใช้จ่าย'
-      const toast = document.createElement('div')
-      toast.className = 'fixed top-4 right-4 bg-gradient-to-r from-red-500 to-pink-600 text-white px-6 py-4 rounded-xl shadow-2xl z-50 flex items-center space-x-3 transform translate-x-full transition-all duration-500 ease-out'
-      toast.innerHTML = `
-        <div class="flex-shrink-0">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
-        </div>
-        <div class="flex-1">
-          <p class="font-semibold">ไม่สามารถลบรายการค่าใช้จ่ายได้</p>
-          <p class="text-sm opacity-90">${errorMessage}</p>
-        </div>
-      `
-      document.body.appendChild(toast)
-      
-      // Animate in
-      setTimeout(() => {
-        toast.classList.remove('translate-x-full')
-        toast.classList.add('translate-x-0')
-      }, 100)
-      
-      // Remove after delay
-      setTimeout(() => {
-        toast.classList.add('translate-x-full', 'opacity-0')
-        setTimeout(() => toast.remove(), 500)
-      }, 6000)
-    }
-  }
+const closeModal = () => {
+  showAddModal.value = false
+  showEditModal.value = false
+  imagePreview.value = ''
+  formData.value = { exp_id: 0, exp_name: '', exp_detail: '', exp_img: '', cur_id: 0, exp_cost: 0 }
 }
 
 const handleImageUpload = (event: Event) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
-  
   if (file) {
     const reader = new FileReader()
     reader.onload = (e) => {
@@ -332,22 +328,31 @@ const handleImageUpload = (event: Event) => {
   }
 }
 
-const closeModal = () => {
-  showAddModal.value = false
-  showEditModal.value = false
-  imagePreview.value = ''
-  formData.value = {
-    exp_id: 0,
-    exp_name: '',
-    exp_detail: '',
-    exp_img: '',
-    cur_id: 0,
-    exp_cost: 0
-  }
+// ── Delete ─────────────────────────────────────────────
+const openDeleteModal = (expense: ExpenseDetail) => {
+  deletingExpense.value = expense
+  showDeleteModal.value = true
 }
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('th-TH')
+const closeDeleteModal = () => {
+  showDeleteModal.value = false
+  deletingExpense.value = null
+}
+
+const confirmDelete = async () => {
+  if (!deletingExpense.value) return
+  isDeleting.value = true
+  try {
+    await apiService.deleteExpenseDetail(deletingExpense.value.exp_id)
+    showToast('success', 'ลบรายการสำเร็จ', 'ข้อมูลถูกลบจากระบบเรียบร้อยแล้ว')
+    await fetchExpenses()
+    emit('refresh')
+    closeDeleteModal()
+  } catch (error: any) {
+    showToast('error', 'ลบไม่สำเร็จ', error?.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่')
+  } finally {
+    isDeleting.value = false
+  }
 }
 
 onMounted(() => {
@@ -357,14 +362,8 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.modal-enter-active,
-.modal-leave-active {
-  transition: all 0.3s ease;
-}
-
-.modal-enter-from,
-.modal-leave-to {
-  opacity: 0;
-  transform: scale(0.95);
-}
+.modal-enter-active, .modal-leave-active { transition: all 0.25s ease; }
+.modal-enter-from, .modal-leave-to { opacity: 0; transform: scale(0.96); }
+.toast-enter-active, .toast-leave-active { transition: all 0.4s ease; }
+.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateX(100%); }
 </style>

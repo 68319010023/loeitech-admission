@@ -1,19 +1,17 @@
 <template>
   <div class="flex h-screen bg-gray-50">
     <!-- Sidebar -->
-    <aside
-      class="w-64 flex-shrink-0 flex flex-col"
-      style="background: linear-gradient(to bottom, rgba(20, 184, 166, 0.9), rgba(101, 163, 13, 0.9))"
-    >
+    <aside class="w-64 flex-shrink-0 flex flex-col"
+      style="background: linear-gradient(to bottom, rgba(20, 184, 166, 0.9), rgba(101, 163, 13, 0.9))">
       <!-- Logo -->
       <div class="p-6 border-b border-white/20">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 bg-white/20 rounded flex items-center justify-center">
-                        <AcademicCapIcon class="w-7 h-7 text-white" />
+            <AcademicCapIcon class="w-7 h-7 text-white" />
           </div>
           <div>
             <p class="text-white font-semibold text-sm">วิทยาลัยเทคนิคเลย</p>
-            <p class="text-white/70 text-xs">LoeiTech <br/> Online Admission System</p>
+            <p class="text-white/70 text-xs">LoeiTech <br /> Online Admission System</p>
           </div>
         </div>
       </div>
@@ -45,13 +43,20 @@
         <RouterLink to="/admin/users"
           class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
           :class="$route.path.startsWith('/admin/users') ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'">
-          <UserGroupIcon class="w-5 h-5" /> จัดการผู้ใช้
+          <UserGroupIcon class="w-5 h-5" /> ข้อมูลผู้ใช้
+        </RouterLink>
+
+
+        <RouterLink to="/admin/manage-users"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+          :class="$route.path.startsWith('/admin/manage-users') ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'">
+          <UserGroupIcon class="w-5 h-5" /> จัดการสมาชิก
         </RouterLink>
 
         <RouterLink to="/admin/settings"
           class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
           :class="$route.path.startsWith('/admin/settings') ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'">
-          <Cog6ToothIcon class="w-5 h-5" /> เเผนการรับสมัครนักศึกษา
+          <Cog6ToothIcon class="w-5 h-5" /> แผนการรับสมัครนักศึกษา
         </RouterLink>
 
         <RouterLink to="/admin/expenses"
@@ -59,11 +64,14 @@
           :class="$route.path.startsWith('/admin/expenses') ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'">
           <ReceiptPercentIcon class="w-5 h-5" /> ค่าใช้จ่าย
         </RouterLink>
+
+
       </nav>
 
       <!-- Footer -->
       <div class="p-4 border-t border-white/20">
-        <button class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white hover:bg-white/10 transition-all w-full">
+        <button
+          class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white hover:bg-white/10 transition-all w-full">
           <ArrowRightOnRectangleIcon class="w-5 h-5" />
           ออกจากระบบ
         </button>
@@ -101,5 +109,6 @@ import {
   MagnifyingGlassIcon,
   ClipboardDocumentCheckIcon,
   ReceiptPercentIcon,
+  ArrowRightOnRectangleIcon,  // ✅ เพิ่ม import ที่หายไป
 } from '@heroicons/vue/24/outline'
 </script>

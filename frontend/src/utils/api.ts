@@ -105,7 +105,7 @@ class ApiService {
     })
   }
 
-  // Curriculum API (for dropdowns)
+  // Curriculum API
   async getCurriculums() {
     return this.request<any[]>('/admin/curriculums')
   }
@@ -136,7 +136,14 @@ class ApiService {
     })
   }
 
-  // Division API (for dropdowns)
+  async getCurriculumChildren(id: number) {
+    return this.request<{
+      divisions: { div_id: number; div_name: string }[]
+      plans: { ap_id: number; ap_years: string; plan_num: number }[]
+    }>(`/admin/curriculums/${id}/children`)
+  }
+
+  // Division API
   async getDivisions() {
     return this.request<any[]>('/admin/divisions')
   }
@@ -160,12 +167,5 @@ class ApiService {
       body: JSON.stringify(data),
     })
   }
-
-  async deleteDivision(id: number) {
-    return this.request<void>(`/admin/divisions/${id}`, {
-      method: 'DELETE',
-    })
-  }
 }
-
 export const apiService = new ApiService()

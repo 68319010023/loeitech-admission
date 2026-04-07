@@ -14,9 +14,18 @@ dotenv.config()
 const app = express()
 const PORT = process.env.PORT || 3001
 
-// Middleware
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}
+
+// ✅ OPTIONS ต้องอยู่ก่อน — ให้ตอบ preflight ได้
+app.options('*', cors(corsOptions))
+app.use(cors(corsOptions))
+
 app.use(helmet())
-app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }))
 app.use(morgan('dev'))
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
