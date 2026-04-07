@@ -206,8 +206,6 @@ import { ref, onMounted, computed } from 'vue'
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import { apiService } from '@/utils/api'
 
-const emit = defineEmits(['refresh'])
-
 // Function to generate cache-busting URL
 const getImageUrl = (imageUrl: string) => {
   if (!imageUrl) return imageUrl
