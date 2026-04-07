@@ -9,9 +9,9 @@
               <div class="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
                 <User class="w-6 h-6 text-white" />
               </div>
-              จัดการผู้ใช้งาน
+             ข้อมูลผู้ใช้
             </h1>
-            <p class="text-gray-600 mt-3 text-lg">จัดการข้อมูลผู้ใช้งานในระบบรับสมัครนักเรียนนักศึกษา</p>
+            <p class="text-gray-600 mt-3 text-lg">เลือกและดาวน์โหลดข้อมูลนักเรียนในรูปแบบไฟล์</p>
           </div>
 
           <div class="flex items-center space-x-3">

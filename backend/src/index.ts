@@ -29,6 +29,8 @@ app.options('*', cors(corsOptions))
 app.use(cors(corsOptions))
 
 app.use(helmet())
+
+app.use(cors({ origin: ['http://localhost:13000', 'http://localhost:5173'], credentials: true }))
 app.use(morgan('dev'))
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))

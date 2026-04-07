@@ -39,12 +39,16 @@ CREATE TABLE admission_plan (
 -- 4. ตาราง expense_detail (ค่าใช้จ่าย)
 -- ============================================================
 CREATE TABLE expense_detail (
-    exp_id     SERIAL PRIMARY KEY,
-    exp_name   VARCHAR(200) NOT NULL,                              -- ชื่อรายการค่าใช้จ่าย
-    exp_detail TEXT         NOT NULL,                              -- รายละเอียด
-    exp_img    TEXT,                                               -- รูปประกอบ (allow null)
-    cur_id     INTEGER NOT NULL REFERENCES curriculums(cur_id),    -- FK → curriculums
-    exp_cost   DOUBLE PRECISION NOT NULL
+    exp_id        SERIAL PRIMARY KEY,
+    exp_name      VARCHAR(200) NOT NULL,                              -- ชื่อรายการค่าใช้จ่าย
+    exp_detail    TEXT         NOT NULL,                              -- รายละเอียด
+    exp_img       TEXT,                                               -- รูปประกอบ (allow null)
+    cur_id        INTEGER NOT NULL REFERENCES curriculums(cur_id),    -- FK → curriculums
+    exp_cost      DOUBLE PRECISION NOT NULL,
+    payment_type  VARCHAR(20) DEFAULT 'mandatory'                     -- ประเภทการชำระเงิน
+                   CHECK (payment_type IN ('mandatory', 'optional')),
+    created_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- ============================================================
