@@ -204,6 +204,7 @@ import {
   HashtagIcon,
   CalendarIcon
 } from '@heroicons/vue/24/outline'
+import { apiService } from '@/utils/api'
 
 interface Curriculum {
   cur_id: number
@@ -254,23 +255,8 @@ const filteredDivisions = computed(() => {
 
 const fetchDivisions = async () => {
   try {
-    const mockData: Division[] = [
-      { 
-        div_id: 1, 
-        div_name: 'คอมพิวเตอร์ธุรกิจ', 
-        cur_id: 1, 
-        curriculum: { cur_id: 1, cur_name: 'ประกาศนียบัตรวิชาชีพ', cur_shortname: 'ปวช' },
-        created_at: '2024-01-01T00:00:00Z' 
-      },
-      { 
-        div_id: 2, 
-        div_name: 'เทคโนโลยีสารสนเทศ', 
-        cur_id: 1, 
-        curriculum: { cur_id: 1, cur_name: 'ประกาศนียบัตรวิชาชีพ', cur_shortname: 'ปวช' },
-        created_at: '2024-01-01T00:00:00Z' 
-      }
-    ]
-    divisions.value = mockData
+    const response = await apiService.getDivisions()
+    divisions.value = response.data
   } catch (error) {
     console.error('Error fetching divisions:', error)
   }
@@ -278,11 +264,8 @@ const fetchDivisions = async () => {
 
 const fetchCurriculums = async () => {
   try {
-    const mockData: Curriculum[] = [
-      { cur_id: 1, cur_name: 'ประกาศนียบัตรวิชาชีพ', cur_shortname: 'ปวช' },
-      { cur_id: 2, cur_name: 'ประกาศนียบัตรวิชาชีพชั้นสูง', cur_shortname: 'ปวส' }
-    ]
-    curriculums.value = mockData
+    const response = await apiService.getCurriculums()
+    curriculums.value = response.data
   } catch (error) {
     console.error('Error fetching curriculums:', error)
   }
@@ -291,9 +274,9 @@ const fetchCurriculums = async () => {
 const handleSubmit = async () => {
   try {
     if (showAddModal.value) {
-      console.log('Adding division:', formData.value)
+      await apiService.createDivision(formData.value)
     } else {
-      console.log('Updating division:', formData.value)
+      await apiService.updateDivision(formData.value.div_id!, formData.value)
     }
     await fetchDivisions()
     closeModal()
@@ -314,10 +297,70 @@ const editDivision = (division: Division) => {
 const deleteDivision = async (id: number) => {
   if (confirm('คุณต้องการลบสาขาวิชานี้ใช่หรือไม่?')) {
     try {
-      console.log('Deleting division:', id)
+      const response = await apiService.deleteDivision(id)
+      
+      if (response.success) {
+        // Success toast
+        const toast = document.createElement('div')
+        toast.className = 'fixed top-4 right-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl z-50 flex items-center space-x-3 transform translate-x-full transition-all duration-500 ease-out'
+        toast.innerHTML = `
+          <div class="flex-shrink-0">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+          <div class="flex-1">
+            <p class="font-semibold">ลบสาขาวิชาสำเร็จแล้ว</p>
+            <p class="text-sm opacity-90">ข้อมูลถูกลบจากระบบเรียบร้อย</p>
+          </div>
+        `
+        document.body.appendChild(toast)
+        
+        // Animate in
+        setTimeout(() => {
+          toast.classList.remove('translate-x-full')
+          toast.classList.add('translate-x-0')
+        }, 100)
+        
+        // Remove after delay
+        setTimeout(() => {
+          toast.classList.add('translate-x-full', 'opacity-0')
+          setTimeout(() => toast.remove(), 500)
+        }, 4000)
+      }
+      
       await fetchDivisions()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting division:', error)
+      
+      // Error toast
+      const errorMessage = error?.message || 'เกิดข้อผิดพลาดในการลบสาขาวิชา'
+      const toast = document.createElement('div')
+      toast.className = 'fixed top-4 right-4 bg-gradient-to-r from-red-500 to-pink-600 text-white px-6 py-4 rounded-xl shadow-2xl z-50 flex items-center space-x-3 transform translate-x-full transition-all duration-500 ease-out'
+      toast.innerHTML = `
+        <div class="flex-shrink-0">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </div>
+        <div class="flex-1">
+          <p class="font-semibold">ไม่สามารถลบสาขาวิชาได้</p>
+          <p class="text-sm opacity-90">${errorMessage}</p>
+        </div>
+      `
+      document.body.appendChild(toast)
+      
+      // Animate in
+      setTimeout(() => {
+        toast.classList.remove('translate-x-full')
+        toast.classList.add('translate-x-0')
+      }, 100)
+      
+      // Remove after delay
+      setTimeout(() => {
+        toast.classList.add('translate-x-full', 'opacity-0')
+        setTimeout(() => toast.remove(), 500)
+      }, 6000)
     }
   }
 }

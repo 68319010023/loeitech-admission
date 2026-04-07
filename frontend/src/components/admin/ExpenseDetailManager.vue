@@ -170,6 +170,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/vue/24/outline'
+import { apiService } from '@/utils/api'
 
 interface Curriculum {
   cur_id: number
@@ -204,29 +205,8 @@ const formData = ref({
 
 const fetchExpenses = async () => {
   try {
-    const mockData: ExpenseDetail[] = [
-      { 
-        exp_id: 1, 
-        exp_name: 'ค่าเทอม', 
-        exp_detail: 'ค่าเทอมการศึกษาประจำภาคการศึกษา', 
-        exp_img: 'https://via.placeholder.com/150',
-        cur_id: 1, 
-        exp_cost: 15000,
-        curriculum: { cur_id: 1, cur_name: 'ประกาศนียบัตรวิชาชีพ', cur_shortname: 'ปวช' },
-        created_at: '2024-01-01T00:00:00Z' 
-      },
-      { 
-        exp_id: 2, 
-        exp_name: 'ค่าอุปกรณ์', 
-        exp_detail: 'ค่าอุปกรณ์การเรียนและชุดพระราชทาน', 
-        exp_img: 'https://via.placeholder.com/150',
-        cur_id: 1, 
-        exp_cost: 3000,
-        curriculum: { cur_id: 1, cur_name: 'ประกาศนียบัตรวิชาชีพ', cur_shortname: 'ปวช' },
-        created_at: '2024-01-01T00:00:00Z' 
-      }
-    ]
-    expenses.value = mockData
+    const response = await apiService.getExpenseDetails()
+    expenses.value = response.data
   } catch (error) {
     console.error('Error fetching expenses:', error)
   }
@@ -234,11 +214,8 @@ const fetchExpenses = async () => {
 
 const fetchCurriculums = async () => {
   try {
-    const mockData: Curriculum[] = [
-      { cur_id: 1, cur_name: 'ประกาศนียบัตรวิชาชีพ', cur_shortname: 'ปวช' },
-      { cur_id: 2, cur_name: 'ประกาศนียบัตรวิชาชีพชั้นสูง', cur_shortname: 'ปวส' }
-    ]
-    curriculums.value = mockData
+    const response = await apiService.getCurriculums()
+    curriculums.value = response.data
   } catch (error) {
     console.error('Error fetching curriculums:', error)
   }
@@ -247,9 +224,9 @@ const fetchCurriculums = async () => {
 const handleSubmit = async () => {
   try {
     if (showAddModal.value) {
-      console.log('Adding expense:', formData.value)
+      await apiService.createExpenseDetail(formData.value)
     } else {
-      console.log('Updating expense:', formData.value)
+      await apiService.updateExpenseDetail(formData.value.exp_id!, formData.value)
     }
     await fetchExpenses()
     closeModal()
@@ -273,10 +250,70 @@ const editExpense = (expense: ExpenseDetail) => {
 const deleteExpense = async (id: number) => {
   if (confirm('คุณต้องการลบรายการค่าใช้จ่ายนี้ใช่หรือไม่?')) {
     try {
-      console.log('Deleting expense:', id)
+      const response = await apiService.deleteExpenseDetail(id)
+      
+      if (response.success) {
+        // Success toast
+        const toast = document.createElement('div')
+        toast.className = 'fixed top-4 right-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl z-50 flex items-center space-x-3 transform translate-x-full transition-all duration-500 ease-out'
+        toast.innerHTML = `
+          <div class="flex-shrink-0">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+          <div class="flex-1">
+            <p class="font-semibold">ลบรายการค่าใช้จ่ายสำเร็จแล้ว</p>
+            <p class="text-sm opacity-90">ข้อมูลถูกลบจากระบบเรียบร้อย</p>
+          </div>
+        `
+        document.body.appendChild(toast)
+        
+        // Animate in
+        setTimeout(() => {
+          toast.classList.remove('translate-x-full')
+          toast.classList.add('translate-x-0')
+        }, 100)
+        
+        // Remove after delay
+        setTimeout(() => {
+          toast.classList.add('translate-x-full', 'opacity-0')
+          setTimeout(() => toast.remove(), 500)
+        }, 4000)
+      }
+      
       await fetchExpenses()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting expense:', error)
+      
+      // Error toast
+      const errorMessage = error?.message || 'เกิดข้อผิดพลาดในการลบรายการค่าใช้จ่าย'
+      const toast = document.createElement('div')
+      toast.className = 'fixed top-4 right-4 bg-gradient-to-r from-red-500 to-pink-600 text-white px-6 py-4 rounded-xl shadow-2xl z-50 flex items-center space-x-3 transform translate-x-full transition-all duration-500 ease-out'
+      toast.innerHTML = `
+        <div class="flex-shrink-0">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </div>
+        <div class="flex-1">
+          <p class="font-semibold">ไม่สามารถลบรายการค่าใช้จ่ายได้</p>
+          <p class="text-sm opacity-90">${errorMessage}</p>
+        </div>
+      `
+      document.body.appendChild(toast)
+      
+      // Animate in
+      setTimeout(() => {
+        toast.classList.remove('translate-x-full')
+        toast.classList.add('translate-x-0')
+      }, 100)
+      
+      // Remove after delay
+      setTimeout(() => {
+        toast.classList.add('translate-x-full', 'opacity-0')
+        setTimeout(() => toast.remove(), 500)
+      }, 6000)
     }
   }
 }

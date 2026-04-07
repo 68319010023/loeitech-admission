@@ -30,22 +30,22 @@
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
           <div class="flex items-center">
             <div class="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
-              <BuildingOffice2Icon class="w-6 h-6 text-emerald-600" />
+              <AcademicCapIcon class="w-6 h-6 text-emerald-600" />
             </div>
             <div class="ml-4">
-              <p class="text-sm text-gray-600">สาขาวิชาทั้งหมด</p>
-              <p class="text-2xl font-bold text-gray-900">3</p>
+              <p class="text-sm text-gray-600">หลักสูตรทั้งหมด</p>
+              <p class="text-2xl font-bold text-gray-900">{{ stats.totalCurriculums }}</p>
             </div>
           </div>
         </div>
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
           <div class="flex items-center">
             <div class="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
-              <AcademicCapIcon class="w-6 h-6 text-emerald-600" />
+              <BuildingOffice2Icon class="w-6 h-6 text-emerald-600" />
             </div>
             <div class="ml-4">
-              <p class="text-sm text-gray-600">หลักสูตรทั้งหมด</p>
-              <p class="text-2xl font-bold text-gray-900">2</p>
+              <p class="text-sm text-gray-600">สาขาวิชาทั้งหมด</p>
+              <p class="text-2xl font-bold text-gray-900">{{ stats.totalDivisions }}</p>
             </div>
           </div>
         </div>
@@ -56,7 +56,7 @@
             </div>
             <div class="ml-4">
               <p class="text-sm text-gray-600">แผนรับสมัคร</p>
-              <p class="text-2xl font-bold text-gray-900">1</p>
+              <p class="text-2xl font-bold text-gray-900">{{ stats.totalAdmissionPlans }}</p>
             </div>
           </div>
         </div>
@@ -90,7 +90,7 @@
         <!-- Tab Content -->
         <div class="p-6">
           <transition name="fade" mode="out-in">
-            <component :is="getTabComponent()" />
+            <component :is="getTabComponent()" @refresh="fetchStats" />
           </transition>
         </div>
       </div>
@@ -99,7 +99,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import {
   AcademicCapIcon,
   BuildingOffice2Icon,
@@ -109,14 +109,21 @@ import {
 import CurriculumsManager from '@/components/admin/CurriculumsManager.vue'
 import DivisionsManager from '@/components/admin/DivisionsManager.vue'
 import AdmissionPlanManager from '@/components/admin/AdmissionPlanManager.vue'
+import { apiService } from '@/utils/api'
 
 const activeTab = ref('curriculums')
 
-const tabs = [
-  { key: 'curriculums', label: 'หลักสูตร', icon: AcademicCapIcon, count: 2 },
-  { key: 'divisions', label: 'สาขาวิชา', icon: BuildingOffice2Icon, count: 3 },
-  { key: 'admission_plan', label: 'แผนรับสมัคร', icon: CalendarDaysIcon, count: 1 }
-]
+const stats = ref({
+  totalDivisions: 0,
+  totalCurriculums: 0,
+  totalAdmissionPlans: 0
+})
+
+const tabs = computed(() => [
+  { key: 'curriculums', label: 'หลักสูตร', icon: AcademicCapIcon, count: stats.value.totalCurriculums },
+  { key: 'divisions', label: 'สาขาวิชา', icon: BuildingOffice2Icon, count: stats.value.totalDivisions },
+  { key: 'admission_plan', label: 'แผนรับสมัคร', icon: CalendarDaysIcon, count: stats.value.totalAdmissionPlans }
+])
 
 const getTabComponent = () => {
   switch (activeTab.value) {
@@ -130,6 +137,28 @@ const getTabComponent = () => {
       return CurriculumsManager
   }
 }
+
+const fetchStats = async () => {
+  try {
+    const [curriculumsRes, divisionsRes, admissionPlansRes] = await Promise.all([
+      apiService.getCurriculums(),
+      apiService.getDivisions(),
+      apiService.getAdmissionPlans()
+    ])
+    
+    stats.value = {
+      totalCurriculums: curriculumsRes.data.length,
+      totalDivisions: divisionsRes.data.length,
+      totalAdmissionPlans: admissionPlansRes.data.length
+    }
+  } catch (error) {
+    console.error('Error fetching stats:', error)
+  }
+}
+
+onMounted(() => {
+  fetchStats()
+})
 </script>
 
 <style scoped>

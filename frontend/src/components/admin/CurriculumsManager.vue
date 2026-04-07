@@ -199,6 +199,7 @@ import {
   MagnifyingGlassIcon,
   HashtagIcon
 } from '@heroicons/vue/24/outline'
+import { apiService } from '@/utils/api'
 
 interface Curriculum {
   cur_id: number
@@ -248,11 +249,8 @@ const filteredCurriculums = computed(() => {
 
 const fetchCurriculums = async () => {
   try {
-    const mockData: Curriculum[] = [
-      { cur_id: 1, cur_name: 'ประกาศนียบัตรวิชาชีพ', cur_shortname: 'ปวช', created_at: '2024-01-01T00:00:00Z' },
-      { cur_id: 2, cur_name: 'ประกาศนียบัตรวิชาชีพชั้นสูง', cur_shortname: 'ปวส', created_at: '2024-01-01T00:00:00Z' }
-    ]
-    curriculums.value = mockData
+    const response = await apiService.getCurriculums()
+    curriculums.value = response.data
   } catch (error) {
     console.error('Error fetching curriculums:', error)
   }
@@ -261,9 +259,9 @@ const fetchCurriculums = async () => {
 const handleSubmit = async () => {
   try {
     if (showAddModal.value) {
-      console.log('Adding curriculum:', formData.value)
+      await apiService.createCurriculum(formData.value)
     } else {
-      console.log('Updating curriculum:', formData.value)
+      await apiService.updateCurriculum(formData.value.cur_id!, formData.value)
     }
     await fetchCurriculums()
     closeModal()
@@ -280,10 +278,70 @@ const editCurriculum = (curriculum: Curriculum) => {
 const deleteCurriculum = async (id: number) => {
   if (confirm('คุณต้องการลบหลักสูตรนี้ใช่หรือไม่?')) {
     try {
-      console.log('Deleting curriculum:', id)
+      const response = await apiService.deleteCurriculum(id)
+      
+      if (response.success) {
+        // Success toast
+        const toast = document.createElement('div')
+        toast.className = 'fixed top-4 right-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl z-50 flex items-center space-x-3 transform translate-x-full transition-all duration-500 ease-out'
+        toast.innerHTML = `
+          <div class="flex-shrink-0">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+          <div class="flex-1">
+            <p class="font-semibold">ลบหลักสูตรสำเร็จแล้ว</p>
+            <p class="text-sm opacity-90">ข้อมูลถูกลบจากระบบเรียบร้อย</p>
+          </div>
+        `
+        document.body.appendChild(toast)
+        
+        // Animate in
+        setTimeout(() => {
+          toast.classList.remove('translate-x-full')
+          toast.classList.add('translate-x-0')
+        }, 100)
+        
+        // Remove after delay
+        setTimeout(() => {
+          toast.classList.add('translate-x-full', 'opacity-0')
+          setTimeout(() => toast.remove(), 500)
+        }, 4000)
+      }
+      
       await fetchCurriculums()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting curriculum:', error)
+      
+      // Error toast
+      const errorMessage = error?.message || 'เกิดข้อผิดพลาดในการลบหลักสูตร'
+      const toast = document.createElement('div')
+      toast.className = 'fixed top-4 right-4 bg-gradient-to-r from-red-500 to-pink-600 text-white px-6 py-4 rounded-xl shadow-2xl z-50 flex items-center space-x-3 transform translate-x-full transition-all duration-500 ease-out'
+      toast.innerHTML = `
+        <div class="flex-shrink-0">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </div>
+        <div class="flex-1">
+          <p class="font-semibold">ไม่สามารถลบหลักสูตรได้</p>
+          <p class="text-sm opacity-90">${errorMessage}</p>
+        </div>
+      `
+      document.body.appendChild(toast)
+      
+      // Animate in
+      setTimeout(() => {
+        toast.classList.remove('translate-x-full')
+        toast.classList.add('translate-x-0')
+      }, 100)
+      
+      // Remove after delay
+      setTimeout(() => {
+        toast.classList.add('translate-x-full', 'opacity-0')
+        setTimeout(() => toast.remove(), 500)
+      }, 6000)
     }
   }
 }

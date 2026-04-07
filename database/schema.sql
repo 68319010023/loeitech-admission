@@ -12,9 +12,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE curriculums (
     cur_id        SERIAL PRIMARY KEY,
     cur_name      VARCHAR(200) NOT NULL,   -- ชื่อหลักสูตร เช่น ประกาศนียบัตรวิชาชีพ
-    cur_shortname VARCHAR(50)  NOT NULL,   -- ชื่อย่อ เช่น ปวช / ปวส
-    created_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    cur_shortname VARCHAR(50)  NOT NULL
 );
 
 -- ============================================================
@@ -23,9 +21,7 @@ CREATE TABLE curriculums (
 CREATE TABLE divisions (
     div_id     SERIAL PRIMARY KEY,
     div_name   VARCHAR(100) NOT NULL,                            -- ชื่อสาขา เช่น คอมพิวเตอร์ธุรกิจ
-    cur_id     INTEGER NOT NULL REFERENCES curriculums(cur_id),  -- FK → curriculums
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    cur_id     INTEGER NOT NULL REFERENCES curriculums(cur_id)
 );
 
 -- ============================================================
@@ -36,9 +32,7 @@ CREATE TABLE admission_plan (
     ap_years   VARCHAR(10)  NOT NULL,                              -- ปีการศึกษา เช่น '2568'
     div_id     INTEGER NOT NULL REFERENCES divisions(div_id),      -- FK → divisions
     cur_id     INTEGER NOT NULL REFERENCES curriculums(cur_id),    -- FK → curriculums
-    plan_num   INTEGER NOT NULL,                                   -- จำนวนที่เปิดรับสมัคร
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    plan_num   INTEGER NOT NULL
 );
 
 -- ============================================================
@@ -50,9 +44,7 @@ CREATE TABLE expense_detail (
     exp_detail TEXT         NOT NULL,                              -- รายละเอียด
     exp_img    TEXT,                                               -- รูปประกอบ (allow null)
     cur_id     INTEGER NOT NULL REFERENCES curriculums(cur_id),    -- FK → curriculums
-    exp_cost   DOUBLE PRECISION NOT NULL,                          -- ราคาต่อหน่วย
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    exp_cost   DOUBLE PRECISION NOT NULL
 );
 
 -- ============================================================

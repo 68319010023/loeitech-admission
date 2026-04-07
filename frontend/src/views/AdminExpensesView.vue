@@ -31,7 +31,7 @@
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm text-gray-600 font-medium">รายการค่าใช้จ่ายทั้งหมด</p>
-              <p class="text-3xl font-bold text-gray-900 mt-2">2</p>
+              <p class="text-3xl font-bold text-gray-900 mt-2">{{ stats.totalExpenses }}</p>
               <p class="text-xs text-emerald-600 mt-2 flex items-center">
                 <span class="w-2 h-2 bg-emerald-500 rounded-full mr-1"></span>
                 รายการ
@@ -46,8 +46,8 @@
         <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-600 font-medium">ค่าธรรมเนียมสมัคร</p>
-              <p class="text-3xl font-bold text-gray-900 mt-2">150</p>
+              <p class="text-sm text-gray-600 font-medium">ค่าธรรมเนียมเฉลี่ย</p>
+              <p class="text-3xl font-bold text-gray-900 mt-2">{{ stats.averageCost.toLocaleString() }}</p>
               <p class="text-xs text-emerald-600 mt-2 flex items-center">
                 <span class="w-2 h-2 bg-emerald-500 rounded-full mr-1"></span>
                 บาท/คน
@@ -62,8 +62,8 @@
         <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-600 font-medium">ค่าเทอม/ปี</p>
-              <p class="text-3xl font-bold text-gray-900 mt-2">45,000</p>
+              <p class="text-sm text-gray-600 font-medium">ค่าใช้จ่ายรวม</p>
+              <p class="text-3xl font-bold text-gray-900 mt-2">{{ stats.totalCost.toLocaleString() }}</p>
               <p class="text-xs text-emerald-600 mt-2 flex items-center">
                 <span class="w-2 h-2 bg-emerald-500 rounded-full mr-1"></span>
                 บาท/ปี
@@ -79,7 +79,7 @@
       <!-- Tab Content -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
         <div class="p-6">
-          <ExpenseDetailManager />
+          <ExpenseDetailManager @refresh="fetchStats" />
         </div>
       </div>
 
@@ -89,10 +89,39 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted, computed } from 'vue'
 import {
   ReceiptPercentIcon,
   CurrencyDollarIcon,
   BanknotesIcon
 } from '@heroicons/vue/24/outline'
 import ExpenseDetailManager from '@/components/admin/ExpenseDetailManager.vue'
+import { apiService } from '@/utils/api'
+
+const expenses = ref<any[]>([])
+
+const stats = computed(() => {
+  const totalExpenses = expenses.value.length
+  const totalCost = expenses.value.reduce((sum, expense) => sum + expense.exp_cost, 0)
+  const averageCost = totalExpenses > 0 ? totalCost / totalExpenses : 0
+  
+  return {
+    totalExpenses,
+    totalCost,
+    averageCost
+  }
+})
+
+const fetchStats = async () => {
+  try {
+    const response = await apiService.getExpenseDetails()
+    expenses.value = response.data
+  } catch (error) {
+    console.error('Error fetching stats:', error)
+  }
+}
+
+onMounted(() => {
+  fetchStats()
+})
 </script>
