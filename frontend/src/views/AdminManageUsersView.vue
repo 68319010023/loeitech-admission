@@ -175,15 +175,15 @@
                   <div class="flex items-center justify-end gap-2">
                     <button
                       @click="editUser(user)"
-                      class="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition-colors flex items-center gap-1 text-xs font-medium"
+                      class="px-3 py-1.5 bg-emerald-100 text-emerald-600 rounded-lg hover:bg-emerald-200 transition-colors flex items-center gap-1 text-xs font-medium"
                     >
-                      <PencilIcon class="h-3 w-3" />แก้ไข
+                    <PencilIcon class="w-4 h-4" />
                     </button>
                     <button
                       @click="deleteUser(user)"
-                      class="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors flex items-center gap-1 text-xs font-medium"
+                      class="px-3 py-1.5 bg-red-100 text-red-500 rounded-lg hover:bg-red-200 transition-colors flex items-center gap-1 text-xs font-medium"
                     >
-                      <TrashIcon class="h-3 w-3" />ลบ
+                       <TrashIcon class="w-4 h-4" />
                     </button>
                   </div>
                 </td>
