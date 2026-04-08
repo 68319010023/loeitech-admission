@@ -27,7 +27,9 @@
       <button @click="checkStatus"
         :disabled="idCard.length !== 13 || isLoading"
         class="w-full py-3 rounded-xl text-sm font-medium text-white transition-all"
-        :class="idCard.length === 13 && !isLoading ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-gray-200 cursor-not-allowed text-gray-400'">
+        :class="idCard.length === 13 && !isLoading
+          ? 'bg-emerald-500 hover:bg-emerald-600'
+          : 'bg-gray-200 cursor-not-allowed text-gray-400'">
         {{ isLoading ? 'กำลังตรวจสอบ...' : 'ตรวจสอบสถานะ' }}
       </button>
 
@@ -35,6 +37,7 @@
       <Transition name="fade">
         <div v-if="result" class="mt-6">
           <div class="border rounded-2xl overflow-hidden">
+
             <!-- Header status -->
             <div class="px-6 py-4 flex items-center gap-3"
               :class="statusStyle(result.status).bg">
@@ -66,7 +69,7 @@
                 <div><p class="text-xs text-gray-400">วันที่สมัคร</p><p class="font-medium">{{ result.appliedAt }}</p></div>
               </div>
 
-              <!-- Payment Information -->
+              <!-- ค่าใช้จ่าย -->
               <div v-if="result.totalAmount" class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
                 <p class="text-xs font-medium text-emerald-700 mb-2">ค่าใช้จ่ายทั้งหมด</p>
                 <div class="flex justify-between items-center">
@@ -75,35 +78,77 @@
                 </div>
               </div>
 
-              <!-- Timeline -->
-              <div class="mt-4 pt-4 border-t border-gray-100">
-                <p class="text-xs font-medium text-gray-500 mb-3">ความคืบหน้า</p>
-                <div class="space-y-3">
-                  <div v-for="(step, i) in timeline" :key="i" class="flex items-center gap-3">
-                    <div class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
-                      :class="step.done ? 'bg-emerald-500' : 'bg-gray-100'">
-                      <CheckIcon v-if="step.done" class="w-3 h-3 text-white" />
-                      <span v-else class="w-2 h-2 rounded-full bg-gray-300 block" />
-                    </div>
-                    <p class="text-sm flex-1" :class="step.done ? 'text-gray-700' : 'text-gray-400'">
-                      {{ step.label }}
+              <!-- ⚠️ ยังไม่ชำระเงิน — แสดงวันกำหนดชำระ -->
+              <div v-if="result.status === 'pending_payment' && result.dueDate"
+                class="p-3 bg-orange-50 border border-orange-200 rounded-xl">
+                <div class="flex items-start gap-2">
+                  <ExclamationTriangleIcon class="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p class="text-xs font-medium text-orange-700">กรุณาชำระเงินภายในกำหนด</p>
+                    <p class="text-xs text-orange-600 mt-0.5">
+                      วันสิ้นสุดการชำระเงิน: <strong>{{ result.dueDate }}</strong>
                     </p>
-                    <p class="text-xs text-gray-400">{{ step.date }}</p>
+                    <p class="text-xs text-orange-500 mt-0.5">
+                      หากไม่ชำระภายในกำหนด จะถูกตัดสิทธิ์อัตโนมัติ
+                    </p>
                   </div>
                 </div>
               </div>
 
-              <!-- ถ้ายังไม่ชำระเงิน -->
-              <div v-if="result.status === 'pending_payment'"
-                class="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-xl text-xs text-orange-600">
-                ⚠️ กรุณาชำระเงินและอัพโหลดสลิปก่อนวันที่ <strong>{{ result.dueDate }}</strong>
+              <!-- Timeline + ปุ่ม -->
+              <div class="mt-4 pt-4 border-t border-gray-100">
+                <p class="text-xs font-medium text-gray-500 mb-3">ความคืบหน้า</p>
+                <div class="space-y-3">
+                  <div v-for="(step, i) in timeline" :key="i">
+                    <div class="flex items-center gap-3">
+                      <div class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+                        :class="step.done ? 'bg-emerald-500' : 'bg-gray-100'">
+                        <CheckIcon v-if="step.done" class="w-3 h-3 text-white" />
+                        <span v-else class="w-2 h-2 rounded-full bg-gray-300 block" />
+                      </div>
+                      <p class="text-sm flex-1" :class="step.done ? 'text-gray-700' : 'text-gray-400'">
+                        {{ step.label }}
+                      </p>
+                      <p class="text-xs text-gray-400">{{ step.date }}</p>
+                    </div>
+
+                    <!-- ปุ่มดาวน์โหลดใบแจ้งชำระเงิน — แสดงใต้ step ชำระเงิน ถ้ายังไม่ได้ชำระ -->
+                    <div v-if="i === 1 && !step.done" class="mt-2 ml-9">
+                      <button @click="downloadPaymentSlip"
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium bg-orange-500 text-white hover:bg-orange-600 transition-all">
+                        <ArrowDownTrayIcon class="w-3.5 h-3.5" />
+                        ดาวน์โหลดใบแจ้งชำระเงิน
+                      </button>
+                    </div>
+
+                    <!-- ลิงก์มอบตัว — แสดงใต้ step มอบตัว ถ้าชำระเงินแล้วแต่ยังไม่ได้มอบตัว -->
+                    <div v-if="i === 2 && !step.done && result.status === 'paid'" class="mt-2 ml-9">
+                      <RouterLink to="/enrollment"
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium bg-emerald-500 text-white hover:bg-emerald-600 transition-all">
+                        <ClipboardDocumentCheckIcon class="w-3.5 h-3.5" />
+                        ดำเนินการมอบตัว
+                      </RouterLink>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <!-- ปุ่มมอบตัว ถ้าชำระเงินแล้ว -->
-              <RouterLink v-if="result.status === 'paid'" to="/enrollment"
-                class="mt-3 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 transition-all">
-                <ClipboardDocumentCheckIcon class="w-4 h-4" /> ดำเนินการมอบตัว
-              </RouterLink>
+              <!-- ปุ่มดาวน์โหลดใบรับรองการมอบตัว — แสดงเมื่อมอบตัวแล้ว -->
+              <div v-if="result.status === 'enrolled'"
+                class="mt-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-sm font-medium text-emerald-700">🎉 มอบตัวเรียบร้อยแล้ว</p>
+                    <p class="text-xs text-emerald-600 mt-0.5">สามารถดาวน์โหลดใบรับรองการมอบตัวได้เลย</p>
+                  </div>
+                  <button @click="downloadEnrollmentCert"
+                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium bg-emerald-500 text-white hover:bg-emerald-600 transition-all flex-shrink-0 ml-3">
+                    <ArrowDownTrayIcon class="w-3.5 h-3.5" />
+                    ใบรับรองการมอบตัว
+                  </button>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
@@ -123,9 +168,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { applicationService } from '../services/applicationService'
+import { exportPaymentPDF } from '../utils/exportPaymentPDF'
+import jsPDF from 'jspdf'
 import {
   MagnifyingGlassIcon, CheckIcon, ClipboardDocumentCheckIcon,
-  ClockIcon, CheckBadgeIcon, BanknotesIcon, ExclamationCircleIcon
+  ClockIcon, CheckBadgeIcon, BanknotesIcon, ExclamationTriangleIcon,
+  ArrowDownTrayIcon
 } from '@heroicons/vue/24/outline'
 
 const idCard = ref('')
@@ -183,8 +231,7 @@ async function checkStatus() {
   try {
     const res = await applicationService.checkStatus(idCard.value)
     const data = res.data.data
-    
-    // Map database fields to UI format
+
     result.value = {
       name: `${data.prefix} ${data.full_name}`,
       course: data.cur_name,
@@ -197,15 +244,29 @@ async function checkStatus() {
       requiredAmount: data.required_amount,
       paidAt: data.paid_at ? formatDate(data.paid_at) : null,
       enrolledAt: data.enrolled_at ? formatDate(data.enrolled_at) : null,
+      // เก็บข้อมูลดิบไว้สำหรับ export PDF
+      raw: data,
     }
 
     const isPaid = data.status === 'paid' || data.status === 'enrolled'
     const isEnrolled = data.status === 'enrolled'
 
     timeline.value = [
-      { label: 'กรอกใบสมัครเรียบร้อย', done: true, date: formatDate(data.created_at) },
-      { label: 'ชำระเงินค่าสมัคร', done: isPaid, date: isPaid ? (data.paid_at ? formatDate(data.paid_at) : formatDate(data.updated_at)) : '' },
-      { label: 'มอบตัวเสร็จสมบูรณ์', done: isEnrolled, date: isEnrolled ? (data.enrolled_at ? formatDate(data.enrolled_at) : formatDate(data.updated_at)) : '' },
+      {
+        label: 'กรอกใบสมัครเรียบร้อย',
+        done: true,
+        date: formatDate(data.created_at),
+      },
+      {
+        label: 'ชำระเงินค่าสมัคร',
+        done: isPaid,
+        date: isPaid ? (data.paid_at ? formatDate(data.paid_at) : '') : '',
+      },
+      {
+        label: 'มอบตัวเสร็จสมบูรณ์',
+        done: isEnrolled,
+        date: isEnrolled ? (data.enrolled_at ? formatDate(data.enrolled_at) : '') : '',
+      },
     ]
   } catch (err: any) {
     if (err.response?.status === 404) {
@@ -219,16 +280,98 @@ async function checkStatus() {
   }
 }
 
+// ดาวน์โหลดใบแจ้งชำระเงิน
+async function downloadPaymentSlip() {
+  if (!result.value) return
+  await exportPaymentPDF({
+    prefix: result.value.raw.prefix,
+    fullName: result.value.raw.full_name,
+    idCard: idCard.value,
+    phone: result.value.raw.phone,
+    courseLabel: result.value.course,
+    branchName: result.value.branch,
+    totalPrice: result.value.totalAmount,
+  })
+}
+
+// ดาวน์โหลดใบรับรองการมอบตัว
+async function downloadEnrollmentCert() {
+  if (!result.value) return
+
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+  const pageW = 210
+  let y = 25
+
+  doc.setFontSize(18)
+  doc.setFont('helvetica', 'bold')
+  doc.text('Enrollment Confirmation Certificate', pageW / 2, y, { align: 'center' })
+  y += 8
+
+  doc.setFontSize(13)
+  doc.setFont('helvetica', 'normal')
+  doc.text('Loei Technical College - Online Admission System', pageW / 2, y, { align: 'center' })
+  y += 12
+
+  doc.setDrawColor(16, 185, 130)
+  doc.setLineWidth(0.8)
+  doc.line(15, y, pageW - 15, y)
+  y += 12
+
+  doc.setFontSize(12)
+  doc.setFont('helvetica', 'bold')
+  doc.text('This is to certify that', pageW / 2, y, { align: 'center' })
+  y += 10
+
+  doc.setFontSize(16)
+  doc.text(result.value.name, pageW / 2, y, { align: 'center' })
+  y += 8
+
+  doc.setFontSize(11)
+  doc.setFont('helvetica', 'normal')
+  doc.text(`ID Card: ${idCard.value}`, pageW / 2, y, { align: 'center' })
+  y += 12
+
+  doc.setFontSize(12)
+  doc.text('has successfully completed enrollment at', pageW / 2, y, { align: 'center' })
+  y += 8
+
+  doc.setFont('helvetica', 'bold')
+  doc.text(`${result.value.course} — ${result.value.branch}`, pageW / 2, y, { align: 'center' })
+  y += 12
+
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(11)
+  doc.text(`Enrollment Date: ${result.value.enrolledAt || result.value.updatedAt}`, pageW / 2, y, { align: 'center' })
+  y += 20
+
+  doc.setFillColor(240, 253, 244)
+  doc.setDrawColor(16, 185, 130)
+  doc.setLineWidth(0.5)
+  doc.roundedRect(15, y, pageW - 30, 14, 3, 3, 'FD')
+  doc.setFontSize(11)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(5, 150, 105)
+  doc.text('Status: ENROLLED', pageW / 2, y + 9, { align: 'center' })
+  doc.setTextColor(0, 0, 0)
+  y += 25
+
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(150, 150, 150)
+  doc.text(`Generated: ${new Date().toLocaleString('th-TH')}`, pageW / 2, y, { align: 'center' })
+
+  doc.save(`enrollment-cert-${idCard.value}.pdf`)
+}
+
 function formatDate(dateString: string) {
   if (!dateString) return ''
   const date = new Date(dateString)
   const day = date.getDate()
   const month = date.getMonth() + 1
-  const year = date.getFullYear() + 543 // Convert to Buddhist year
+  const year = date.getFullYear() + 543
   const time = date.toTimeString().slice(0, 5)
-  
-  const monthNames = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
-  
+  const monthNames = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+    'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
   return `${day} ${monthNames[month - 1]} ${year} ${time}`
 }
 </script>

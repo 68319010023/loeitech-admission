@@ -89,7 +89,7 @@ export const createApplication = async (req: Request, res: Response) => {
     await client.query('BEGIN')
 
     const {
-      id_card_number, prefix, full_name, address, phone, email,
+      id_card_number, id_type, prefix, full_name, address, phone, email,
       prev_school, prev_level, prev_year, gpa,
       cur_id, div_id, ap_id, doc_type,
       expenses, // JSON string array ของรายการค่าใช้จ่าย
@@ -125,11 +125,11 @@ export const createApplication = async (req: Request, res: Response) => {
     // สร้างใบสมัคร
     const appResult = await client.query(`
       INSERT INTO applicants
-        (id_card_number, prefix, full_name, address, phone, email,
+        (id_card_number, id_type, prefix, full_name, address, phone, email,
          prev_school, prev_level, prev_year, gpa, cur_id, div_id, ap_id)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
       RETURNING app_id
-    `, [id_card_number, prefix, full_name, address, phone, email,
+    `, [id_card_number, id_type || 'thai_id', prefix, full_name, address, phone, email,
         prev_school, prev_level, prev_year, gpa, cur_id, div_id, ap_id])
 
     const app_id = appResult.rows[0].app_id
@@ -190,9 +190,6 @@ export const createApplication = async (req: Request, res: Response) => {
 
   } catch (err: any) {
     await client.query('ROLLBACK')
-    if (err.message?.includes('Invalid Thai ID')) {
-      return sendError(res, 'เลขบัตรประชาชนไม่ถูกต้อง', 400)
-    }
     sendError(res, 'เกิดข้อผิดพลาดในการส่งใบสมัคร', 500, err)
   } finally {
     client.release()

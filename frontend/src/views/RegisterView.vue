@@ -3,12 +3,10 @@
 
     <!-- Stepper -->
     <div class="flex items-center justify-between mb-8">
-      <div v-for="(step, i) in steps" :key="i" class="flex items-center"
-        :class="i < steps.length - 1 ? 'flex-1' : ''">
+      <div v-for="(step, i) in steps" :key="i" class="flex items-center" :class="i < steps.length - 1 ? 'flex-1' : ''">
         <div class="flex flex-col items-center">
-          <div class="w-11 h-11 rounded-full flex items-center justify-center border-2 transition-all"
-            :class="currentStep > i ? 'bg-emerald-500 border-emerald-500 text-white'
-              : currentStep === i ? 'bg-emerald-500 border-emerald-500 text-white'
+          <div class="w-11 h-11 rounded-full flex items-center justify-center border-2 transition-all" :class="currentStep > i ? 'bg-emerald-500 border-emerald-500 text-white'
+            : currentStep === i ? 'bg-emerald-500 border-emerald-500 text-white'
               : 'border-gray-300 text-gray-300 bg-white'">
             <CheckIcon v-if="currentStep > i" class="w-4 h-4" />
             <component v-else :is="step.icon" class="w-4 h-4" />
@@ -35,7 +33,8 @@
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="text-sm text-gray-600 mb-1 block">ด้านหน้า *</label>
-                <label class="upload-box" :class="form.idFront ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'">
+                <label class="upload-box"
+                  :class="form.idFront ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'">
                   <input type="file" accept="image/*" class="hidden" @change="handleUpload('idFront', $event)" />
                   <div v-if="!form.idFrontPreview" class="flex flex-col items-center gap-2 text-gray-400">
                     <PhotoIcon class="w-8 h-8" /><span class="text-xs">คลิกเพื่ออัพโหลด</span>
@@ -55,18 +54,40 @@
               </div>
             </div>
           </div>
+          <!-- แทนที่ช่อง เลขประจำตัวประชาชน เดิม -->
           <div class="col-span-2">
-            <label class="text-sm text-gray-600 mb-1 block">เลขประจำตัวประชาชน *</label>
-            <input v-model="form.idCard" type="text" inputmode="numeric"
-              placeholder="เลขประจำตัวประชาชน 13 หลัก" maxlength="13"
-              class="input-field" @keydown="blockNonDigit" />
+            <label class="text-sm text-gray-600 mb-1 block">ประเภทเอกสารแสดงตน *</label>
+            <select v-model="form.idType" class="input-field" @change="form.idCard = ''">
+              <option value="">เลือกประเภทเอกสาร</option>
+              <option value="thai_id">บัตรประจำตัวประชาชนไทย</option>
+              <option value="alien_id">บัตรประจำตัวคนต่างด้าว</option>
+              <option value="passport">หนังสือเดินทาง (Passport)</option>
+              <option value="g_code">G-Code (บุคคลไม่มีสัญชาติไทย)</option>
+              <option value="other">เอกสารราชการอื่น ๆ</option>
+            </select>
+          </div>
+
+          <div v-if="form.idType" class="col-span-2">
+            <label class="text-sm text-gray-600 mb-1 block">
+              {{ idTypeLabel }} *
+            </label>
+            <!-- Thai ID: รับแค่ตัวเลข -->
+            <input v-if="form.idType === 'thai_id'" v-model="form.idCard" type="text" inputmode="numeric"
+              :placeholder="idTypePlaceholder" maxlength="13" class="input-field" @keydown="blockNonDigit" />
+            <!-- อื่น ๆ: รับทั้งตัวเลขและตัวอักษร -->
+            <input v-else v-model="form.idCard" type="text" :placeholder="idTypePlaceholder" maxlength="20"
+              class="input-field" @input="form.idCard = form.idCard.toUpperCase()" />
+            <p class="text-xs text-gray-400 mt-1">{{ idTypeHint }}</p>
           </div>
           <div>
             <label class="text-sm text-gray-600 mb-1 block">คำนำหน้าชื่อ *</label>
             <select v-model="form.prefix" class="input-field">
               <option value="">เลือกคำนำหน้า</option>
-              <option>นาย</option><option>นาง</option><option>นางสาว</option>
-              <option>เด็กชาย</option><option>เด็กหญิง</option>
+              <option>นาย</option>
+              <option>นาง</option>
+              <option>นางสาว</option>
+              <option>เด็กชาย</option>
+              <option>เด็กหญิง</option>
             </select>
           </div>
           <div>
@@ -75,13 +96,13 @@
           </div>
           <div class="col-span-2">
             <label class="text-sm text-gray-600 mb-1 block">ที่อยู่ *</label>
-            <textarea v-model="form.address" placeholder="บ้านเลขที่ หมู่ที่ ถนน ตำบล อำเภอ จังหวัด"
-              rows="3" class="input-field resize-none" />
+            <textarea v-model="form.address" placeholder="บ้านเลขที่ หมู่ที่ ถนน ตำบล อำเภอ จังหวัด" rows="3"
+              class="input-field resize-none" />
           </div>
           <div>
             <label class="text-sm text-gray-600 mb-1 block">เบอร์โทรศัพท์ *</label>
-            <input v-model="form.phone" type="text" inputmode="numeric" placeholder="0XX-XXX-XXXX"
-              maxlength="12" class="input-field" @keydown="blockNonDigit" @input="formatPhone" />
+            <input v-model="form.phone" type="text" inputmode="numeric" placeholder="0XX-XXX-XXXX" maxlength="12"
+              class="input-field" @keydown="blockNonDigit" @input="formatPhone" />
           </div>
           <div>
             <label class="text-sm text-gray-600 mb-1 block">อีเมล *</label>
@@ -112,8 +133,8 @@
           </div>
           <div>
             <label class="text-sm text-gray-600 mb-1 block">ปีที่จบการศึกษา *</label>
-            <input v-model="form.prevYear" type="text" inputmode="numeric" placeholder="พ.ศ. เช่น 2567"
-              maxlength="4" class="input-field" @keydown="blockNonDigit" @input="validateYear" />
+            <input v-model="form.prevYear" type="text" inputmode="numeric" placeholder="พ.ศ. เช่น 2567" maxlength="4"
+              class="input-field" @keydown="blockNonDigit" @input="validateYear" />
             <Transition name="fade">
               <p v-if="yearWarning" class="text-red-500 text-xs mt-1">
                 กรุณากรอกปีไม่เกิน {{ new Date().getFullYear() + 543 }}
@@ -122,7 +143,7 @@
           </div>
           <div>
             <label class="text-sm text-gray-600 mb-1 block">เกรดเฉลี่ย (GPA) *</label>
-            <input v-model="form.gpa" type="text" inputmode="decimal" placeholder="เช่น 4.00" class="input-field" 
+            <input v-model="form.gpa" type="text" inputmode="decimal" placeholder="เช่น 4.00" class="input-field"
               @input="validateGPA" maxlength="4" />
             <Transition name="fade">
               <p v-if="gpaWarning" class="text-red-500 text-xs mt-1">
@@ -134,13 +155,13 @@
           <!-- แสดงหลักสูตรที่สมัครได้ -->
           <div v-if="form.prevLevel" class="col-span-2 p-4 rounded-xl border"
             :class="form.prevLevel === 'm3' ? 'bg-blue-50 border-blue-200' : 'bg-emerald-50 border-emerald-200'">
-            <p class="text-sm font-medium mb-1"
-              :class="form.prevLevel === 'm3' ? 'text-blue-700' : 'text-emerald-700'">
+            <p class="text-sm font-medium mb-1" :class="form.prevLevel === 'm3' ? 'text-blue-700' : 'text-emerald-700'">
               📋 หลักสูตรที่สามารถสมัครได้
             </p>
             <p class="text-sm" :class="form.prevLevel === 'm3' ? 'text-blue-600' : 'text-emerald-600'">
               <span v-if="form.prevLevel === 'm3'">✅ ประกาศนียบัตรวิชาชีพ (ปวช.) เท่านั้น</span>
-              <span v-else-if="form.prevLevel === 'm6'">✅ ประกาศนียบัตรวิชาชีพชั้นสูง (ปวส.) — ทุกสาขาที่รับผู้จบ ม.6</span>
+              <span v-else-if="form.prevLevel === 'm6'">✅ ประกาศนียบัตรวิชาชีพชั้นสูง (ปวส.) — ทุกสาขาที่รับผู้จบ
+                ม.6</span>
               <span v-else-if="form.prevLevel === 'pvc'">✅ ประกาศนียบัตรวิชาชีพชั้นสูง (ปวส.) — ทุกสาขา</span>
             </p>
           </div>
@@ -163,7 +184,8 @@
                 <label class="text-sm text-gray-600 mb-1 block">
                   {{ form.docType === 'certificate' ? 'ด้านหน้า *' : 'อัพโหลดเอกสาร *' }}
                 </label>
-                <label class="upload-box" :class="form.eduFront ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'">
+                <label class="upload-box"
+                  :class="form.eduFront ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'">
                   <input type="file" accept="image/*" class="hidden" @change="handleUpload('eduFront', $event)" />
                   <div v-if="!form.eduFrontPreview" class="flex flex-col items-center gap-2 text-gray-400">
                     <PhotoIcon class="w-8 h-8" /><span class="text-xs">คลิกเพื่ออัพโหลด</span>
@@ -173,7 +195,8 @@
               </div>
               <div v-if="form.docType === 'certificate'">
                 <label class="text-sm text-gray-600 mb-1 block">ด้านหลัง *</label>
-                <label class="upload-box" :class="form.eduBack ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'">
+                <label class="upload-box"
+                  :class="form.eduBack ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'">
                   <input type="file" accept="image/*" class="hidden" @change="handleUpload('eduBack', $event)" />
                   <div v-if="!form.eduBackPreview" class="flex flex-col items-center gap-2 text-gray-400">
                     <PhotoIcon class="w-8 h-8" /><span class="text-xs">คลิกเพื่ออัพโหลด</span>
@@ -193,7 +216,8 @@
           <AcademicCapIcon class="w-5 h-5 text-emerald-500" /> เลือกสาขาวิชาที่ต้องการสมัคร
         </h2>
 
-        <div class="mb-5 inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-xl text-sm font-medium">
+        <div
+          class="mb-5 inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-xl text-sm font-medium">
           <AcademicCapIcon class="w-4 h-4" />
           หลักสูตร: {{ fixedCourseLabel }}
         </div>
@@ -207,8 +231,7 @@
         <div v-else class="grid grid-cols-1 gap-3">
           <div v-for="plan in admissionPlans" :key="plan.ap_id"
             @click="Number(plan.remaining) > 0 && selectPlan(plan.ap_id, plan.cur_id)"
-            class="flex items-center justify-between border-2 rounded-xl px-5 py-4 transition-all"
-            :class="Number(plan.remaining) <= 0
+            class="flex items-center justify-between border-2 rounded-xl px-5 py-4 transition-all" :class="Number(plan.remaining) <= 0
               ? 'border-gray-100 bg-gray-50 cursor-not-allowed opacity-60'
               : form.apId === plan.ap_id
                 ? 'border-emerald-500 bg-emerald-50 cursor-pointer'
@@ -260,8 +283,7 @@
             </div>
 
             <!-- บังคับจ่าย: แสดงแค่ราคา -->
-            <div v-if="exp.payment_type === 'mandatory'"
-              class="text-sm font-semibold text-gray-700">
+            <div v-if="exp.payment_type === 'mandatory'" class="text-sm font-semibold text-gray-700">
               {{ exp.exp_cost.toLocaleString() }} บาท
             </div>
             <div v-else class="flex items-center gap-3">
@@ -271,7 +293,7 @@
                 @input="form.expenseOrders[exp.exp_id] = { ...form.expenseOrders[exp.exp_id], size: ($event.target as HTMLSelectElement).value, qty: form.expenseOrders[exp.exp_id]?.qty || 1 }"
                 class="input-field !w-20 !py-1.5 text-xs">
                 <option value="">ไซส์</option>
-                <option v-for="s in ['XS','S','M','L','XL','XXL']" :key="s">{{ s }}</option>
+                <option v-for="s in ['XS', 'S', 'M', 'L', 'XL', 'XXL']" :key="s">{{ s }}</option>
               </select>
               <div class="flex items-center gap-2">
                 <button @click="changeQty(exp.exp_id, -1)"
@@ -310,27 +332,60 @@
           <div class="bg-gray-50 rounded-xl p-4">
             <p class="font-medium text-gray-700 mb-3">ข้อมูลส่วนตัว</p>
             <div class="grid grid-cols-2 gap-3">
-              <div><p class="text-xs text-gray-400">ชื่อ - สกุล</p><p class="font-medium">{{ form.prefix }} {{ form.fullName }}</p></div>
-              <div><p class="text-xs text-gray-400">เลขบัตรประชาชน</p><p class="font-medium">{{ form.idCard }}</p></div>
-              <div><p class="text-xs text-gray-400">โทรศัพท์</p><p class="font-medium">{{ form.phone }}</p></div>
-              <div><p class="text-xs text-gray-400">อีเมล</p><p class="font-medium">{{ form.email }}</p></div>
-              <div class="col-span-2"><p class="text-xs text-gray-400">ที่อยู่</p><p class="font-medium">{{ form.address }}</p></div>
+              <div>
+                <p class="text-xs text-gray-400">ชื่อ - สกุล</p>
+                <p class="font-medium">{{ form.prefix }} {{ form.fullName }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-400">เลขบัตรประชาชน</p>
+                <p class="font-medium">{{ form.idCard }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-400">โทรศัพท์</p>
+                <p class="font-medium">{{ form.phone }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-400">อีเมล</p>
+                <p class="font-medium">{{ form.email }}</p>
+              </div>
+              <div class="col-span-2">
+                <p class="text-xs text-gray-400">ที่อยู่</p>
+                <p class="font-medium">{{ form.address }}</p>
+              </div>
             </div>
           </div>
           <div class="bg-gray-50 rounded-xl p-4">
             <p class="font-medium text-gray-700 mb-3">หลักสูตรและสาขาวิชา</p>
             <div class="grid grid-cols-2 gap-3">
-              <div><p class="text-xs text-gray-400">หลักสูตร</p><p class="font-medium text-emerald-600">{{ fixedCourseLabel }}</p></div>
-              <div><p class="text-xs text-gray-400">สาขาวิชา</p><p class="font-medium text-emerald-600">{{ selectedPlan?.div_name || '-' }}</p></div>
+              <div>
+                <p class="text-xs text-gray-400">หลักสูตร</p>
+                <p class="font-medium text-emerald-600">{{ fixedCourseLabel }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-400">สาขาวิชา</p>
+                <p class="font-medium text-emerald-600">{{ selectedPlan?.div_name || '-' }}</p>
+              </div>
             </div>
           </div>
           <div class="bg-gray-50 rounded-xl p-4">
             <p class="font-medium text-gray-700 mb-3">ประวัติการศึกษา</p>
             <div class="grid grid-cols-2 gap-3">
-              <div><p class="text-xs text-gray-400">สถานศึกษาเดิม</p><p class="font-medium">{{ form.prevSchool }}</p></div>
-              <div><p class="text-xs text-gray-400">วุฒิการศึกษา</p><p class="font-medium">{{ prevLevelLabel }}</p></div>
-              <div><p class="text-xs text-gray-400">ปีที่จบ</p><p class="font-medium">{{ form.prevYear }}</p></div>
-              <div><p class="text-xs text-gray-400">เกรดเฉลี่ย</p><p class="font-medium">{{ form.gpa }}</p></div>
+              <div>
+                <p class="text-xs text-gray-400">สถานศึกษาเดิม</p>
+                <p class="font-medium">{{ form.prevSchool }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-400">วุฒิการศึกษา</p>
+                <p class="font-medium">{{ prevLevelLabel }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-400">ปีที่จบ</p>
+                <p class="font-medium">{{ form.prevYear }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-400">เกรดเฉลี่ย</p>
+                <p class="font-medium">{{ form.gpa }}</p>
+              </div>
             </div>
           </div>
           <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center justify-between">
@@ -407,7 +462,7 @@ const form = reactive({
   // Step 1
   prefix: '', fullName: '', idCard: '', address: '', phone: '', email: '',
   idFront: null as File | null, idBack: null as File | null,
-  idFrontPreview: '', idBackPreview: '',
+  idFrontPreview: '', idBackPreview: '', idType: '',
   // Step 2
   prevSchool: '', prevLevel: '', prevYear: '', gpa: '',
   docType: '',
@@ -420,6 +475,39 @@ const form = reactive({
 })
 
 // ===== Computed =====
+const idTypeLabel = computed(() => {
+  const map: Record<string, string> = {
+    thai_id: 'เลขประจำตัวประชาชน',
+    alien_id: 'เลขประจำตัวคนต่างด้าว',
+    passport: 'เลขหนังสือเดินทาง',
+    g_code: 'G-Code',
+    other: 'เลขเอกสารราชการ',
+  }
+  return map[form.idType] || 'หมายเลขประจำตัว'
+})
+
+const idTypePlaceholder = computed(() => {
+  const map: Record<string, string> = {
+    thai_id: 'เลขประจำตัวประชาชน 13 หลัก',
+    alien_id: 'เช่น 6-1234-56789-12-3',
+    passport: 'เช่น AA1234567',
+    g_code: 'เช่น G-1234567',
+    other: 'หมายเลขเอกสาร',
+  }
+  return map[form.idType] || ''
+})
+
+const idTypeHint = computed(() => {
+  const map: Record<string, string> = {
+    thai_id: 'กรอกตัวเลข 13 หลัก ไม่มีขีด',
+    alien_id: 'ตามที่ระบุในบัตรประจำตัวคนต่างด้าว',
+    passport: 'ตัวอักษรและตัวเลข ตามหน้าหนังสือเดินทาง',
+    g_code: 'รหัส G ที่ออกโดยกรมการปกครอง',
+    other: 'หมายเลขตามเอกสารราชการที่ใช้แสดงตน',
+  }
+  return map[form.idType] || ''
+})
+
 
 const fixedCourseLabel = computed(() => {
   if (form.prevLevel === 'm3') return 'ประกาศนียบัตรวิชาชีพ (ปวช.)'
@@ -531,22 +619,22 @@ function formatPhone(e: Event) {
 function validateGPA(e: Event) {
   const input = e.target as HTMLInputElement
   let value = input.value
-  
+
   // Allow only digits and one decimal point
   value = value.replace(/[^0-9.]/g, '')
-  
+
   // Remove multiple decimal points
   const parts = value.split('.')
   if (parts.length > 2) {
     value = parts[0] + '.' + parts.slice(1).join('')
   }
-  
+
   // Auto add decimal point for single digits (except 4) - only if input is longer than current value
   const currentValue = form.gpa || ''
   if (value.length === 1 && value !== '4' && !value.includes('.') && value.length > currentValue.length) {
     value = value + '.'
   }
-  
+
   // Limit to 4.00 with warning
   const numValue = parseFloat(value)
   if (numValue > 4) {
@@ -560,20 +648,20 @@ function validateGPA(e: Event) {
     // Hide warning when value is valid
     gpaWarning.value = false
   }
-  
+
   form.gpa = value
 }
 
 function validateYear(e: Event) {
   const input = e.target as HTMLInputElement
   let value = input.value
-  
+
   // Allow only digits
   value = value.replace(/[^0-9]/g, '')
-  
+
   // Get current year in Buddhist calendar
   const currentYear = new Date().getFullYear() + 543
-  
+
   // Validate year range
   const yearValue = parseInt(value)
   if (yearValue > currentYear) {
@@ -585,7 +673,7 @@ function validateYear(e: Event) {
     // Hide warning when value is valid
     yearWarning.value = false
   }
-  
+
   form.prevYear = value
 }
 
@@ -606,7 +694,8 @@ function handleUpload(field: 'idFront' | 'idBack' | 'eduFront' | 'eduBack', even
 
 function validateStep() {
   if (currentStep.value === 0) {
-    return !!(form.prefix && form.fullName && form.idCard.length === 13
+    return !!(form.idType && form.idCard && form.idCard.length >= 5
+      && form.prefix && form.fullName
       && form.address && form.phone.replace(/\D/g, '').length === 10
       && form.email && form.idFront && form.idBack)
   }
@@ -640,6 +729,7 @@ async function onConfirmed() {
   try {
     const fd = new FormData()
     fd.append('id_card_number', form.idCard)
+    fd.append('id_type', form.idType)
     fd.append('prefix', form.prefix)
     fd.append('full_name', form.fullName)
     fd.append('address', form.address)

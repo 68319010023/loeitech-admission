@@ -4,3 +4,4 @@ node_modules/
 build/
 dist/
 CONFIG_GUIDE.md
+backend/uploads/
