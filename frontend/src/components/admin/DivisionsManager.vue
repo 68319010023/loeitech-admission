@@ -311,6 +311,10 @@ const toast = ref({ show: false, type: 'success' as 'success' | 'error', title: 
 let toastTimer: ReturnType<typeof setTimeout> | null = null
 
 // ── Computed ───────────────────────────────────────────
+const curriculumOptions = computed(() => {
+  return curriculums.value
+})
+
 const filteredDivisions = computed(() => {
   let filtered = divisions.value
   if (selectedAbbreviation.value) {
@@ -428,7 +432,6 @@ const confirmDelete = async () => {
 onMounted(() => {
   fetchCurriculums()
   fetchDivisions()
-  fetchCurriculumOptions()
 })
 </script>
 

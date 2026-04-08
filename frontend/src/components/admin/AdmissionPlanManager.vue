@@ -281,7 +281,6 @@ const admissionPlans = ref<AdmissionPlan[]>([])
 const curriculums = ref<Curriculum[]>([])
 const divisions = ref<Division[]>([])
 const isSubmitting = ref(false)
-
 const showAddModal = ref(false)
 const showEditModal = ref(false)
 const formData = ref({
@@ -291,10 +290,28 @@ const formData = ref({
   cur_id: 0,
   plan_num: 0
 })
+const showDeleteModal = ref(false)
+const isDeleting = ref(false)
+const deletingPlan = ref<AdmissionPlan | null>(null)
+const selectedCurriculum = ref('')
+const selectedDivision = ref('')
+const toast = ref({ show: false, type: 'success' as 'success' | 'error', title: '', message: '' })
+let toastTimer: ReturnType<typeof setTimeout> | null = null
 
 const filteredDivisions = computed(() => {
   if (!formData.value.cur_id) return []
   return divisions.value.filter(division => division.cur_id === formData.value.cur_id)
+})
+
+const filteredAdmissionPlans = computed(() => {
+  let filtered = admissionPlans.value
+  if (selectedCurriculum.value) {
+    filtered = filtered.filter(plan => plan.cur_id === Number(selectedCurriculum.value))
+  }
+  if (selectedDivision.value) {
+    filtered = filtered.filter(plan => plan.div_id === Number(selectedDivision.value))
+  }
+  return filtered
 })
 
 // ── Toast ──────────────────────────────────────────────

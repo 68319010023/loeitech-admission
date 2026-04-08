@@ -208,6 +208,12 @@ class ApiService {
       method: 'DELETE',
     })
   }
+
+  async getDivisionChildren(id: number) {
+    return this.request<{
+      plans: { ap_id: number; ap_years: string; plan_num: number }[]
+    }>(`/admin/divisions/${id}/children`)
+  }
 }
 
 export const apiService = new ApiService()
