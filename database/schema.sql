@@ -1,306 +1,424 @@
--- ============================================================
--- DATABASE SCHEMA: ltc_admission_db
--- วิทยาลัยเทคนิคเลย — ระบบรับสมัครนักเรียนนักศึกษาออนไลน์
--- ปีการศึกษา 2569
--- ============================================================
--- หมายเหตุ: ตารางทั้งหมดอยู่ใน schema "public"
--- UUID ใช้ uuid_generate_v4() จาก extension uuid-ossp
--- ============================================================
+-- DROP SCHEMA public;
 
+CREATE SCHEMA public AUTHORIZATION pg_database_owner;
 
--- ------------------------------------------------------------
--- ENUM TYPES
--- ------------------------------------------------------------
+COMMENT ON SCHEMA public IS 'standard public schema';
 
--- payment_status / payment_type
--- ใช้แทนค่า string เพื่อความสม่ำเสมอของข้อมูลในคอลัมน์ payment_type
--- ค่าที่ใช้: 'mandatory', 'optional', 'custom'
-CREATE TYPE public.payment_type AS ENUM (
-    'mandatory',
-    'optional',
-    'custom'
+-- DROP TYPE public."payment_status";
+
+CREATE TYPE public."payment_status" AS ENUM (
+	'บังคับจ่าย',
+	'ไม่บังคับจ่าย');
+
+-- DROP TYPE public."payment_type";
+
+CREATE TYPE public."payment_type" AS ENUM (
+	'บังคับจ่าย',
+	'ไม่บังคับจ่าย');
+
+-- DROP SEQUENCE public.admission_plan_ap_id_seq;
+
+CREATE SEQUENCE public.admission_plan_ap_id_seq
+	INCREMENT BY 1
+	MINVALUE 1
+	MAXVALUE 2147483647
+	START 1
+	CACHE 1
+	NO CYCLE;
+-- DROP SEQUENCE public.curriculums_cur_id_seq;
+
+CREATE SEQUENCE public.curriculums_cur_id_seq
+	INCREMENT BY 1
+	MINVALUE 1
+	MAXVALUE 2147483647
+	START 1
+	CACHE 1
+	NO CYCLE;
+-- DROP SEQUENCE public.divisions_div_id_seq;
+
+CREATE SEQUENCE public.divisions_div_id_seq
+	INCREMENT BY 1
+	MINVALUE 1
+	MAXVALUE 2147483647
+	START 1
+	CACHE 1
+	NO CYCLE;
+-- DROP SEQUENCE public.expense_detail_exp_id_seq;
+
+CREATE SEQUENCE public.expense_detail_exp_id_seq
+	INCREMENT BY 1
+	MINVALUE 1
+	MAXVALUE 2147483647
+	START 1
+	CACHE 1
+	NO CYCLE;-- public.curriculums definition
+
+-- Drop table
+
+-- DROP TABLE public.curriculums;
+
+CREATE TABLE public.curriculums (
+	cur_id serial4 NOT NULL,
+	cur_name varchar(200) NULL,
+	cur_shortname varchar(50) NULL,
+	CONSTRAINT curriculums_pkey PRIMARY KEY (cur_id)
 );
 
 
--- ============================================================
--- MASTER DATA TABLES (ตารางข้อมูลหลัก)
--- ตารางเหล่านี้เป็นข้อมูลที่ admin/staff กรอกไว้ล่วงหน้า
--- ============================================================
-CREATE TABLE admission_plan (
-    ap_id      SERIAL PRIMARY KEY,
-    ap_years   VARCHAR(10)  NOT NULL,                              -- ปีการศึกษา เช่น '2568'
-    div_id     INTEGER NOT NULL REFERENCES divisions(div_id),      -- FK → divisions
-    cur_id     INTEGER NOT NULL REFERENCES curriculums(cur_id),    -- FK → curriculums
-    plan_num   INTEGER NOT NULL
-);
+-- public.users definition
 
--- ============================================================
--- 4. ตาราง expense_detail (ค่าใช้จ่าย)
--- ============================================================
-CREATE TABLE expense_detail (
-    exp_id     SERIAL PRIMARY KEY,
-    exp_name   VARCHAR(200) NOT NULL,                              -- ชื่อรายการค่าใช้จ่าย
-    exp_detail TEXT         NOT NULL,                              -- รายละเอียด
-    exp_img    TEXT,                                               -- รูปประกอบ (allow null)
-    cur_id     INTEGER NOT NULL REFERENCES curriculums(cur_id),    -- FK → curriculums
-    exp_cost   DOUBLE PRECISION NOT NULL
-);
+-- Drop table
 
--- ============================================================
--- 5. ตาราง users (ผู้ใช้งานระบบ)
--- ============================================================
-CREATE TABLE users (
-    id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    username   VARCHAR(50)  UNIQUE NOT NULL,
-    email      VARCHAR(100) UNIQUE NOT NULL,
-    password   VARCHAR(255) NOT NULL,
-    role       VARCHAR(20)  DEFAULT 'student' CHECK (role IN ('admin', 'student')),
-    full_name  VARCHAR(100),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- DROP TABLE public.users;
 
-
--- ------------------------------------------------------------
--- admission_plan — แผนการรับสมัครประจำปี
--- ------------------------------------------------------------
--- เก็บโควต้าการรับสมัครของแต่ละสาขา แต่ละปีการศึกษา
--- ใช้ดึงสาขาที่เปิดรับสมัคร และคำนวณที่นั่งว่างแบบ real-time
--- ตัวอย่าง: ปีการศึกษา 2569, สาขาช่างยนต์ (ปวช.) รับ 100 คน
--- หมายเหตุ: จำนวนที่ว่าง = plan_num - COUNT(applicants ที่เลือก ap_id นี้)
-CREATE TABLE public.admission_plan (
-    ap_id     serial4     NOT NULL,  -- PK, auto increment
-    ap_years  varchar(10) NULL,      -- ปีการศึกษา เช่น '2569'
-    div_id    int4        NULL,      -- FK → divisions.div_id (สาขาที่เปิดรับ)
-    cur_id    int4        NULL,      -- FK → curriculums.cur_id (หลักสูตร)
-    plan_num  int4        NULL,      -- โควต้าจำนวนที่นั่งที่เปิดรับ
-    CONSTRAINT admission_plan_pkey PRIMARY KEY (ap_id),
-    CONSTRAINT fk_cur_id FOREIGN KEY (cur_id) REFERENCES public.curriculums(cur_id),
-    CONSTRAINT fk_div_id FOREIGN KEY (div_id) REFERENCES public.divisions(div_id)
-);
-
-
--- ------------------------------------------------------------
--- users — เจ้าหน้าที่และผู้ดูแลระบบ
--- ------------------------------------------------------------
--- เก็บข้อมูล account สำหรับเจ้าหน้าที่ที่เข้าใช้ระบบหลังบ้าน
--- role มีสองค่าเท่านั้น: 'admin' หรือ 'staff'
---   - admin: จัดการระบบ ตั้งค่า อนุมัติ/ปฏิเสธ ได้ทุกอย่าง
---   - staff: ดูข้อมูลผู้สมัคร ยืนยันการชำระเงิน ยืนยันมอบตัว
--- password_hash: เก็บรหัสผ่านที่ผ่าน bcrypt แล้ว ไม่เก็บ plain text
 CREATE TABLE public.users (
-    id            uuid         DEFAULT gen_random_uuid() NOT NULL, -- PK, UUID auto
-    username      varchar(100) NOT NULL,                           -- ชื่อผู้ใช้ (unique)
-    password_hash varchar(255) NOT NULL,                           -- รหัสผ่าน (bcrypt hash)
-    role          varchar(10)  NOT NULL,                           -- 'admin' หรือ 'staff'
-    created_at    timestamp    DEFAULT now() NULL,                 -- วันที่สร้าง account
-    CONSTRAINT users_pkey PRIMARY KEY (id),
-    CONSTRAINT users_username_key UNIQUE (username),
-    CONSTRAINT users_role_check CHECK (role IN ('admin', 'staff'))
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	username varchar(100) NOT NULL,
+	password_hash varchar(255) NOT NULL,
+	"role" varchar(10) NOT NULL,
+	created_at timestamp DEFAULT now() NULL,
+	CONSTRAINT users_pkey PRIMARY KEY (id),
+	CONSTRAINT users_role_check CHECK (((role)::text = ANY ((ARRAY['admin'::character varying, 'staff'::character varying])::text[]))),
+	CONSTRAINT users_username_key UNIQUE (username)
 );
 
 
--- ============================================================
--- TRANSACTION TABLES (ตารางข้อมูล transaction)
--- ตารางเหล่านี้สร้างขึ้นเมื่อผู้สมัครดำเนินการผ่านระบบ
--- ============================================================
+-- public.divisions definition
+
+-- Drop table
+
+-- DROP TABLE public.divisions;
+
+CREATE TABLE public.divisions (
+	div_id serial4 NOT NULL,
+	div_name varchar(100) NULL,
+	cur_id int4 NULL,
+	CONSTRAINT divisions_pkey PRIMARY KEY (div_id),
+	CONSTRAINT fk_cur_id FOREIGN KEY (cur_id) REFERENCES public.curriculums(cur_id)
+);
 
 
--- ------------------------------------------------------------
--- applicants — ข้อมูลผู้สมัคร
--- ------------------------------------------------------------
--- ตารางหลักของระบบ เก็บข้อมูลส่วนตัวและการสมัครของผู้สมัครทุกคน
--- สร้างเมื่อ: ผู้สมัครกรอกข้อมูลครบ 5 ขั้นตอนและยืนยันการสมัคร
---
--- status มี 3 ค่า:
---   'pending_payment' → กรอกข้อมูลแล้ว รอชำระเงิน (ค่า default)
---   'paid'            → ชำระเงินแล้ว รอมอบตัว
---   'enrolled'        → มอบตัวแล้ว เป็นนักเรียน/นักศึกษาแล้ว
---
--- prev_level เก็บวุฒิการศึกษาเดิม:
---   'm3'  = ม.3  → สมัครได้เฉพาะ ปวช.
---   'm6'  = ม.6  → สมัครได้เฉพาะ ปวส. (เฉพาะสาขาที่รับ ม.6)
---   'pvc' = ปวช. → สมัครได้ ปวส. ทุกสาขา
+-- public.expense_detail definition
+
+-- Drop table
+
+-- DROP TABLE public.expense_detail;
+
+CREATE TABLE public.expense_detail (
+	exp_id serial4 NOT NULL,
+	exp_name varchar(200) NULL,
+	exp_detail text NOT NULL,
+	exp_img text NULL,
+	cur_id int4 NULL,
+	exp_cost float8 NULL,
+	"payment_type" varchar(20) NULL,
+	CONSTRAINT expense_detail_pkey PRIMARY KEY (exp_id),
+	CONSTRAINT fk_cur_id FOREIGN KEY (cur_id) REFERENCES public.curriculums(cur_id)
+);
+
+
+-- public.admission_plan definition
+
+-- Drop table
+
+-- DROP TABLE public.admission_plan;
+
+CREATE TABLE public.admission_plan (
+	ap_id serial4 NOT NULL,
+	ap_years varchar(10) NULL,
+	div_id int4 NULL,
+	cur_id int4 NULL,
+	plan_num int4 NULL,
+	CONSTRAINT admission_plan_pkey PRIMARY KEY (ap_id),
+	CONSTRAINT fk_cur_id FOREIGN KEY (cur_id) REFERENCES public.curriculums(cur_id),
+	CONSTRAINT fk_div_id FOREIGN KEY (div_id) REFERENCES public.divisions(div_id)
+);
+
+
+-- public.applicants definition
+
+-- Drop table
+
+-- DROP TABLE public.applicants;
+
 CREATE TABLE public.applicants (
-    app_id         uuid        DEFAULT uuid_generate_v4() NOT NULL, -- PK, UUID auto
-    id_card_number varchar(13) NOT NULL,  -- เลขบัตรประชาชน 13 หลัก (unique, ผ่าน validate_thai_id)
-    prefix         varchar(20) NOT NULL,  -- คำนำหน้าชื่อ (นาย/นาง/นางสาว/เด็กชาย/เด็กหญิง)
-    full_name      varchar(200) NOT NULL, -- ชื่อ-นามสกุล
-    address        text        NOT NULL,  -- ที่อยู่ปัจจุบัน
-    phone          varchar(15) NOT NULL,  -- เบอร์โทรศัพท์ (format: 0XX-XXX-XXXX)
-    email          varchar(200) NOT NULL, -- อีเมล
-    prev_school    varchar(200) NOT NULL, -- ชื่อสถานศึกษาเดิม
-    prev_level     varchar(10) NOT NULL,  -- วุฒิการศึกษา: 'm3', 'm6', 'pvc'
-    prev_year      varchar(4)  NOT NULL,  -- ปีที่จบการศึกษา (พ.ศ.)
-    gpa            varchar(10) NOT NULL,  -- เกรดเฉลี่ย
-    cur_id         int4        NOT NULL,  -- FK → curriculums.cur_id (หลักสูตรที่สมัคร)
-    div_id         int4        NOT NULL,  -- FK → divisions.div_id (สาขาวิชาที่สมัคร)
-    ap_id          int4        NOT NULL,  -- FK → admission_plan.ap_id (แผนรับสมัครปีนี้)
-    status         varchar(30) NOT NULL DEFAULT 'pending_payment', -- สถานะการสมัคร
-    created_at     timestamp   DEFAULT now() NULL, -- วันที่สมัคร
-    updated_at     timestamp   DEFAULT now() NULL, -- อัพเดทล่าสุด (auto via trigger)
-    CONSTRAINT applicants_pkey PRIMARY KEY (app_id),
-    CONSTRAINT applicants_id_card_number_key UNIQUE (id_card_number),
-    CONSTRAINT fk_ap_id FOREIGN KEY (ap_id) REFERENCES public.admission_plan(ap_id),
-    CONSTRAINT fk_cur_id FOREIGN KEY (cur_id) REFERENCES public.curriculums(cur_id),
-    CONSTRAINT fk_div_id FOREIGN KEY (div_id) REFERENCES public.divisions(div_id)
+	app_id uuid DEFAULT uuid_generate_v4() NOT NULL,
+	id_card_number varchar(20) NOT NULL, -- หมายเลขประจำตัว ตามประเภทเอกสาร (id_type) เช่น เลขบัตรปชช. 13 หลัก / เลขต่างด้าว / passport / G-code
+	prefix varchar(20) NOT NULL,
+	full_name varchar(200) NOT NULL,
+	address text NOT NULL,
+	phone varchar(15) NOT NULL,
+	email varchar(200) NOT NULL,
+	prev_school varchar(200) NOT NULL,
+	prev_level varchar(10) NOT NULL,
+	prev_year varchar(4) NOT NULL,
+	gpa varchar(10) NOT NULL,
+	cur_id int4 NOT NULL,
+	div_id int4 NOT NULL,
+	ap_id int4 NOT NULL,
+	status varchar(30) DEFAULT 'pending_payment'::character varying NOT NULL,
+	created_at timestamptz DEFAULT now() NULL,
+	updated_at timestamptz DEFAULT now() NULL,
+	id_type varchar(20) DEFAULT 'thai_id'::character varying NOT NULL, -- ประเภทเอกสารแสดงตน: thai_id, alien_id, passport, g_code, other
+	CONSTRAINT applicants_id_card_number_key UNIQUE (id_card_number),
+	CONSTRAINT applicants_pkey PRIMARY KEY (app_id),
+	CONSTRAINT fk_ap_id FOREIGN KEY (ap_id) REFERENCES public.admission_plan(ap_id),
+	CONSTRAINT fk_cur_id FOREIGN KEY (cur_id) REFERENCES public.curriculums(cur_id),
+	CONSTRAINT fk_div_id FOREIGN KEY (div_id) REFERENCES public.divisions(div_id)
 );
--- Trigger: อัพเดท updated_at อัตโนมัติทุกครั้งที่มีการ UPDATE
--- Trigger: ตรวจสอบความถูกต้องของเลขบัตรประชาชน (checksum 13 หลัก) ก่อน INSERT/UPDATE
+
+-- Column comments
+
+COMMENT ON COLUMN public.applicants.id_card_number IS 'หมายเลขประจำตัว ตามประเภทเอกสาร (id_type) เช่น เลขบัตรปชช. 13 หลัก / เลขต่างด้าว / passport / G-code';
+COMMENT ON COLUMN public.applicants.id_type IS 'ประเภทเอกสารแสดงตน: thai_id, alien_id, passport, g_code, other';
+
+-- Table Triggers
+
+create trigger update_applicants_updated_at before
+update
+    on
+    public.applicants for each row execute function update_updated_at_column();
 
 
--- ------------------------------------------------------------
--- documents — ไฟล์เอกสารแนบ
--- ------------------------------------------------------------
--- เก็บ path ของไฟล์ที่ผู้สมัครอัพโหลดทั้งหมด
--- doc_type บอกประเภทของเอกสาร:
---   'id_front'        → บัตรประชาชนด้านหน้า (บังคับ)
---   'id_back'         → บัตรประชาชนด้านหลัง (บังคับ)
---   'certificate_front' → วุฒิการศึกษา (ป.พ.) ด้านหน้า
---   'certificate_back'  → วุฒิการศึกษา (ป.พ.) ด้านหลัง
---   'letter_front'    → หนังสือรับรองการเป็นนักเรียน
---   'studentcard_front' → บัตรนักเรียน
--- หมายเหตุ: ไฟล์จริงเก็บในโฟลเดอร์ uploads/ บน server
---           file_path คือ relative path เช่น 'uploads/1234567890.jpg'
+-- public.documents definition
+
+-- Drop table
+
+-- DROP TABLE public.documents;
+
 CREATE TABLE public.documents (
-    doc_id      uuid        DEFAULT uuid_generate_v4() NOT NULL, -- PK, UUID auto
-    app_id      uuid        NOT NULL,      -- FK → applicants.app_id
-    doc_type    varchar(50) NOT NULL,      -- ประเภทเอกสาร (ดูรายละเอียดด้านบน)
-    file_path   text        NOT NULL,      -- path ไฟล์บน server
-    file_name   varchar(200) NOT NULL,     -- ชื่อไฟล์ต้นฉบับที่ผู้ใช้อัพโหลด
-    file_size   int4        NULL,          -- ขนาดไฟล์ (bytes)
-    uploaded_at timestamp   DEFAULT now() NULL, -- วันเวลาที่อัพโหลด
-    CONSTRAINT documents_pkey PRIMARY KEY (doc_id),
-    CONSTRAINT fk_app_id FOREIGN KEY (app_id)
-        REFERENCES public.applicants(app_id) ON DELETE CASCADE
-    -- ON DELETE CASCADE: ถ้าลบ applicant จะลบเอกสารทั้งหมดด้วยอัตโนมัติ
+	doc_id uuid DEFAULT uuid_generate_v4() NOT NULL,
+	app_id uuid NOT NULL,
+	doc_type varchar(50) NOT NULL,
+	file_path text NOT NULL,
+	file_name varchar(200) NOT NULL,
+	file_size int4 NULL,
+	uploaded_at timestamp DEFAULT now() NULL,
+	CONSTRAINT documents_pkey PRIMARY KEY (doc_id),
+	CONSTRAINT fk_app_id FOREIGN KEY (app_id) REFERENCES public.applicants(app_id) ON DELETE CASCADE
 );
 
 
--- ------------------------------------------------------------
--- applicant_expenses — รายการค่าใช้จ่ายของผู้สมัครแต่ละคน
--- ------------------------------------------------------------
--- เก็บรายการค่าใช้จ่ายที่ผู้สมัครเลือก/ถูกกำหนด ในขั้นตอนที่ 4
--- ความสัมพันธ์: applicants 1 → many applicant_expenses
---               expense_detail 1 → many applicant_expenses
---
--- is_required:
---   true  → รายการบังคับ (qty=1 เสมอ ไม่มีตัวเลือก)
---   false → รายการไม่บังคับ (ผู้สมัครเลือกจำนวนเอง)
---
--- unit_price เก็บราคา ณ เวลาที่สมัคร เพื่อกันกรณีราคาเปลี่ยนในภายหลัง
--- total_price = unit_price × quantity
-CREATE TABLE public.applicant_expenses (
-    ae_id       uuid    DEFAULT uuid_generate_v4() NOT NULL, -- PK, UUID auto
-    app_id      uuid    NOT NULL,    -- FK → applicants.app_id
-    exp_id      int4    NOT NULL,    -- FK → expense_detail.exp_id
-    quantity    int4    DEFAULT 1 NOT NULL, -- จำนวนที่สั่ง
-    size        varchar(10) NULL,    -- ไซส์ (XS/S/M/L/XL/XXL) สำหรับรายการเครื่องแบบ
-    unit_price  float8  NOT NULL,    -- ราคาต่อหน่วย ณ เวลาที่สมัคร
-    total_price float8  NOT NULL,    -- ยอดรวม (unit_price × quantity)
-    is_required bool    DEFAULT false NOT NULL, -- บังคับจ่ายหรือไม่
-    CONSTRAINT applicant_expenses_pkey PRIMARY KEY (ae_id),
-    CONSTRAINT fk_app_id FOREIGN KEY (app_id)
-        REFERENCES public.applicants(app_id) ON DELETE CASCADE,
-    CONSTRAINT fk_exp_id FOREIGN KEY (exp_id)
-        REFERENCES public.expense_detail(exp_id)
-);
+-- public.enrollments definition
 
+-- Drop table
 
--- ------------------------------------------------------------
--- payments — การชำระเงิน
--- ------------------------------------------------------------
--- เก็บข้อมูลการชำระเงินของผู้สมัครแต่ละคน
--- ความสัมพันธ์: applicants 1 → 1 payments (UNIQUE constraint บน app_id)
---
--- ขั้นตอนการชำระเงิน:
---   1. ระบบสร้าง record นี้อัตโนมัติพร้อมกับ applicants
---   2. ผู้สมัครโอนเงินแล้วอัพโหลดสลิป → slip_path และ paid_at จะถูกอัพเดท
---   3. เจ้าหน้าที่ตรวจสอบและยืนยัน → verified_at และ verified_by จะถูกอัพเดท
---   4. สถานะ applicants.status เปลี่ยนจาก 'pending_payment' → 'paid'
---
--- due_date: วันกำหนดชำระ = created_at + 3 วัน
---           ถ้าไม่ชำระภายในกำหนด ระบบจะตัดสิทธิ์อัตโนมัติ
-CREATE TABLE public.payments (
-    pay_id          uuid    DEFAULT uuid_generate_v4() NOT NULL, -- PK, UUID auto
-    app_id          uuid    NOT NULL,       -- FK → applicants.app_id (unique: 1 คน 1 ใบ)
-    total_amount    float8  NOT NULL,       -- ยอดรวมทั้งหมด (บังคับ + ไม่บังคับที่เลือก)
-    required_amount float8  NOT NULL,       -- ยอดบังคับจ่าย
-    optional_amount float8  DEFAULT 0 NOT NULL, -- ยอดรายการไม่บังคับที่เลือกสั่ง
-    slip_path       text    NULL,           -- path ไฟล์สลิปโอนเงิน (NULL = ยังไม่ได้อัพ)
-    slip_name       varchar(200) NULL,      -- ชื่อไฟล์สลิป
-    paid_at         timestamp NULL,         -- วันเวลาที่อัพโหลดสลิป (NULL = ยังไม่ชำระ)
-    due_date        timestamp NOT NULL,     -- วันกำหนดชำระ (สร้างอัตโนมัติ = now() + 3 days)
-    verified_at     timestamp NULL,         -- วันเวลาที่เจ้าหน้าที่ยืนยัน
-    verified_by     varchar(200) NULL,      -- username ของเจ้าหน้าที่ที่ยืนยัน
-    CONSTRAINT payments_pkey PRIMARY KEY (pay_id),
-    CONSTRAINT payments_app_id_key UNIQUE (app_id),
-    CONSTRAINT fk_app_id FOREIGN KEY (app_id)
-        REFERENCES public.applicants(app_id) ON DELETE CASCADE
-);
+-- DROP TABLE public.enrollments;
 
-
--- ------------------------------------------------------------
--- enrollments — การมอบตัว
--- ------------------------------------------------------------
--- เก็บข้อมูลการมอบตัวออนไลน์ของผู้สมัครที่ชำระเงินแล้ว
--- ความสัมพันธ์: applicants 1 → 1 enrollments (UNIQUE constraint บน app_id)
---
--- ขั้นตอนการมอบตัว:
---   1. ผู้สมัครที่ status = 'paid' เข้าหน้า "มอบตัว"
---   2. อัพโหลดสำเนาทะเบียนบ้านของตนเอง บิดา และมารดา
---   3. ระบบสร้าง record นี้ → enrolled_at จะถูกบันทึก
---   4. เจ้าหน้าที่ตรวจสอบเอกสาร → verified_at และ verified_by ถูกอัพเดท
---   5. สถานะ applicants.status เปลี่ยนจาก 'paid' → 'enrolled'
---      นับเป็นนักเรียน/นักศึกษาอย่างเป็นทางการแล้ว
 CREATE TABLE public.enrollments (
-    enroll_id          uuid DEFAULT uuid_generate_v4() NOT NULL, -- PK, UUID auto
-    app_id             uuid NOT NULL,      -- FK → applicants.app_id (unique: 1 คน 1 ครั้ง)
-    tabien_self_path   text NULL,          -- path สำเนาทะเบียนบ้านของตนเอง
-    tabien_father_path text NULL,          -- path สำเนาทะเบียนบ้านบิดา
-    tabien_mother_path text NULL,          -- path สำเนาทะเบียนบ้านมารดา
-    enrolled_at        timestamp DEFAULT now() NULL, -- วันเวลาที่มอบตัว
-    verified_at        timestamp NULL,     -- วันเวลาที่เจ้าหน้าที่ยืนยันเอกสาร
-    verified_by        varchar(200) NULL,  -- username ของเจ้าหน้าที่ที่ยืนยัน
-    CONSTRAINT enrollments_pkey PRIMARY KEY (enroll_id),
-    CONSTRAINT enrollments_app_id_key UNIQUE (app_id),
-    CONSTRAINT fk_app_id FOREIGN KEY (app_id)
-        REFERENCES public.applicants(app_id) ON DELETE CASCADE
+	enroll_id uuid DEFAULT uuid_generate_v4() NOT NULL,
+	app_id uuid NOT NULL,
+	tabien_self_path text NULL,
+	tabien_father_path text NULL,
+	tabien_mother_path text NULL,
+	enrolled_at timestamp DEFAULT now() NULL,
+	verified_at timestamp NULL,
+	verified_by varchar(200) NULL,
+	CONSTRAINT enrollments_app_id_key UNIQUE (app_id),
+	CONSTRAINT enrollments_pkey PRIMARY KEY (enroll_id),
+	CONSTRAINT fk_app_id FOREIGN KEY (app_id) REFERENCES public.applicants(app_id) ON DELETE CASCADE
 );
 
 
--- ============================================================
--- FUNCTIONS & TRIGGERS
--- ============================================================
+-- public.onsite_enrollments definition
 
--- update_updated_at_column()
--- Trigger function: อัพเดท updated_at = NOW() อัตโนมัติ
--- ใช้กับตาราง: applicants
+-- Drop table
+
+-- DROP TABLE public.onsite_enrollments;
+
+CREATE TABLE public.onsite_enrollments (
+	onsite_id uuid DEFAULT uuid_generate_v4() NOT NULL,
+	ap_id int4 NOT NULL,
+	count int4 DEFAULT 0 NOT NULL,
+	note text NULL,
+	recorded_by varchar(200) NOT NULL,
+	recorded_at timestamp DEFAULT now() NOT NULL,
+	updated_at timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT onsite_enrollments_ap_id_key UNIQUE (ap_id),
+	CONSTRAINT onsite_enrollments_pkey PRIMARY KEY (onsite_id),
+	CONSTRAINT fk_ap_id FOREIGN KEY (ap_id) REFERENCES public.admission_plan(ap_id)
+);
+
+
+-- public.payments definition
+
+-- Drop table
+
+-- DROP TABLE public.payments;
+
+CREATE TABLE public.payments (
+	pay_id uuid DEFAULT uuid_generate_v4() NOT NULL,
+	app_id uuid NOT NULL,
+	total_amount float8 NOT NULL,
+	required_amount float8 NOT NULL,
+	optional_amount float8 DEFAULT 0 NOT NULL,
+	slip_path text NULL,
+	slip_name varchar(200) NULL,
+	paid_at timestamp NULL,
+	due_date timestamp NOT NULL,
+	verified_at timestamp NULL,
+	verified_by varchar(200) NULL,
+	CONSTRAINT payments_app_id_key UNIQUE (app_id),
+	CONSTRAINT payments_pkey PRIMARY KEY (pay_id),
+	CONSTRAINT fk_app_id FOREIGN KEY (app_id) REFERENCES public.applicants(app_id) ON DELETE CASCADE
+);
+
+
+-- public.applicant_expenses definition
+
+-- Drop table
+
+-- DROP TABLE public.applicant_expenses;
+
+CREATE TABLE public.applicant_expenses (
+	ae_id uuid DEFAULT uuid_generate_v4() NOT NULL,
+	app_id uuid NOT NULL,
+	exp_id int4 NOT NULL,
+	quantity int4 DEFAULT 1 NOT NULL,
+	"size" varchar(10) NULL,
+	unit_price float8 NOT NULL,
+	total_price float8 NOT NULL,
+	is_required bool DEFAULT false NOT NULL,
+	CONSTRAINT applicant_expenses_pkey PRIMARY KEY (ae_id),
+	CONSTRAINT fk_app_id FOREIGN KEY (app_id) REFERENCES public.applicants(app_id) ON DELETE CASCADE,
+	CONSTRAINT fk_exp_id FOREIGN KEY (exp_id) REFERENCES public.expense_detail(exp_id)
+);
+
+
+
+-- DROP FUNCTION public.update_updated_at_column();
+
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
-RETURNS trigger LANGUAGE plpgsql AS $$
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
 BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
-$$;
+$function$
+;
 
--- validate_thai_id(varchar)
--- ตรวจสอบความถูกต้องของเลขบัตรประชาชนไทย 13 หลัก
--- ใช้ algorithm checksum มาตรฐานของกรมการปกครอง
--- คืนค่า TRUE ถ้าถูกต้อง, FALSE ถ้าไม่ถูกต้อง
-CREATE OR REPLACE FUNCTION public.validate_thai_id(id_number varchar)
-RETURNS boolean LANGUAGE plpgsql AS $$
+-- DROP FUNCTION public.uuid_generate_v1();
+
+CREATE OR REPLACE FUNCTION public.uuid_generate_v1()
+ RETURNS uuid
+ LANGUAGE c
+ PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_generate_v1$function$
+;
+
+-- DROP FUNCTION public.uuid_generate_v1mc();
+
+CREATE OR REPLACE FUNCTION public.uuid_generate_v1mc()
+ RETURNS uuid
+ LANGUAGE c
+ PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_generate_v1mc$function$
+;
+
+-- DROP FUNCTION public.uuid_generate_v3(uuid, text);
+
+CREATE OR REPLACE FUNCTION public.uuid_generate_v3(namespace uuid, name text)
+ RETURNS uuid
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_generate_v3$function$
+;
+
+-- DROP FUNCTION public.uuid_generate_v4();
+
+CREATE OR REPLACE FUNCTION public.uuid_generate_v4()
+ RETURNS uuid
+ LANGUAGE c
+ PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_generate_v4$function$
+;
+
+-- DROP FUNCTION public.uuid_generate_v5(uuid, text);
+
+CREATE OR REPLACE FUNCTION public.uuid_generate_v5(namespace uuid, name text)
+ RETURNS uuid
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_generate_v5$function$
+;
+
+-- DROP FUNCTION public.uuid_nil();
+
+CREATE OR REPLACE FUNCTION public.uuid_nil()
+ RETURNS uuid
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_nil$function$
+;
+
+-- DROP FUNCTION public.uuid_ns_dns();
+
+CREATE OR REPLACE FUNCTION public.uuid_ns_dns()
+ RETURNS uuid
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_ns_dns$function$
+;
+
+-- DROP FUNCTION public.uuid_ns_oid();
+
+CREATE OR REPLACE FUNCTION public.uuid_ns_oid()
+ RETURNS uuid
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_ns_oid$function$
+;
+
+-- DROP FUNCTION public.uuid_ns_url();
+
+CREATE OR REPLACE FUNCTION public.uuid_ns_url()
+ RETURNS uuid
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_ns_url$function$
+;
+
+-- DROP FUNCTION public.uuid_ns_x500();
+
+CREATE OR REPLACE FUNCTION public.uuid_ns_x500()
+ RETURNS uuid
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_ns_x500$function$
+;
+
+-- DROP FUNCTION public.validate_student_id_card();
+
+CREATE OR REPLACE FUNCTION public.validate_student_id_card()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+    IF NOT validate_thai_id(NEW.id_card_number) THEN
+        RAISE EXCEPTION 'Invalid Thai ID number format';
+    END IF;
+    RETURN NEW;
+END;
+$function$
+;
+
+-- DROP FUNCTION public.validate_thai_id(varchar);
+
+CREATE OR REPLACE FUNCTION public.validate_thai_id(id_number character varying)
+ RETURNS boolean
+ LANGUAGE plpgsql
+AS $function$
 DECLARE
     sum INTEGER := 0;
     i INTEGER;
     digit INTEGER;
     checksum INTEGER;
 BEGIN
-    -- ต้องมี 13 หลักและเป็นตัวเลขเท่านั้น
     IF LENGTH(id_number) != 13 OR id_number ~ '[^0-9]' THEN
         RETURN FALSE;
     END IF;
-    -- คำนวณ checksum ด้วย algorithm กรมการปกครอง
     FOR i IN 1..12 LOOP
         digit := CAST(SUBSTRING(id_number, i, 1) AS INTEGER);
         sum := sum + (digit * (13 - i + 1));
@@ -308,99 +426,5 @@ BEGIN
     checksum := (11 - (sum % 11)) % 10;
     RETURN checksum = CAST(SUBSTRING(id_number, 13, 1) AS INTEGER);
 END;
-$$;
-
--- validate_student_id_card()
--- Trigger function: เรียก validate_thai_id() ก่อน INSERT/UPDATE ใน applicants
--- ถ้าเลขไม่ถูกต้องจะ RAISE EXCEPTION และ rollback อัตโนมัติ
-CREATE OR REPLACE FUNCTION public.validate_student_id_card()
-RETURNS trigger LANGUAGE plpgsql AS $$
-BEGIN
-    IF NOT validate_thai_id(NEW.id_card_number) THEN
-        RAISE EXCEPTION 'Invalid Thai ID number format';
-    END IF;
-    RETURN NEW;
-END;
-$$;
-
--- 1. ลบ trigger ตรวจสอบเลขบัตรประชาชนออก
-DROP TRIGGER IF EXISTS validate_applicant_id_card ON public.applicants;
-
--- 2. ขยาย id_card_number ให้รองรับรหัสที่ยาวกว่า 13 หลัก
-ALTER TABLE public.applicants
-  ALTER COLUMN id_card_number TYPE varchar(20);
-
--- 3. เพิ่มคอลัมน์ id_type บอกประเภทเอกสารแสดงตน
-ALTER TABLE public.applicants
-  ADD COLUMN IF NOT EXISTS id_type varchar(20) NOT NULL DEFAULT 'thai_id';
--- ค่าที่รองรับ:
---   'thai_id'    → บัตรประจำตัวประชาชนไทย 13 หลัก
---   'alien_id'   → บัตรประจำตัวคนต่างด้าว (Alien ID Card)
---   'passport'   → หนังสือเดินทาง
---   'g_code'     → G-Code (รหัสประจำตัวบุคคลไม่มีสัญชาติไทย)
---   'other'      → เอกสารราชการอื่น ๆ
-
--- 4. เพิ่ม comment อธิบาย
-COMMENT ON COLUMN public.applicants.id_card_number IS
-  'หมายเลขประจำตัว ตามประเภทเอกสาร (id_type) เช่น เลขบัตรปชช. 13 หลัก / เลขต่างด้าว / passport / G-code';
-COMMENT ON COLUMN public.applicants.id_type IS
-  'ประเภทเอกสารแสดงตน: thai_id, alien_id, passport, g_code, other';
-
-
--- ============================================================
--- RELATIONSHIP DIAGRAM (ภาพรวมความสัมพันธ์)
--- ============================================================
---
---  curriculums ──┬────────── divisions
---    (ปวช./ปวส.) │               │
---                │               │
---                ├── expense_detail    admission_plan ◄──┤
---                │   (ค่าใช้จ่าย)      (โควต้าต่อปี)      │
---                │        │                  │           │
---                └────────┴──────── applicants ──────────┘
---                                      │
---               ┌──────────────────────┼─────────────────────┐
---               │                      │                     │
---          documents           applicant_expenses        payments
---         (เอกสารแนบ)           (รายการค่าใช้จ่าย)     (การชำระเงิน)
---                                                            │
---                                                       enrollments
---                                                       (การมอบตัว)
---
--- ============================================================
--- STATUS FLOW (สถานะการสมัคร)
--- ============================================================
---
---  [กรอกข้อมูลครบ]
---       ↓
---  pending_payment  →  paid  →  enrolled
---  (รอชำระเงิน)    (ชำระแล้ว)  (มอบตัวแล้ว)
---       ↓               ↓           ↓
---  ถ้าไม่ชำระ      รอมอบตัว    เป็นนักเรียน
---  ภายใน 3 วัน    ผ่านระบบ    อย่างเป็นทางการ
---  ตัดสิทธิ์
---
--- ============================================================
-
--- 1. ลบ trigger ตรวจสอบเลขบัตรประชาชนออก
-DROP TRIGGER IF EXISTS validate_applicant_id_card ON public.applicants;
-
--- 2. ขยาย id_card_number ให้รองรับรหัสที่ยาวกว่า 13 หลัก
-ALTER TABLE public.applicants
-  ALTER COLUMN id_card_number TYPE varchar(20);
-
--- 3. เพิ่มคอลัมน์ id_type บอกประเภทเอกสารแสดงตน
-ALTER TABLE public.applicants
-  ADD COLUMN IF NOT EXISTS id_type varchar(20) NOT NULL DEFAULT 'thai_id';
--- ค่าที่รองรับ:
---   'thai_id'    → บัตรประจำตัวประชาชนไทย 13 หลัก
---   'alien_id'   → บัตรประจำตัวคนต่างด้าว (Alien ID Card)
---   'passport'   → หนังสือเดินทาง
---   'g_code'     → G-Code (รหัสประจำตัวบุคคลไม่มีสัญชาติไทย)
---   'other'      → เอกสารราชการอื่น ๆ
-
--- 4. เพิ่ม comment อธิบาย
-COMMENT ON COLUMN public.applicants.id_card_number IS
-  'หมายเลขประจำตัว ตามประเภทเอกสาร (id_type) เช่น เลขบัตรปชช. 13 หลัก / เลขต่างด้าว / passport / G-code';
-COMMENT ON COLUMN public.applicants.id_type IS
-  'ประเภทเอกสารแสดงตน: thai_id, alien_id, passport, g_code, other';
+$function$
+;
