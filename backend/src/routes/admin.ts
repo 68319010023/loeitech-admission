@@ -16,13 +16,14 @@ import {
   createCurriculum,
   updateCurriculum,
   deleteCurriculum,
-  getCurriculumChildren   // ← เพิ่ม
+  getCurriculumChildren
 } from '../controllers/curriculumController'
 import {
   getDivisions,
   createDivision,
   updateDivision,
-  deleteDivision
+  deleteDivision,
+  getDivisionChildren
 } from '../controllers/divisionController'
 
 import {
@@ -48,6 +49,7 @@ router.get('/divisions', getDivisions)
 router.post('/divisions', createDivision)
 router.put('/divisions/:id', updateDivision)
 router.delete('/divisions/:id', deleteDivision)
+router.get('/divisions/:id/children', getDivisionChildren)
 
 // Admission Plan routes
 router.get('/admission-plan', getAdmissionPlans)

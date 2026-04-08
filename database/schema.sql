@@ -188,12 +188,15 @@ CREATE TABLE public.enrollments (
 
 -- อัพเดท updated_at อัตโนมัติทุกครั้งที่ applicants ถูก UPDATE
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
-RETURNS trigger LANGUAGE plpgsql AS $$
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
 BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
-$$;
+$function$
+;
 
 CREATE TRIGGER set_updated_at
     BEFORE UPDATE ON public.applicants

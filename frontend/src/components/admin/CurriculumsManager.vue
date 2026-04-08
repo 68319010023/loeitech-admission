@@ -7,9 +7,9 @@
           <div class="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center mr-3">
             <AcademicCapIcon class="w-5 h-5 text-emerald-600" />
           </div>
-          จัดการหลักสูตร
+          จัดการหลักสูตรที่เปิดรับสมัคร
         </h2>
-        <p class="text-gray-600 mt-1">เพิ่ม แก้ไข หรือลบข้อมูลหลักสูตรการศึกษา</p>
+        <p class="text-gray-600 mt-1">เพิ่ม แก้ไข หรือลบข้อมูลหลักสูตร</p>
       </div>
       <button
         @click="showAddModal = true"
@@ -35,18 +35,10 @@
           </div>
         </div>
         <div class="sm:w-48">
-          <select
-            v-model="selectedAbbreviation"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-          >
-            <option value="">ทั้งหมด</option>
-            <option v-for="abbreviation in curriculumAbbreviations" :key="abbreviation" :value="abbreviation">
-              {{ abbreviation }}
-            </option>
-          </select>
+          
         </div>
         <div class="flex items-center text-sm text-gray-600">
-          <span>พบ {{ filteredCurriculums.length }} รายการ</span>
+          <span>{{ filteredCurriculums.length }} รายการ</span>
         </div>
       </div>
     </div>
@@ -57,8 +49,7 @@
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลำดับ</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อหลักสูตร</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">หลักสูตร</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อย่อ</th>
               <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">จัดการ</th>
             </tr>
@@ -66,16 +57,12 @@
           <tbody class="bg-white divide-y divide-gray-200">
             <tr v-for="curriculum in filteredCurriculums" :key="curriculum.cur_id"
                 class="hover:bg-gray-50 transition-colors">
+              
               <td class="px-6 py-4 whitespace-nowrap">
-                <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-800 rounded-full text-sm font-medium">
-                  {{ filteredCurriculums.indexOf(curriculum) + 1 }}
-                </span>
+                <div class="text-sm text-gray-900">{{ filteredCurriculums.indexOf(curriculum) + 1 }}. {{ curriculum.cur_name }}</div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm font-medium text-gray-900">{{ curriculum.cur_name }}</div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span class="inline-flex px-2 py-1 text-xs font-medium text-gray-800 rounded-full">
+                <span class="inline-flex px-2 py-1 text-sm  text-gray-800 rounded-full">
                   {{ curriculum.cur_shortname }}
                 </span>
               </td>
@@ -107,11 +94,11 @@
         <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <AcademicCapIcon class="w-8 h-8 text-gray-400" />
         </div>
-        <h3 class="text-lg font-medium text-gray-900 mb-2">ไม่พบข้อมูลหลักสูตร</h3>
-        <p class="text-gray-500 mb-4">ยังไม่มีข้อมูลหลักสูตรในระบบ หรือค้นหาไม่พบ</p>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">ไม่พบข้อมูล</h3>
+        <p class="text-gray-500 mb-4">ยังไม่มีข้อมูลหลักสูตรในระบบ</p>
         <button @click="showAddModal = true"
           class="bg-emerald-500 text-white px-4 py-2 rounded-lg hover:bg-emerald-600 transition-colors">
-          เพิ่มหลักสูตรแรก
+          เพิ่มหลักสูตรที่เปิดรับสมัคร
         </button>
       </div>
     </div>

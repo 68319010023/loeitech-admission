@@ -29,14 +29,14 @@
             <input
               v-model="searchQuery"
               type="text"
-              placeholder="ค้นหาชื่อสาขาวิชา"
+              placeholder="ค้นหาสาขาวิชา"
               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
             />
           </div>
         </div>
         <div class="sm:w-48">
           <select v-model="selectedAbbreviation"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors">
+            class="h-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors">
             <option value="">ทั้งหมด</option>
             <option v-for="curriculum in curriculumOptions" :key="curriculum.cur_id" :value="curriculum.cur_id">
               {{ curriculum.cur_shortname }}
@@ -44,7 +44,7 @@
           </select>
         </div>
         <div class="flex items-center space-x-2 text-sm text-gray-600">
-          <span>พบ {{ filteredDivisions.length }} รายการ</span>
+          <span>{{ filteredDivisions.length }} รายการ</span>
         </div>
       </div>
     </div>
@@ -55,26 +55,17 @@
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลำดับ</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อสาขาวิชา</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อย่อ</th>
-              <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">จัดการ</th>
+              <th class=" px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">หลักสูตร - สาขาวิชา</th>
+              <th class="w-25px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">จัดการ</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
             <tr v-for="division in filteredDivisions" :key="division.div_id" class="hover:bg-gray-50 transition-colors">
+              
               <td class="px-6 py-4 whitespace-nowrap">
-                <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-800 rounded-full text-sm font-medium">
-                  {{ filteredDivisions.indexOf(division) + 1 }}
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm font-medium text-gray-900">{{ division.div_name }}</div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span class="inline-flex px-2 py-1 text-xs font-medium text-gray-800 rounded-full">
-                  {{ division.curriculum?.cur_shortname }}
-                </span>
+                <div class="text-sm  text-gray-900">
+                  {{ filteredDivisions.indexOf(division) + 1 }}. {{ division.curriculum?.cur_shortname }} - {{ division.div_name }}
+                </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-center">
                 <div class="flex items-center justify-center space-x-2">
@@ -146,7 +137,7 @@
                       <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อสาขาวิชา</label>
                       <input v-model="formData.div_name" type="text"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-                        placeholder="เช่น คอมพิวเตอร์ธุรกิจ" required />
+                        placeholder="เช่น เทคโนโลยีสารสนเทศ" required />
                     </div>
                     <div>
                       <label class="block text-sm font-medium text-gray-700 mb-1">หลักสูตร</label>
@@ -155,7 +146,7 @@
                         required>
                         <option value="">เลือกหลักสูตร</option>
                         <option v-for="curriculum in curriculums" :key="curriculum.cur_id" :value="curriculum.cur_id">
-                          {{ curriculum.cur_name }} ({{ curriculum.cur_shortname }})
+                          {{ curriculum.cur_shortname }}
                         </option>
                       </select>
                     </div>
@@ -311,10 +302,14 @@ const toast = ref({ show: false, type: 'success' as 'success' | 'error', title: 
 let toastTimer: ReturnType<typeof setTimeout> | null = null
 
 // ── Computed ───────────────────────────────────────────
+const curriculumOptions = computed(() => {
+  return curriculums.value
+})
+
 const filteredDivisions = computed(() => {
   let filtered = divisions.value
   if (selectedAbbreviation.value) {
-    filtered = filtered.filter(d => d.curriculum?.cur_shortname === selectedAbbreviation.value)
+    filtered = filtered.filter(d => d.curriculum?.cur_id === Number(selectedAbbreviation.value))
   }
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase()
@@ -428,7 +423,6 @@ const confirmDelete = async () => {
 onMounted(() => {
   fetchCurriculums()
   fetchDivisions()
-  fetchCurriculumOptions()
 })
 </script>
 

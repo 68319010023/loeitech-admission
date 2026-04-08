@@ -208,6 +208,33 @@ class ApiService {
       method: 'DELETE',
     })
   }
+
+  async getDivisionChildren(id: number) {
+    return this.request<{
+      plans: { ap_id: number; ap_years: string; plan_num: number }[]
+    }>(`/admin/divisions/${id}/children`)
+  }
+
+  // ── Enrollment (Onsite) API ────────────────────────────
+  async getEnrollmentSummary() {
+    return this.request<any[]>('/enrollments/summary')
+  }
+
+  async getOnsiteEnrollments() {
+    return this.request<any[]>('/enrollments/onsite')
+  }
+
+  async upsertOnsiteEnrollment(data: {
+    ap_id: number
+    count: number
+    note?: string
+    recorded_by?: string
+  }) {
+    return this.request<any>('/enrollments/onsite', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
 }
 
 export const apiService = new ApiService()
