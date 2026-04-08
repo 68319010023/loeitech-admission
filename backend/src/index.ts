@@ -8,6 +8,7 @@ import pool from './config/db'
 import authRoutes from './routes/auth'
 import applicationRoutes from './routes/applications'
 import adminRoutes from './routes/admin'
+import enrollmentRoutes from './routes/enrollment'
 
 dotenv.config()
 
@@ -39,6 +40,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 app.use('/api/auth', authRoutes)
 app.use('/api/applications', applicationRoutes)
 app.use('/api/admin', adminRoutes)
+app.use('/api/enrollments', enrollmentRoutes) 
 
 // Health check
 app.get('/api/health', async (_req, res) => {

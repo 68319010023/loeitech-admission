@@ -18,10 +18,10 @@
             </div>
             <div class="flex-1">
               <h3 class="text-lg font-semibold text-gray-800 mb-1">
-                สลิปการโอนชำระค่าบำรุงการศึกษาและเครื่องแบบ
+                สำเนาทะเบียนบ้านของตนเอง
               </h3>
               <p class="text-gray-600 text-sm">
-                กรุณาเตรียมสลิปการโอนเงินที่แสดงการชำระค่าบำรุงการศึกษาและค่าเครื่องแบบให้เรียบร้อย
+                 เตรียมสำเนาทะเบียนบ้านของนักเรียนโดยต้องเป็นเอกสารที่ชัดเจนและสมบูรณ์
               </p>
             </div>
           </div>
@@ -33,10 +33,11 @@
             </div>
             <div class="flex-1">
               <h3 class="text-lg font-semibold text-gray-800 mb-1">
-                สำเนาทะเบียนบ้านของตนเอง
+                 สำเนาทะเบียนบ้านของบิดา-มารดา
               </h3>
               <p class="text-gray-600 text-sm">
-                เตรียมสำเนาทะเบียนบ้านของนักเรียนโดยต้องเป็นเอกสารที่ชัดเจนและสมบูรณ์
+                เตรียมสำเนาทะเบียนบ้านของบิดาหรือมารดา หรือผู้ปกครองที่รับผิดชอบ
+
               </p>
             </div>
           </div>
@@ -48,10 +49,10 @@
             </div>
             <div class="flex-1">
               <h3 class="text-lg font-semibold text-gray-800 mb-1">
-                สำเนาทะเบียนบ้านของบิดา-มารดา
+                สลิปการโอนชำระค่าบำรุงการศึกษาและเครื่องแบบ
               </h3>
               <p class="text-gray-600 text-sm">
-                เตรียมสำเนาทะเบียนบ้านของบิดาหรือมารดา หรือผู้ปกครองที่รับผิดชอบ
+                กรุณาเตรียมสลิปการโอนเงินที่แสดงการชำระค่าบำรุงการศึกษาและค่าเครื่องแบบให้เรียบร้อย
               </p>
             </div>
           </div>
@@ -114,32 +115,25 @@ import {
   CheckCircleIcon,
   CheckIcon
 } from '@heroicons/vue/24/outline'
-
+import api from '@/services/api' // ← เพิ่ม
+ 
 const router = useRouter()
-const currentStep = ref(2) // Current step is confirmation
-
-const steps = [
-  { label: 'อัปโหลดเอกสารเพิ่มเติม', sub: 'เอกสารประกอบการสมัคร', icon: DocumentArrowUpIcon },
-  { label: 'อัปโหลดหลักฐานการชำระเงิน', sub: 'สลิปการโอนเงิน', icon: BanknotesIcon },
-  { label: 'ยืนยันข้อมูล', sub: 'มอบตัว', icon: CheckCircleIcon },
-]
-
+ 
 const idCard = ref('')
 const errorMessage = ref('')
 const isValidIdCard = ref(false)
-
+const isLoading = ref(false) // ← เพิ่ม
+ 
 const validateIdCard = (event) => {
   const value = event.target.value
-  
-  // อนุญาตให้กรอกเฉพาะตัวเลขเท่านั้น
+ 
   if (!/^\d*$/.test(value)) {
     event.target.value = value.replace(/\D/g, '')
     return
   }
-  
+ 
   idCard.value = event.target.value
-  
-  // ตรวจสอบความถูกต้อง
+ 
   if (value.length === 0) {
     errorMessage.value = ''
     isValidIdCard.value = false
@@ -151,11 +145,29 @@ const validateIdCard = (event) => {
     isValidIdCard.value = true
   }
 }
-
-const handleSubmit = () => {
-  if (isValidIdCard.value) {
-    // นำทางไปยังหน้า SuccessView
+ 
+// ← แก้ handleSubmit ให้เชื่อม API
+const handleSubmit = async () => {
+  if (!isValidIdCard.value) return
+ 
+  isLoading.value = true
+  errorMessage.value = ''
+ 
+  try {
+    await api.post('/enrollments/confirm', {
+      idCard: idCard.value
+    })
     router.push('/success')
+  } catch (error) {
+    if (error.response?.status === 404) {
+      errorMessage.value = 'ไม่พบข้อมูลการสมัครในระบบ'
+    } else if (error.response?.status === 400) {
+      errorMessage.value = error.response.data.message || 'ไม่สามารถมอบตัวได้'
+    } else {
+      errorMessage.value = 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง'
+    }
+  } finally {
+    isLoading.value = false
   }
 }
 </script>

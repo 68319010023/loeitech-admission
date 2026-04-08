@@ -41,7 +41,7 @@ router.get('/curriculums', getCurriculums)
 router.post('/curriculums', createCurriculum)
 router.put('/curriculums/:id', updateCurriculum)
 router.delete('/curriculums/:id', deleteCurriculum)
-router.get('/curriculums/:id/children', getCurriculumChildren)  // ← เพิ่ม
+router.get('/curriculums/:id/children', getCurriculumChildren)  
 
 // Division routes
 router.get('/divisions', getDivisions)
