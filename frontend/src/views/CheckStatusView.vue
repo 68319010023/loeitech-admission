@@ -25,10 +25,10 @@
       </div>
 
       <button @click="checkStatus"
-        :disabled="idCard.length !== 13"
+        :disabled="idCard.length !== 13 || isLoading"
         class="w-full py-3 rounded-xl text-sm font-medium text-white transition-all"
-        :class="idCard.length === 13 ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-gray-200 cursor-not-allowed text-gray-400'">
-        ตรวจสอบสถานะ
+        :class="idCard.length === 13 && !isLoading ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-gray-200 cursor-not-allowed text-gray-400'">
+        {{ isLoading ? 'กำลังตรวจสอบ...' : 'ตรวจสอบสถานะ' }}
       </button>
 
       <!-- ผลลัพธ์ -->
@@ -64,6 +64,15 @@
                 <div><p class="text-xs text-gray-400">หลักสูตร</p><p class="font-medium text-emerald-600">{{ result.course }}</p></div>
                 <div><p class="text-xs text-gray-400">สาขาวิชา</p><p class="font-medium">{{ result.branch }}</p></div>
                 <div><p class="text-xs text-gray-400">วันที่สมัคร</p><p class="font-medium">{{ result.appliedAt }}</p></div>
+              </div>
+
+              <!-- Payment Information -->
+              <div v-if="result.totalAmount" class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                <p class="text-xs font-medium text-emerald-700 mb-2">ค่าใช้จ่ายทั้งหมด</p>
+                <div class="flex justify-between items-center">
+                  <span class="text-sm text-emerald-600">จำนวนเงินที่ต้องชำระ</span>
+                  <span class="text-lg font-bold text-emerald-700">{{ result.totalAmount?.toLocaleString() }} บาท</span>
+                </div>
               </div>
 
               <!-- Timeline -->
@@ -113,6 +122,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { applicationService } from '../services/applicationService'
 import {
   MagnifyingGlassIcon, CheckIcon, ClipboardDocumentCheckIcon,
   ClockIcon, CheckBadgeIcon, BanknotesIcon, ExclamationCircleIcon
@@ -121,37 +131,7 @@ import {
 const idCard = ref('')
 const result = ref<any>(null)
 const notFound = ref(false)
-
-// ข้อมูลตัวอย่าง
-const mockData: Record<string, any> = {
-  '1234567890123': {
-    name: 'นาย ตัวอย่าง ข้อมูล',
-    course: 'ปวช.',
-    branch: 'เทคโนโลยีสารสนเทศ (IT)',
-    appliedAt: '1 เม.ย. 2569',
-    updatedAt: '2 เม.ย. 2569 10:30 น.',
-    status: 'pending_payment',
-    dueDate: '5 เม.ย. 2569',
-  },
-  '9876543210987': {
-    name: 'นางสาว ตัวอย่าง สอง',
-    course: 'ปวส.',
-    branch: 'เทคนิคยานยนต์',
-    appliedAt: '28 มี.ค. 2569',
-    updatedAt: '1 เม.ย. 2569 14:20 น.',
-    status: 'enrolled',
-    dueDate: null,
-  },
-  '1111111111111': {
-    name: 'นาย ตัวอย่าง สาม',
-    course: 'ปวช.',
-    branch: 'ช่างไฟฟ้า',
-    appliedAt: '15 มี.ค. 2569',
-    updatedAt: '30 มี.ค. 2569 09:15 น.',
-    status: 'paid',
-    dueDate: null,
-  },
-}
+const isLoading = ref(false)
 
 const statusConfig: Record<string, any> = {
   pending_payment: {
@@ -194,24 +174,62 @@ function blockNonDigit(e: KeyboardEvent) {
   if (!allowed.includes(e.key) && !/^\d$/.test(e.key)) e.preventDefault()
 }
 
-function checkStatus() {
+async function checkStatus() {
   if (idCard.value.length !== 13) return
   result.value = null
   notFound.value = false
+  isLoading.value = true
 
-  const data = mockData[idCard.value]
-  if (!data) { notFound.value = true; return }
+  try {
+    const res = await applicationService.checkStatus(idCard.value)
+    const data = res.data.data
+    
+    // Map database fields to UI format
+    result.value = {
+      name: `${data.prefix} ${data.full_name}`,
+      course: data.cur_name,
+      branch: data.div_name,
+      appliedAt: formatDate(data.created_at),
+      updatedAt: formatDate(data.updated_at),
+      status: data.status,
+      dueDate: data.due_date ? formatDate(data.due_date) : null,
+      totalAmount: data.total_amount,
+      requiredAmount: data.required_amount,
+      paidAt: data.paid_at ? formatDate(data.paid_at) : null,
+      enrolledAt: data.enrolled_at ? formatDate(data.enrolled_at) : null,
+    }
 
-  result.value = data
+    const isPaid = data.status === 'paid' || data.status === 'enrolled'
+    const isEnrolled = data.status === 'enrolled'
 
-  const isPaid = data.status === 'paid' || data.status === 'enrolled'
-  const isEnrolled = data.status === 'enrolled'
+    timeline.value = [
+      { label: 'กรอกใบสมัครเรียบร้อย', done: true, date: formatDate(data.created_at) },
+      { label: 'ชำระเงินค่าสมัคร', done: isPaid, date: isPaid ? (data.paid_at ? formatDate(data.paid_at) : formatDate(data.updated_at)) : '' },
+      { label: 'มอบตัวเสร็จสมบูรณ์', done: isEnrolled, date: isEnrolled ? (data.enrolled_at ? formatDate(data.enrolled_at) : formatDate(data.updated_at)) : '' },
+    ]
+  } catch (err: any) {
+    if (err.response?.status === 404) {
+      notFound.value = true
+    } else {
+      console.error('Error checking status:', err)
+      alert('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง')
+    }
+  } finally {
+    isLoading.value = false
+  }
+}
 
-  timeline.value = [
-    { label: 'กรอกใบสมัครเรียบร้อย', done: true, date: data.appliedAt },
-    { label: 'ชำระเงินค่าสมัคร', done: isPaid, date: isPaid ? data.updatedAt : '' },
-    { label: 'มอบตัวเสร็จสมบูรณ์', done: isEnrolled, date: isEnrolled ? data.updatedAt : '' },
-  ]
+function formatDate(dateString: string) {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  const day = date.getDate()
+  const month = date.getMonth() + 1
+  const year = date.getFullYear() + 543 // Convert to Buddhist year
+  const time = date.toTimeString().slice(0, 5)
+  
+  const monthNames = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
+  
+  return `${day} ${monthNames[month - 1]} ${year} ${time}`
 }
 </script>
 

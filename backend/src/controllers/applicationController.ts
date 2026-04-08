@@ -72,7 +72,7 @@ export const getAdmissionPlan = async (req: Request, res: Response) => {
       LEFT JOIN applicants a ON a.ap_id = ap.ap_id
       WHERE ($1::varchar IS NULL OR c.cur_shortname = $1)
         AND ($2::varchar IS NULL OR ap.ap_years = $2)
-      GROUP BY ap.ap_id, c.cur_name, c.cur_shortname, d.div_name
+      GROUP BY ap.ap_id, c.cur_name, c.cur_shortname, d.div_name, ap.plan_num
       ORDER BY ap.cur_id, ap.div_id
     `, [curShortname, ap_years || null])
 

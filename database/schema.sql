@@ -14,10 +14,11 @@
 
 -- payment_status / payment_type
 -- ใช้แทนค่า string เพื่อความสม่ำเสมอของข้อมูลในคอลัมน์ payment_type
--- ค่าที่ใช้: 'บังคับจ่าย' หรือ 'ไม่บังคับจ่าย'
+-- ค่าที่ใช้: 'mandatory', 'optional', 'custom'
 CREATE TYPE public.payment_type AS ENUM (
-    'บังคับจ่าย',
-    'ไม่บังคับจ่าย'
+    'mandatory',
+    'optional',
+    'custom'
 );
 
 

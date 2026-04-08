@@ -113,11 +113,22 @@
           <div>
             <label class="text-sm text-gray-600 mb-1 block">ปีที่จบการศึกษา *</label>
             <input v-model="form.prevYear" type="text" inputmode="numeric" placeholder="พ.ศ. เช่น 2567"
-              maxlength="4" class="input-field" @keydown="blockNonDigit" />
+              maxlength="4" class="input-field" @keydown="blockNonDigit" @input="validateYear" />
+            <Transition name="fade">
+              <p v-if="yearWarning" class="text-red-500 text-xs mt-1">
+                กรุณากรอกปีไม่เกิน {{ new Date().getFullYear() + 543 }}
+              </p>
+            </Transition>
           </div>
           <div>
             <label class="text-sm text-gray-600 mb-1 block">เกรดเฉลี่ย (GPA) *</label>
-            <input v-model="form.gpa" type="text" inputmode="decimal" placeholder="เช่น 3.50" class="input-field" />
+            <input v-model="form.gpa" type="text" inputmode="decimal" placeholder="เช่น 4.00" class="input-field" 
+              @input="validateGPA" maxlength="4" />
+            <Transition name="fade">
+              <p v-if="gpaWarning" class="text-red-500 text-xs mt-1">
+                กรุณากรอกเลขไม่เกิน 4.00
+              </p>
+            </Transition>
           </div>
 
           <!-- แสดงหลักสูตรที่สมัครได้ -->
@@ -230,35 +241,34 @@
         <div v-else class="space-y-3">
           <div v-for="exp in expenses" :key="exp.exp_id"
             class="flex items-center justify-between border rounded-xl px-4 py-3"
-            :class="exp.payment_type === 'บังคับจ่าย' ? 'border-gray-200 bg-gray-50' : 'border-gray-200'">
+            :class="exp.payment_type === 'mandatory' ? 'border-gray-200 bg-gray-50' : 'border-gray-200'">
 
             <!-- ชื่อรายการ + ราคา -->
             <div class="flex items-center gap-3">
               <div class="w-2 h-2 rounded-full flex-shrink-0"
-                :class="exp.payment_type === 'บังคับจ่าย' ? 'bg-red-400' : 'bg-emerald-400'" />
+                :class="exp.payment_type === 'mandatory' ? 'bg-red-400' : 'bg-emerald-400'" />
               <div>
                 <p class="text-sm font-medium text-gray-800">{{ exp.exp_name }}</p>
                 <p class="text-xs text-gray-400">
                   {{ exp.exp_cost.toLocaleString() }} บาท
                   <span class="ml-1 px-1.5 py-0.5 rounded text-xs"
-                    :class="exp.payment_type === 'บังคับจ่าย' ? 'bg-red-100 text-red-500' : 'bg-emerald-100 text-emerald-600'">
-                    {{ exp.payment_type }}
+                    :class="exp.payment_type === 'mandatory' ? 'bg-red-100 text-red-500' : 'bg-emerald-100 text-emerald-600'">
+                    {{ exp.payment_type === 'mandatory' ? 'บังคับจ่าย' : 'ไม่บังคับจ่าย' }}
                   </span>
                 </p>
               </div>
             </div>
 
             <!-- บังคับจ่าย: แสดงแค่ราคา -->
-            <div v-if="exp.payment_type === 'บังคับจ่าย'"
+            <div v-if="exp.payment_type === 'mandatory'"
               class="text-sm font-semibold text-gray-700">
               {{ exp.exp_cost.toLocaleString() }} บาท
             </div>
-
-            <!-- ไม่บังคับ: มีตัวเลือกจำนวน -->
             <div v-else class="flex items-center gap-3">
               <select
                 v-if="exp.exp_name.includes('เครื่องแบบ') || exp.exp_name.includes('กางเกง') || exp.exp_name.includes('รองเท้า') || exp.exp_name.includes('เสื้อ')"
-                v-model="form.expenseOrders[exp.exp_id].size"
+                :value="form.expenseOrders[exp.exp_id]?.size"
+                @input="form.expenseOrders[exp.exp_id] = { ...form.expenseOrders[exp.exp_id], size: ($event.target as HTMLSelectElement).value, qty: form.expenseOrders[exp.exp_id]?.qty || 1 }"
                 class="input-field !w-20 !py-1.5 text-xs">
                 <option value="">ไซส์</option>
                 <option v-for="s in ['XS','S','M','L','XL','XXL']" :key="s">{{ s }}</option>
@@ -371,6 +381,8 @@ const showError = ref(false)
 const showConfirm = ref(false)
 const isSubmitting = ref(false)
 const isLoading = ref(false)
+const gpaWarning = ref(false)
+const yearWarning = ref(false)
 
 // ข้อมูลจาก API
 const curriculums = ref<any[]>([])
@@ -404,7 +416,7 @@ const form = reactive({
   // Step 3
   curId: 0, apId: 0,
   // Step 4
-  expenseOrders: {} as Record<number, { qty: number; size: string }>,
+  expenseOrders: {} as Record<number, { qty: number; size?: string }>,
 })
 
 // ===== Computed =====
@@ -424,7 +436,7 @@ const selectedPlan = computed(() =>
 )
 
 const requiredExpenses = computed(() =>
-  expenses.value.filter(e => e.payment_type === 'บังคับจ่าย')
+  expenses.value.filter(e => e.payment_type === 'mandatory')
 )
 
 // ยอดบังคับจ่าย (qty = 1 เสมอ)
@@ -436,7 +448,7 @@ const requiredTotal = computed(() =>
 const totalPrice = computed(() => {
   let total = requiredTotal.value
   expenses.value
-    .filter(e => e.payment_type !== 'บังคับจ่าย')
+    .filter(e => e.payment_type !== 'mandatory')
     .forEach(e => {
       const qty = form.expenseOrders[e.exp_id]?.qty || 0
       total += e.exp_cost * qty
@@ -485,8 +497,8 @@ async function loadExpenses(curId: number) {
   try {
     const res = await applicationService.getExpenses(curId)
     expenses.value = res.data.data
-    // init orders — default qty = 1 ทุกรายการ
-    expenses.value.forEach(e => {
+    // init orders  default qty = 1  1
+    expenses.value.forEach((e: any) => {
       if (!form.expenseOrders[e.exp_id]) {
         form.expenseOrders[e.exp_id] = { qty: 1, size: '' }
       }
@@ -516,6 +528,67 @@ function formatPhone(e: Event) {
   else form.phone = digits.slice(0, 3) + '-' + digits.slice(3, 6) + '-' + digits.slice(6)
 }
 
+function validateGPA(e: Event) {
+  const input = e.target as HTMLInputElement
+  let value = input.value
+  
+  // Allow only digits and one decimal point
+  value = value.replace(/[^0-9.]/g, '')
+  
+  // Remove multiple decimal points
+  const parts = value.split('.')
+  if (parts.length > 2) {
+    value = parts[0] + '.' + parts.slice(1).join('')
+  }
+  
+  // Auto add decimal point for single digits (except 4) - only if input is longer than current value
+  const currentValue = form.gpa || ''
+  if (value.length === 1 && value !== '4' && !value.includes('.') && value.length > currentValue.length) {
+    value = value + '.'
+  }
+  
+  // Limit to 4.00 with warning
+  const numValue = parseFloat(value)
+  if (numValue > 4) {
+    // Show warning instead of auto-correcting
+    input.value = form.gpa // Revert to previous value
+    gpaWarning.value = true
+    return
+  } else if (parts[1] && parts[1].length > 2) {
+    value = parts[0] + '.' + parts[1].slice(0, 2)
+  } else {
+    // Hide warning when value is valid
+    gpaWarning.value = false
+  }
+  
+  form.gpa = value
+}
+
+function validateYear(e: Event) {
+  const input = e.target as HTMLInputElement
+  let value = input.value
+  
+  // Allow only digits
+  value = value.replace(/[^0-9]/g, '')
+  
+  // Get current year in Buddhist calendar
+  const currentYear = new Date().getFullYear() + 543
+  
+  // Validate year range
+  const yearValue = parseInt(value)
+  if (yearValue > currentYear) {
+    // Show warning and revert to previous value
+    input.value = form.prevYear
+    yearWarning.value = true
+    return
+  } else {
+    // Hide warning when value is valid
+    yearWarning.value = false
+  }
+  
+  form.prevYear = value
+}
+
 function handleUpload(field: 'idFront' | 'idBack' | 'eduFront' | 'eduBack', event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (!file) return
@@ -540,7 +613,12 @@ function validateStep() {
   if (currentStep.value === 1) {
     const eduValid = form.docType && form.eduFront &&
       (form.docType !== 'certificate' || form.eduBack)
-    return !!(form.prevSchool && form.prevLevel && form.prevYear && form.gpa && eduValid)
+    const gpaValue = parseFloat(form.gpa)
+    const gpaValid = form.gpa && gpaValue <= 4.00 && !isNaN(gpaValue)
+    const yearValue = parseInt(form.prevYear)
+    const currentYear = new Date().getFullYear() + 543
+    const yearValid = form.prevYear && yearValue <= currentYear && !isNaN(yearValue)
+    return !!(form.prevSchool && form.prevLevel && yearValid && gpaValid && eduValid)
   }
   if (currentStep.value === 2) return !!form.apId
   return true
@@ -583,15 +661,15 @@ async function onConfirmed() {
     // รวม required (qty=1) + optional (ตามที่เลือก)
     const expenseList = expenses.value
       .filter(e => {
-        if (e.payment_type === 'บังคับจ่าย') return true
+        if (e.payment_type === 'mandatory') return true
         return (form.expenseOrders[e.exp_id]?.qty || 0) > 0
       })
       .map(e => ({
         exp_id: e.exp_id,
-        quantity: e.payment_type === 'บังคับจ่าย' ? 1 : form.expenseOrders[e.exp_id].qty,
+        quantity: e.payment_type === 'mandatory' ? 1 : (form.expenseOrders[e.exp_id]?.qty || 1),
         size: form.expenseOrders[e.exp_id]?.size || null,
         unit_price: e.exp_cost,
-        is_required: e.payment_type === 'บังคับจ่าย',
+        is_required: e.payment_type === 'mandatory',
       }))
     fd.append('expenses', JSON.stringify(expenseList))
 
