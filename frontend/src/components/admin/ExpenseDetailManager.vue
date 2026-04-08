@@ -65,7 +65,8 @@
               </div>
             </td>
             <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-              {{ expense.curriculum?.cur_name ?? '-' }}
+              {{ expense.curriculum?.cur_shortname ?? '-' }}
+
             </td>
             <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
               {{ expense.exp_cost.toLocaleString() }} บาท
