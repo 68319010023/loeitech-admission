@@ -1,6 +1,13 @@
 import { Router } from 'express'
-import { confirmEnrollment, getEnrollmentStatus } from '../controllers/enrollmentController'
+import {
+  confirmEnrollment,
+  getEnrollmentStatus,
+  getOnsiteEnrollments,
+  upsertOnsiteEnrollment,
+  getEnrollmentSummary,
+} from '../controllers/enrollmentController'
 import { upload } from '../middleware/upload'
+
 
 const router = Router()
 
@@ -17,5 +24,10 @@ router.post('/confirm', upload.fields([
 
 // ตรวจสอบสถานะ
 router.get('/status/:idCard', getEnrollmentStatus)
+
+// เพิ่ม route onsite
+router.get('/onsite', getOnsiteEnrollments)
+router.post('/onsite', upsertOnsiteEnrollment)
+router.get('/summary', getEnrollmentSummary)
 
 export default router

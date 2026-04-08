@@ -10,14 +10,13 @@
         </h2>
         <p class="text-gray-600 mt-1">เพิ่ม แก้ไข หรือลบข้อมูลเเผนการรับสมัครต่างๆ</p>
       </div>
-      <button
-        @click="showAddModal = true"
+      <button @click="showAddModal = true"
         class="bg-emerald-500 text-white px-4 py-2 rounded-lg hover:bg-emerald-600 transition-colors">
         <PlusIcon class="w-5 h-5 inline-block mr-1" />
         เพิ่มแผนรับสมัคร
       </button>
 
-      
+
 
     </div>
 
@@ -25,29 +24,24 @@
     <div class="bg-white rounded-lg border border-gray-200 p-4 mb-6">
       <div class="flex flex-col sm:flex-row gap-4">
         <div class="flex items-center gap-4">
-          <select
-            v-model="selectedCurriculum"
-            class="w-115 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-          >
-            <option value="">ค้นหาตามหลักสูตรทั้งหมด</option>
+          <select v-model="selectedCurriculum" @change="selectedDivision = ''"
+            class="h-10 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors">
+            <option value="">หลักสูตร</option>
             <option v-for="curriculum in curriculums" :key="curriculum.cur_id" :value="curriculum.cur_id">
-              {{ curriculum.cur_name }}
+              {{ curriculum.cur_shortname }}
             </option>
           </select>
         </div>
         <div class="flex items-center gap-4">
-          <select
-            v-model="selectedDivision"
-            class="w-115 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-          >
-            <option value="">ค้นหาตามสาขาวิชาทั้งหมด</option>
-            <option v-for="division in filteredDivisions" :key="division.div_id" :value="division.div_id">
+          <select v-model="selectedDivision" class="h-10 px-4 py-2 border border-gray-300 rounded-lg ...">
+            <option value="">สาขาวิชา</option>
+            <option v-for="division in filteredDivisionsForFilter" :key="division.div_id" :value="division.div_id">
               {{ division.div_name }}
             </option>
           </select>
         </div>
         <div class="flex items-center space-x-2 text-sm text-gray-600">
-          <span>พบ {{ filteredAdmissionPlans.length }} รายการ</span>
+          <span>{{ filteredAdmissionPlans.length }} รายการ</span>
         </div>
       </div>
     </div>
@@ -57,33 +51,30 @@
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลำดับ</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ปีการศึกษา</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">หลักสูตร</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สาขาวิชา</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">หลักสูตร-สาขาวิชา
+            </th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จำนวนรับ</th>
             <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">จัดการ</th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
           <tr v-for="(plan, index) in filteredAdmissionPlans" :key="plan.ap_id">
-            <td class="px-6 py-4 text-sm text-gray-900 text-center">
-              <div class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-800 rounded-full text-sm font-medium">{{ index + 1 }}</div>
-            </td>
+
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ plan.ap_years }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-              {{ plan.curriculum?.cur_shortname || plan.curriculum?.cur_name || 'N/A' }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-              {{ plan.division?.div_name || 'N/A' }}
+              {{ plan.curriculum?.cur_shortname || plan.curriculum?.cur_name || 'N/A' }} - {{ plan.division?.div_name ||
+                'N/A' }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ plan.plan_num }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-center">
               <div class="flex items-center justify-center space-x-2">
-                <button @click="editAdmissionPlan(plan)" class="inline-flex items-center px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors">
+                <button @click="editAdmissionPlan(plan)"
+                  class="inline-flex items-center px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors">
                   <PencilIcon class="w-4 h-4" />
                 </button>
-                <button @click="openDeleteModal(plan)" class="inline-flex items-center px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
+                <button @click="openDeleteModal(plan)"
+                  class="inline-flex items-center px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
                   <TrashIcon class="w-4 h-4" />
                 </button>
               </div>
@@ -91,7 +82,7 @@
           </tr>
         </tbody>
       </table>
-      
+
       <!-- No data found message -->
       <div v-if="filteredAdmissionPlans.length === 0" class="text-center py-12">
         <div class="w-20 h-20 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
@@ -99,8 +90,7 @@
         </div>
         <h3 class="text-lg font-medium text-gray-900 mb-2">ไม่พบข้อมูลแผนรับสมัคร</h3>
         <p class="text-gray-500 mb-6">ไม่พบข้อมูลที่ตรงกับเงื่อนไขการค้นหา หรือยังไม่มีข้อมูลในระบบ</p>
-        <button
-          @click="showAddModal = true"
+        <button @click="showAddModal = true"
           class="bg-emerald-500 text-white px-6 py-2 rounded-lg hover:bg-emerald-600 transition-colors inline-flex items-center">
           <PlusIcon class="w-5 h-5 mr-2" />
           เพิ่มแผนรับสมัครแรก
@@ -114,7 +104,8 @@
         <div v-if="toast.show"
           class="fixed top-4 right-4 z-[99999] flex items-center space-x-3 px-6 py-4 rounded-xl shadow-2xl text-white"
           :class="toast.type === 'success' ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gradient-to-r from-red-500 to-pink-600'">
-          <svg v-if="toast.type === 'success'" class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg v-if="toast.type === 'success'" class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
           <svg v-else class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -298,18 +289,41 @@ const selectedDivision = ref('')
 const toast = ref({ show: false, type: 'success' as 'success' | 'error', title: '', message: '' })
 let toastTimer: ReturnType<typeof setTimeout> | null = null
 
+// แทนที่ filteredDivisions และ filteredAdmissionPlans เดิม
+
+// สาขาที่กรองตาม selectedCurriculum (สำหรับ dropdown filter)
+const filteredDivisionsForFilter = computed(() => {
+  let divs = divisions.value
+  if (selectedCurriculum.value) {
+    divs = divs.filter(d => d.cur_id === Number(selectedCurriculum.value))
+  }
+  // deduplicate ชื่อซ้ำ
+  const seen = new Set<string>()
+  return divs.filter(d => {
+    if (seen.has(d.div_name)) return false
+    seen.add(d.div_name)
+    return true
+  })
+})
+
 const filteredDivisions = computed(() => {
-  if (!formData.value.cur_id) return []
-  return divisions.value.filter(division => division.cur_id === formData.value.cur_id)
+  const curId = Number(formData.value.cur_id)
+  if (!curId) return divisions.value
+  return divisions.value.filter(d => d.cur_id === curId)
 })
 
 const filteredAdmissionPlans = computed(() => {
   let filtered = admissionPlans.value
   if (selectedCurriculum.value) {
-    filtered = filtered.filter(plan => plan.cur_id === Number(selectedCurriculum.value))
+    filtered = filtered.filter(plan =>
+      // รองรับทั้ง plan.cur_id และ plan.curriculum.cur_id
+      Number(plan.cur_id || plan.curriculum?.cur_id) === Number(selectedCurriculum.value)
+    )
   }
   if (selectedDivision.value) {
-    filtered = filtered.filter(plan => plan.div_id === Number(selectedDivision.value))
+    filtered = filtered.filter(plan =>
+      Number(plan.div_id || plan.division?.div_id) === Number(selectedDivision.value)
+    )
   }
   return filtered
 })
@@ -330,7 +344,7 @@ const fetchAdmissionPlans = async () => {
       apiService.getCurriculums(),
       apiService.getDivisions()
     ])
-    
+
     admissionPlans.value = plansResponse.data
     curriculums.value = curriculumsResponse.data
     divisions.value = divisionsResponse.data
@@ -395,7 +409,7 @@ const deleteAdmissionPlan = async (id: number) => {
   if (confirm('คุณต้องการลบแผนรับสมัครนี้ใช่หรือไม่?')) {
     try {
       const response = await apiService.deleteAdmissionPlan(id)
-      
+
       if (response.success) {
         // Success toast
         const toast = document.createElement('div')
@@ -412,24 +426,24 @@ const deleteAdmissionPlan = async (id: number) => {
           </div>
         `
         document.body.appendChild(toast)
-        
+
         // Animate in
         setTimeout(() => {
           toast.classList.remove('translate-x-full')
           toast.classList.add('translate-x-0')
         }, 100)
-        
+
         // Remove after delay
         setTimeout(() => {
           toast.classList.add('translate-x-full', 'opacity-0')
           setTimeout(() => toast.remove(), 500)
         }, 4000)
       }
-      
+
       await fetchAdmissionPlans()
     } catch (error: any) {
       console.error('Error deleting admission plan:', error)
-      
+
       // Error toast
       const errorMessage = error?.message || 'เกิดข้อผิดพลาดในการลบแผนรับสมัคร'
       const toast = document.createElement('div')
@@ -446,13 +460,13 @@ const deleteAdmissionPlan = async (id: number) => {
         </div>
       `
       document.body.appendChild(toast)
-      
+
       // Animate in
       setTimeout(() => {
         toast.classList.remove('translate-x-full')
         toast.classList.add('translate-x-0')
       }, 100)
-      
+
       // Remove after delay
       setTimeout(() => {
         toast.classList.add('translate-x-full', 'opacity-0')
@@ -503,8 +517,25 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.modal-enter-active, .modal-leave-active { transition: all 0.25s ease; }
-.modal-enter-from, .modal-leave-to { opacity: 0; transform: scale(0.96); }
-.toast-enter-active, .toast-leave-active { transition: all 0.4s ease; }
-.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateX(100%); }
+.modal-enter-active,
+.modal-leave-active {
+  transition: all 0.25s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+.toast-enter-active,
+.toast-leave-active {
+  transition: all 0.4s ease;
+}
+
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateX(100%);
+}
 </style>

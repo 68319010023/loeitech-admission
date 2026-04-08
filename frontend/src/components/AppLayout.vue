@@ -65,6 +65,12 @@
           <ReceiptPercentIcon class="w-5 h-5" /> ค่าใช้จ่าย
         </RouterLink>
 
+        <RouterLink to="/admin/onsite-enrollment"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+          :class="$route.path === '/admin/onsite-enrollment' ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'">
+          <ClipboardDocumentListIcon class="w-5 h-5" /> บันทึกยอดมอบตัวออนไซต์
+        </RouterLink>
+
 
       </nav>
 
@@ -110,5 +116,6 @@ import {
   ClipboardDocumentCheckIcon,
   ReceiptPercentIcon,
   ArrowRightOnRectangleIcon,  // ✅ เพิ่ม import ที่หายไป
+    ClipboardDocumentListIcon,
 } from '@heroicons/vue/24/outline'
 </script>

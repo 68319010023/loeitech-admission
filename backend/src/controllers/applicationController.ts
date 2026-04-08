@@ -54,28 +54,28 @@ export const getAdmissionPlan = async (req: Request, res: Response) => {
     else if (prev_level === 'm6' || prev_level === 'pvc') curShortname = 'ปวส.'
 
     const result = await pool.query(`
-      SELECT
-        ap.ap_id,
-        ap.ap_years,
-        ap.plan_num,
-        ap.cur_id,
-        c.cur_name,
-        c.cur_shortname,
-        ap.div_id,
-        d.div_name,
-        COUNT(a.app_id) AS applicant_count,
-        ap.plan_num - COUNT(a.app_id)::int AS remaining,
-        CASE WHEN ap.plan_num - COUNT(a.app_id)::int <= 0 THEN true ELSE false END AS is_full
-      FROM admission_plan ap
-      JOIN curriculums c ON c.cur_id = ap.cur_id
-      JOIN divisions d ON d.div_id = ap.div_id
-      LEFT JOIN applicants a ON a.ap_id = ap.ap_id
-      WHERE ($1::varchar IS NULL OR c.cur_shortname = $1)
-        AND ($2::varchar IS NULL OR ap.ap_years = $2)
-      GROUP BY ap.ap_id, c.cur_name, c.cur_shortname, d.div_name, ap.plan_num
-      ORDER BY ap.cur_id, ap.div_id
-    `, [curShortname, ap_years || null])
-
+  SELECT
+    ap.ap_id, ap.ap_years, ap.plan_num,
+    ap.cur_id, c.cur_name, c.cur_shortname,
+    ap.div_id, d.div_name,
+    COUNT(DISTINCT a.app_id) FILTER (WHERE a.status = 'enrolled') AS online_enrolled,
+    COALESCE(o.count, 0) AS onsite_enrolled,
+    ap.plan_num - (
+      COUNT(DISTINCT a.app_id) FILTER (WHERE a.status = 'enrolled') + COALESCE(o.count, 0)
+    ) AS remaining,
+    CASE WHEN ap.plan_num - (
+      COUNT(DISTINCT a.app_id) FILTER (WHERE a.status = 'enrolled') + COALESCE(o.count, 0)
+    ) <= 0 THEN true ELSE false END AS is_full
+  FROM admission_plan ap
+  JOIN curriculums c ON c.cur_id = ap.cur_id
+  JOIN divisions d ON d.div_id = ap.div_id
+  LEFT JOIN applicants a ON a.ap_id = ap.ap_id
+  LEFT JOIN onsite_enrollments o ON o.ap_id = ap.ap_id
+  WHERE ($1::varchar IS NULL OR c.cur_shortname = $1)
+    AND ($2::varchar IS NULL OR ap.ap_years = $2)
+  GROUP BY ap.ap_id, c.cur_name, c.cur_shortname, d.div_name, o.count
+  ORDER BY ap.cur_id, ap.div_id
+`, [curShortname, ap_years || null])
     sendSuccess(res, result.rows)
   } catch (err) {
     sendError(res, 'ไม่สามารถดึงข้อมูลแผนการรับสมัครได้', 500, err)
@@ -130,7 +130,7 @@ export const createApplication = async (req: Request, res: Response) => {
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
       RETURNING app_id
     `, [id_card_number, id_type || 'thai_id', prefix, full_name, address, phone, email,
-        prev_school, prev_level, prev_year, gpa, cur_id, div_id, ap_id])
+      prev_school, prev_level, prev_year, gpa, cur_id, div_id, ap_id])
 
     const app_id = appResult.rows[0].app_id
 
@@ -171,7 +171,7 @@ export const createApplication = async (req: Request, res: Response) => {
           (app_id, exp_id, quantity, size, unit_price, total_price, is_required)
         VALUES ($1,$2,$3,$4,$5,$6,$7)
       `, [app_id, exp.exp_id, exp.quantity, exp.size || null,
-          exp.unit_price, total, exp.is_required])
+        exp.unit_price, total, exp.is_required])
     }
 
     // สร้างรายการชำระเงิน

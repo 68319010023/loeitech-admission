@@ -111,3 +111,83 @@ export const getEnrollmentStatus = async (req: Request, res: Response) => {
     sendError(res, 'เกิดข้อผิดพลาด', 500, err)
   }
 }
+
+// ── Onsite Enrollment ────────────────────────────────────
+
+// ดึงยอดออนไซต์ทั้งหมด
+export const getOnsiteEnrollments = async (_req: Request, res: Response) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        o.onsite_id, o.ap_id, o.count, o.note,
+        o.recorded_by, o.recorded_at, o.updated_at,
+        ap.ap_years, ap.plan_num,
+        c.cur_name, c.cur_shortname,
+        d.div_name,
+        COUNT(DISTINCT a.app_id) FILTER (WHERE a.status = 'enrolled') AS online_count
+      FROM onsite_enrollments o
+      JOIN admission_plan ap ON ap.ap_id = o.ap_id
+      JOIN curriculums c ON c.cur_id = ap.cur_id
+      JOIN divisions d ON d.div_id = ap.div_id
+      LEFT JOIN applicants a ON a.ap_id = ap.ap_id
+      GROUP BY o.onsite_id, ap.ap_id, ap.ap_years, ap.plan_num,c.cur_id,
+               c.cur_name, c.cur_shortname, d.div_name
+      ORDER BY ap.ap_years DESC, c.cur_id, d.div_name
+    `)
+    sendSuccess(res, result.rows)
+  } catch (err) {
+    sendError(res, 'ไม่สามารถดึงข้อมูลได้', 500, err)
+  }
+}
+
+// บันทึก/อัพเดทยอดออนไซต์ (upsert)
+export const upsertOnsiteEnrollment = async (req: Request, res: Response) => {
+  try {
+    const { ap_id, count, note, recorded_by } = req.body
+    if (!ap_id || count === undefined) {
+      return sendError(res, 'กรุณาระบุ ap_id และจำนวน', 400)
+    }
+    const result = await pool.query(`
+      INSERT INTO onsite_enrollments (ap_id, count, note, recorded_by)
+      VALUES ($1, $2, $3, $4)
+      ON CONFLICT (ap_id) DO UPDATE SET
+        count       = EXCLUDED.count,
+        note        = EXCLUDED.note,
+        recorded_by = EXCLUDED.recorded_by,
+        updated_at  = NOW()
+      RETURNING *
+    `, [ap_id, count, note || null, recorded_by || 'staff'])
+    sendSuccess(res, result.rows[0], 'บันทึกข้อมูลเรียบร้อย')
+  } catch (err) {
+    sendError(res, 'ไม่สามารถบันทึกข้อมูลได้', 500, err)
+  }
+}
+
+// สรุปยอดรวม online + onsite แยกตามสาขา
+export const getEnrollmentSummary = async (_req: Request, res: Response) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        ap.ap_id, ap.ap_years, ap.plan_num,
+        c.cur_name, c.cur_shortname,c.cur_id,
+        d.div_name,
+        COUNT(DISTINCT a.app_id) FILTER (WHERE a.status = 'enrolled') AS online_enrolled,
+        COALESCE(o.count, 0) AS onsite_enrolled,
+        COUNT(DISTINCT a.app_id) FILTER (WHERE a.status = 'enrolled') + COALESCE(o.count, 0) AS total_enrolled,
+        ap.plan_num - (
+          COUNT(DISTINCT a.app_id) FILTER (WHERE a.status = 'enrolled') + COALESCE(o.count, 0)
+        ) AS remaining
+      FROM admission_plan ap
+      JOIN curriculums c ON c.cur_id = ap.cur_id
+      JOIN divisions d ON d.div_id = ap.div_id
+      LEFT JOIN applicants a ON a.ap_id = ap.ap_id
+      LEFT JOIN onsite_enrollments o ON o.ap_id = ap.ap_id
+      GROUP BY ap.ap_id, ap.ap_years, ap.plan_num,c.cur_id,
+               c.cur_name, c.cur_shortname, d.div_name, o.count
+      ORDER BY ap.ap_years DESC, c.cur_id, d.div_name
+    `)
+    sendSuccess(res, result.rows)
+  } catch (err) {
+    sendError(res, 'ไม่สามารถดึงข้อมูลสรุปได้', 500, err)
+  }
+}

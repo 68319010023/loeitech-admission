@@ -17,8 +17,8 @@
 
           <div class="flex items-center space-x-3">
             <div class="flex items-center bg-emerald-50 px-4 py-2 rounded-lg">
-              <div class="w-3 h-3 bg-emerald-500 rounded-full mr-2 animate-pulse"></div>
-              <span class="text-emerald-700 font-medium">ระบบพร้อมใช้งาน</span>
+              
+              
             </div>
           </div>
         </div>
