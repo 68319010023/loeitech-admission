@@ -1,21 +1,22 @@
 import { Router } from 'express'
-import { 
-  getAdmissionPlans, 
-  createAdmissionPlan, 
-  updateAdmissionPlan, 
-  deleteAdmissionPlan 
+import {
+  getAdmissionPlans,
+  createAdmissionPlan,
+  updateAdmissionPlan,
+  deleteAdmissionPlan
 } from '../controllers/admissionPlanController'
-import { 
-  getExpenseDetails, 
-  createExpenseDetail, 
-  updateExpenseDetail, 
-  deleteExpenseDetail 
+import {
+  getExpenseDetails,
+  createExpenseDetail,
+  updateExpenseDetail,
+  deleteExpenseDetail
 } from '../controllers/expenseDetailController'
 import {
   getCurriculums,
   createCurriculum,
   updateCurriculum,
-  deleteCurriculum
+  deleteCurriculum,
+  getCurriculumChildren   // ← เพิ่ม
 } from '../controllers/curriculumController'
 import {
   getDivisions,
@@ -24,13 +25,23 @@ import {
   deleteDivision
 } from '../controllers/divisionController'
 
+import {
+  getUsers,
+  createUser,
+  updateUser,
+  deleteUser
+} from '../controllers/userController'
+ 
+
 const router = Router()
+
 
 // Curriculum routes
 router.get('/curriculums', getCurriculums)
 router.post('/curriculums', createCurriculum)
 router.put('/curriculums/:id', updateCurriculum)
 router.delete('/curriculums/:id', deleteCurriculum)
+router.get('/curriculums/:id/children', getCurriculumChildren)  // ← เพิ่ม
 
 // Division routes
 router.get('/divisions', getDivisions)
@@ -49,5 +60,10 @@ router.get('/expense-detail', getExpenseDetails)
 router.post('/expense-detail', createExpenseDetail)
 router.put('/expense-detail/:id', updateExpenseDetail)
 router.delete('/expense-detail/:id', deleteExpenseDetail)
+
+router.get('/users', getUsers)
+router.post('/users', createUser)
+router.put('/users/:id', updateUser)
+router.delete('/users/:id', deleteUser)
 
 export default router

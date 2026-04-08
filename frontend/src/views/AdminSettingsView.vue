@@ -1,22 +1,24 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
     <!-- Header Section -->
-    <div class="bg-white shadow-sm border-b border-emerald-100">
+    <div class="bg-white shadow-lg border-b border-emerald-100">
       <div class="max-w-7xl mx-auto px-6 py-8">
         <div class="flex items-center justify-between">
+
           <div>
-            <h1 class="text-3xl font-bold text-gray-900 flex items-center">
-              <div class="w-8 h-8 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center mr-3">
-                <Cog6ToothIcon class="w-5 h-5 text-white" />
+            <h1 class="text-4xl font-bold text-gray-900 flex items-center">
+              <div class="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
+                <Cog6ToothIcon class="w-6 h-6 text-white" />
               </div>
               ตั้งค่าเเผนการรับสมัครนักศึกษา
             </h1>
-            <p class="text-gray-600 mt-2">จัดการข้อมูลพื้นฐานของระบบรับสมัครนักเรียนนักศึกษา</p>
+            <p class="text-gray-600 mt-3 text-lg">จัดการข้อมูลพื้นฐานของระบบรับสมัครนักเรียนนักศึกษา</p>
           </div>
-          <div class="flex items-center space-x-2 text-sm text-gray-500">
-            <div class="flex items-center">
-              <div class="w-2 h-2 bg-emerald-500 rounded-full mr-2 animate-pulse"></div>
-              ระบบพร้อมใช้งาน
+
+          <div class="flex items-center space-x-3">
+            <div class="flex items-center bg-emerald-50 px-4 py-2 rounded-lg">
+              <div class="w-3 h-3 bg-emerald-500 rounded-full mr-2 animate-pulse"></div>
+              <span class="text-emerald-700 font-medium">ระบบพร้อมใช้งาน</span>
             </div>
           </div>
         </div>
@@ -79,8 +81,11 @@
             >
               <component :is="tab.icon" class="w-5 h-5 mr-2" />
               {{ tab.label }}
-              <span v-if="tab.count" class="ml-2 px-2 py-1 text-xs rounded-full" 
-                :class="activeTab === tab.key ? 'bg-emerald-200 text-emerald-800' : 'bg-gray-200 text-gray-600'">
+              <span
+                v-if="tab.count !== undefined"
+                class="ml-2 px-2 py-1 text-xs rounded-full"
+                :class="activeTab === tab.key ? 'bg-emerald-200 text-emerald-800' : 'bg-gray-200 text-gray-600'"
+              >
                 {{ tab.count }}
               </span>
             </button>
@@ -90,7 +95,8 @@
         <!-- Tab Content -->
         <div class="p-6">
           <transition name="fade" mode="out-in">
-            <component :is="getTabComponent()" @refresh="fetchStats" />
+            <!-- ✅ ใช้ computed แทน function -->
+            <component :is="currentTabComponent" :key="activeTab" @refresh="fetchStats" />
           </transition>
         </div>
       </div>
@@ -125,18 +131,15 @@ const tabs = computed(() => [
   { key: 'admission_plan', label: 'แผนรับสมัคร', icon: CalendarDaysIcon, count: stats.value.totalAdmissionPlans }
 ])
 
-const getTabComponent = () => {
+// ✅ computed แทน function — re-render เฉพาะเมื่อ activeTab เปลี่ยน
+const currentTabComponent = computed(() => {
   switch (activeTab.value) {
-    case 'curriculums':
-      return CurriculumsManager
-    case 'divisions':
-      return DivisionsManager
-    case 'admission_plan':
-      return AdmissionPlanManager
-    default:
-      return CurriculumsManager
+    case 'curriculums': return CurriculumsManager
+    case 'divisions': return DivisionsManager
+    case 'admission_plan': return AdmissionPlanManager
+    default: return CurriculumsManager
   }
-}
+})
 
 const fetchStats = async () => {
   try {
@@ -145,7 +148,6 @@ const fetchStats = async () => {
       apiService.getDivisions(),
       apiService.getAdmissionPlans()
     ])
-    
     stats.value = {
       totalCurriculums: curriculumsRes.data.length,
       totalDivisions: divisionsRes.data.length,
@@ -166,7 +168,6 @@ onMounted(() => {
 .fade-leave-active {
   transition: opacity 0.3s ease;
 }
-
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;

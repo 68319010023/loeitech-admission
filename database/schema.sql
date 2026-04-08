@@ -25,63 +25,38 @@ CREATE TYPE public.payment_type AS ENUM (
 -- MASTER DATA TABLES (ตารางข้อมูลหลัก)
 -- ตารางเหล่านี้เป็นข้อมูลที่ admin/staff กรอกไว้ล่วงหน้า
 -- ============================================================
-
-
--- ------------------------------------------------------------
--- curriculums — หลักสูตร
--- ------------------------------------------------------------
--- เก็บประเภทหลักสูตรของวิทยาลัย
--- ตัวอย่างข้อมูล:
---   cur_id=1, cur_name='ประกาศนียบัตรวิชาชีพ', cur_shortname='ปวช.'
---   cur_id=2, cur_name='ประกาศนียบัตรวิชาชีพชั้นสูง', cur_shortname='ปวส.'
--- หมายเหตุ: cur_shortname ใช้ตรวจสอบสิทธิ์สมัครตามวุฒิการศึกษา
---   - วุฒิ ม.3  → สมัครได้เฉพาะ cur_shortname = 'ปวช.'
---   - วุฒิ ม.6  → สมัครได้เฉพาะ cur_shortname = 'ปวส.'
---   - วุฒิ ปวช. → สมัครได้เฉพาะ cur_shortname = 'ปวส.' ทุกสาขา
-CREATE TABLE public.curriculums (
-    cur_id  serial4      NOT NULL,  -- PK, auto increment
-    cur_name     varchar(200) NULL, -- ชื่อเต็มของหลักสูตร
-    cur_shortname varchar(50) NULL, -- ชื่อย่อ (ปวช./ปวส.) — ใช้ใน business logic
-    CONSTRAINT curriculums_pkey PRIMARY KEY (cur_id)
+CREATE TABLE admission_plan (
+    ap_id      SERIAL PRIMARY KEY,
+    ap_years   VARCHAR(10)  NOT NULL,                              -- ปีการศึกษา เช่น '2568'
+    div_id     INTEGER NOT NULL REFERENCES divisions(div_id),      -- FK → divisions
+    cur_id     INTEGER NOT NULL REFERENCES curriculums(cur_id),    -- FK → curriculums
+    plan_num   INTEGER NOT NULL
 );
 
-
--- ------------------------------------------------------------
--- divisions — สาขาวิชา
--- ------------------------------------------------------------
--- เก็บรายชื่อสาขาวิชาทั้งหมดของวิทยาลัย
--- แต่ละสาขาผูกกับหลักสูตร (ปวช. หรือ ปวส.) ผ่าน cur_id
--- ตัวอย่างข้อมูล:
---   div_id=1, div_name='ช่างยนต์', cur_id=1 (ปวช.)
---   div_id=2, div_name='เทคนิคยานยนต์', cur_id=2 (ปวส.)
-CREATE TABLE public.divisions (
-    div_id   serial4      NOT NULL,  -- PK, auto increment
-    div_name varchar(100) NULL,      -- ชื่อสาขาวิชา
-    cur_id   int4         NULL,      -- FK → curriculums.cur_id (หลักสูตรที่สาขานี้สังกัด)
-    CONSTRAINT divisions_pkey PRIMARY KEY (div_id),
-    CONSTRAINT fk_cur_id FOREIGN KEY (cur_id) REFERENCES public.curriculums(cur_id)
+-- ============================================================
+-- 4. ตาราง expense_detail (ค่าใช้จ่าย)
+-- ============================================================
+CREATE TABLE expense_detail (
+    exp_id     SERIAL PRIMARY KEY,
+    exp_name   VARCHAR(200) NOT NULL,                              -- ชื่อรายการค่าใช้จ่าย
+    exp_detail TEXT         NOT NULL,                              -- รายละเอียด
+    exp_img    TEXT,                                               -- รูปประกอบ (allow null)
+    cur_id     INTEGER NOT NULL REFERENCES curriculums(cur_id),    -- FK → curriculums
+    exp_cost   DOUBLE PRECISION NOT NULL
 );
 
-
--- ------------------------------------------------------------
--- expense_detail — รายละเอียดค่าใช้จ่าย
--- ------------------------------------------------------------
--- เก็บรายการค่าใช้จ่ายของแต่ละหลักสูตร เช่น
---   ค่าธรรมเนียมการศึกษา, ค่าห้องสมุด, ค่าอินเทอร์เน็ต,
---   เครื่องแบบ, รองเท้า, อุปกรณ์การเรียน ฯลฯ
--- payment_type กำหนดว่ารายการนี้บังคับจ่ายหรือไม่
---   - 'บังคับจ่าย'    → ผู้สมัครต้องชำระทุกคน ไม่มีตัวเลือก
---   - 'ไม่บังคับจ่าย' → ผู้สมัครเลือกสั่งหรือไม่ก็ได้ (เช่น เครื่องแบบ)
-CREATE TABLE public.expense_detail (
-    exp_id       serial4      NOT NULL,  -- PK, auto increment
-    exp_name     varchar(200) NULL,      -- ชื่อรายการค่าใช้จ่าย
-    exp_detail   text         NOT NULL,  -- รายละเอียดเพิ่มเติม
-    exp_img      text         NULL,      -- URL รูปภาพประกอบ (ถ้ามี)
-    cur_id       int4         NULL,      -- FK → curriculums.cur_id (ค่าใช้จ่ายของหลักสูตรไหน)
-    exp_cost     float8       NULL,      -- ราคาต่อหน่วย (บาท)
-    payment_type varchar(20)  NULL,      -- 'บังคับจ่าย' หรือ 'ไม่บังคับจ่าย'
-    CONSTRAINT expense_detail_pkey PRIMARY KEY (exp_id),
-    CONSTRAINT fk_cur_id FOREIGN KEY (cur_id) REFERENCES public.curriculums(cur_id)
+-- ============================================================
+-- 5. ตาราง users (ผู้ใช้งานระบบ)
+-- ============================================================
+CREATE TABLE users (
+    id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    username   VARCHAR(50)  UNIQUE NOT NULL,
+    email      VARCHAR(100) UNIQUE NOT NULL,
+    password   VARCHAR(255) NOT NULL,
+    role       VARCHAR(20)  DEFAULT 'student' CHECK (role IN ('admin', 'student')),
+    full_name  VARCHAR(100),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 

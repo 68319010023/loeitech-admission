@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
+const API_BASE_URL = 'http://localhost:3001/api'
 
 interface ApiResponse<T> {
   success: boolean
@@ -9,7 +9,7 @@ interface ApiResponse<T> {
 class ApiService {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     const url = `${API_BASE_URL}${endpoint}`
-    
+
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
@@ -20,12 +20,12 @@ class ApiService {
 
     try {
       const response = await fetch(url, config)
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
       }
-      
+
       return await response.json()
     } catch (error) {
       console.error('API request failed:', error)
@@ -33,7 +33,40 @@ class ApiService {
     }
   }
 
-  // Admission Plan API
+  // ── Users API ──────────────────────────────────────────
+  async getUsers() {
+    return this.request<any[]>('/admin/users')
+  }
+
+  async createUser(data: {
+    username: string
+    password: string
+    role: 'admin' | 'staff'
+  }) {
+    return this.request<any>('/admin/users', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateUser(id: string, data: Partial<{
+    username: string
+    password: string
+    role: string
+  }>) {
+    return this.request<any>(`/admin/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteUser(id: string) {
+    return this.request<void>(`/admin/users/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
+  // ── Admission Plan API ─────────────────────────────────
   async getAdmissionPlans() {
     return this.request<any[]>('/admin/admission-plan')
   }
@@ -68,7 +101,7 @@ class ApiService {
     })
   }
 
-  // Expense Detail API
+  // ── Expense Detail API ─────────────────────────────────
   async getExpenseDetails() {
     return this.request<any[]>('/admin/expense-detail')
   }
@@ -79,6 +112,7 @@ class ApiService {
     exp_img?: string
     cur_id: number
     exp_cost: number
+    payment_type?: string
   }) {
     return this.request<any>('/admin/expense-detail', {
       method: 'POST',
@@ -92,6 +126,7 @@ class ApiService {
     exp_img?: string
     cur_id: number
     exp_cost: number
+    payment_type?: string
   }) {
     return this.request<any>(`/admin/expense-detail/${id}`, {
       method: 'PUT',
@@ -105,7 +140,7 @@ class ApiService {
     })
   }
 
-  // Curriculum API (for dropdowns)
+  // ── Curriculum API ─────────────────────────────────────
   async getCurriculums() {
     return this.request<any[]>('/admin/curriculums')
   }
@@ -136,7 +171,14 @@ class ApiService {
     })
   }
 
-  // Division API (for dropdowns)
+  async getCurriculumChildren(id: number) {
+    return this.request<{
+      divisions: { div_id: number; div_name: string }[]
+      plans: { ap_id: number; ap_years: string; plan_num: number }[]
+    }>(`/admin/curriculums/${id}/children`)
+  }
+
+  // ── Division API ───────────────────────────────────────
   async getDivisions() {
     return this.request<any[]>('/admin/divisions')
   }

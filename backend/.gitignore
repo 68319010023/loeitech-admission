@@ -1,6 +1,6 @@
 node_modules/
+dist/
 .env
 .env.local
-build/
-dist/
-CONFIG_GUIDE.md
+.DS_Store
+*.log

@@ -4,6 +4,7 @@
     <div class="bg-white shadow-lg border-b border-emerald-100">
       <div class="max-w-7xl mx-auto px-6 py-8">
         <div class="flex items-center justify-between">
+
           <div>
             <h1 class="text-4xl font-bold text-gray-900 flex items-center">
               <div class="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
@@ -13,6 +14,7 @@
             </h1>
             <p class="text-gray-600 mt-3 text-lg">จัดการข้อมูลค่าใช้จ่ายในระบบรับสมัครนักเรียนนักศึกษา</p>
           </div>
+
           <div class="flex items-center space-x-3">
             <div class="flex items-center bg-emerald-50 px-4 py-2 rounded-lg">
               <div class="w-3 h-3 bg-emerald-500 rounded-full mr-2 animate-pulse"></div>
@@ -30,31 +32,15 @@
         <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-600 font-medium">รายการค่าใช้จ่ายทั้งหมด</p>
-              <p class="text-3xl font-bold text-gray-900 mt-2">{{ stats.totalExpenses }}</p>
-              <p class="text-xs text-emerald-600 mt-2 flex items-center">
-                <span class="w-2 h-2 bg-emerald-500 rounded-full mr-1"></span>
-                รายการ
-              </p>
-            </div>
-            <div class="w-14 h-14 bg-gradient-to-br from-emerald-100 to-emerald-200 rounded-xl flex items-center justify-center">
-              <ReceiptPercentIcon class="w-7 h-7 text-emerald-600" />
-            </div>
-          </div>
-        </div>
-        
-        <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-gray-600 font-medium">ค่าธรรมเนียมเฉลี่ย</p>
-              <p class="text-3xl font-bold text-gray-900 mt-2">{{ stats.averageCost.toLocaleString() }}</p>
+              <p class="text-sm text-gray-600 font-medium">ปวช</p>
+              <p class="text-3xl font-bold text-gray-900 mt-2">{{ stats.pavocCost.toLocaleString() }}</p>
               <p class="text-xs text-emerald-600 mt-2 flex items-center">
                 <span class="w-2 h-2 bg-emerald-500 rounded-full mr-1"></span>
                 บาท/คน
               </p>
             </div>
-            <div class="w-14 h-14 bg-gradient-to-br from-emerald-100 to-emerald-200 rounded-xl flex items-center justify-center">
-              <CurrencyDollarIcon class="w-7 h-7 text-emerald-600" />
+            <div class="w-14 h-14 bg-emerald-100 from-blue-100 to-blue-200 rounded-xl flex items-center justify-center">
+              <BanknotesIcon class="w-7 h-7 text-emerald-600" />
             </div>
           </div>
         </div>
@@ -62,14 +48,30 @@
         <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-600 font-medium">ค่าใช้จ่ายรวม</p>
-              <p class="text-3xl font-bold text-gray-900 mt-2">{{ stats.totalCost.toLocaleString() }}</p>
+              <p class="text-sm text-gray-600 font-medium">ปวส (สายตรง)</p>
+              <p class="text-3xl font-bold text-gray-900 mt-2">{{ stats.pavasDirectCost.toLocaleString() }}</p>
               <p class="text-xs text-emerald-600 mt-2 flex items-center">
                 <span class="w-2 h-2 bg-emerald-500 rounded-full mr-1"></span>
-                บาท/ปี
+                บาท/คน
               </p>
             </div>
-            <div class="w-14 h-14 bg-gradient-to-br from-emerald-100 to-emerald-200 rounded-xl flex items-center justify-center">
+            <div class="w-14 h-14 bg-emerald-100 from-purple-100 to-purple-200 rounded-xl flex items-center justify-center">
+              <BanknotesIcon class="w-7 h-7 text-emerald-600" />
+            </div>
+          </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600 font-medium">ปวส (ม.6)</p>
+              <p class="text-3xl font-bold text-gray-900 mt-2">{{ stats.pavasM6Cost.toLocaleString() }}</p>
+              <p class="text-xs text-emerald-600 mt-2 flex items-center">
+                <span class="w-2 h-2 bg-emerald-500 rounded-full mr-1"></span>
+                บาท/คน
+              </p>
+            </div>
+            <div class="w-14 h-14 bg-emerald-100 from-orange-100 to-orange-200 rounded-xl flex items-center justify-center">
               <BanknotesIcon class="w-7 h-7 text-emerald-600" />
             </div>
           </div>
@@ -101,14 +103,28 @@ import { apiService } from '@/utils/api'
 const expenses = ref<any[]>([])
 
 const stats = computed(() => {
-  const totalExpenses = expenses.value.length
-  const totalCost = expenses.value.reduce((sum, expense) => sum + expense.exp_cost, 0)
-  const averageCost = totalExpenses > 0 ? totalCost / totalExpenses : 0
+  // Group expenses by curriculum type based on actual database data
+  const pavocExpenses = expenses.value.filter(expense => 
+    expense.curriculum?.cur_id === 18 || 
+    expense.curriculum?.cur_name?.includes('  1. ปวช.') 
+  )
+  
+  const pavasM6Expenses = expenses.value.filter(expense => 
+    expense.curriculum?.cur_id === 19 || 
+    expense.curriculum?.cur_name?.includes('  1. ปวส. ม.6') 
+  )
+  
+  // For now, treat all PAVAS as M.6 type since we only have one PAVAS curriculum
+  const pavasDirectExpenses = [] // No direct track curriculum in database yet
+  
+  const pavocCost = pavocExpenses.reduce((sum, expense) => sum + (expense.exp_cost || 0), 0)
+  const pavasDirectCost = pavasDirectExpenses.reduce((sum, expense) => sum + (expense.exp_cost || 0), 0)
+  const pavasM6Cost = pavasM6Expenses.reduce((sum, expense) => sum + (expense.exp_cost || 0), 0)
   
   return {
-    totalExpenses,
-    totalCost,
-    averageCost
+    pavocCost,
+    pavasDirectCost,
+    pavasM6Cost
   }
 })
 
