@@ -4,10 +4,10 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 const pool = new Pool({
-  host: 'docker3.loeitech.org',
- port: 56442,
-  database: 'ltc_admission_db',
-  user: 'admin_ltc',
+  host: process.env.DB_HOST,
+  port: parseInt(process.env.DB_PORT || '56442'),
+  database: process.env.DB_NAME,
+  user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   ssl: false,
   max: 10,
