@@ -5,8 +5,7 @@ const router = createRouter({
   routes: [
     { path: '/', component: () => import('../views/HomeView.vue') },
     { path: '/register', component: () => import('../views/RegisterView.vue') },
-    { path: '/status', component: () => import('../views/StatusView.vue') },
-    { path: '/success', component: () => import('../views/SuccessView.vue') },
+    { path: '/check-status', component: () => import('../views/CheckStatusView.vue') },
     { path: '/enrollment', component: () => import('../views/StatusView.vue') },
     { path: '/enrollment/:idCard', component: () => import('../views/SuccessView.vue') },
     { path: '/check-status', component: () => import('../views/CheckStatusView.vue') },

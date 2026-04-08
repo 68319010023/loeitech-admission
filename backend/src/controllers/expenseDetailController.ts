@@ -7,7 +7,8 @@ export const getExpenseDetails = async (_req: Request, res: Response) => {
     const query = `
       SELECT 
         ed.*,
-        c.cur_name
+        c.cur_name,
+        c.cur_shortname
       FROM expense_detail ed
       JOIN curriculums c ON ed.cur_id = c.cur_id
       ORDER BY c.cur_name ASC, ed.exp_name ASC
@@ -23,7 +24,8 @@ export const getExpenseDetails = async (_req: Request, res: Response) => {
       payment_type: row.payment_type || 'mandatory',
       curriculum: {
         cur_id: row.cur_id,
-        cur_name: row.cur_name
+        cur_name: row.cur_name,
+        cur_shortname: row.cur_shortname
       }
     }))
     
