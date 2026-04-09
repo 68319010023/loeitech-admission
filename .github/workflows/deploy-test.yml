@@ -49,7 +49,9 @@ jobs:
             BACKEND_PORT=3002 \
             FRONTEND_PORT=5174 \
             REGISTRY_URL=${{ secrets.REGISTRY_URL }} \
-            DATABASE_URL=${{ secrets.DATABASE_URL_TEST }} \
+            DB_USER=${{ secrets.DB_USER_TEST }} \
+            DB_PASSWORD=${{ secrets.DB_PASSWORD_TEST }} \
+            DB_NAME=ltc_admission_test \
             JWT_SECRET=${{ secrets.JWT_SECRET_TEST }} \
             FRONTEND_URL=https://test-admission.loeitech.ac.th \
             bash deploy.sh
