@@ -33,6 +33,27 @@ class ApiService {
     }
   }
 
+  // Generic HTTP methods
+  async get<T>(endpoint: string, options: { params?: Record<string, any> } = {}): Promise<ApiResponse<T>> {
+    const url = new URL(endpoint, API_BASE_URL)
+    if (options.params) {
+      Object.entries(options.params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          url.searchParams.append(key, String(value))
+        }
+      })
+    }
+    return this.request<T>(url.pathname + url.search)
+  }
+
+  async post<T>(endpoint: string, data?: any, options: RequestInit = {}): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'POST',
+      body: data ? (data instanceof FormData ? data : JSON.stringify(data)) : undefined,
+      ...options,
+    })
+  }
+
   // ── Users API ──────────────────────────────────────────
   async getUsers() {
     return this.request<any[]>('/admin/users')

@@ -9,6 +9,7 @@ const router = createRouter({
     { path: '/enrollment', component: () => import('../views/StatusView.vue') },
     { path: '/enrollment/:idCard', component: () => import('../views/SuccessView.vue') },
     { path: '/check-status', component: () => import('../views/CheckStatusView.vue') },
+    { path: '/login', component: () => import('../views/LoginView.vue') },
 
     { path: '/admin/users', component: () => import('../views/AdminUsersView.vue') },
     { path: '/admin/manage-users', component: () => import('../views/AdminManageUsersView.vue') },

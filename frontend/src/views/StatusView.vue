@@ -89,7 +89,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { DocumentTextIcon, UserIcon } from '@heroicons/vue/24/outline'
-import api from '@/services/api'
+import { apiService as api } from '@/utils/api'
 
 const router = useRouter()
 const idCard = ref('')

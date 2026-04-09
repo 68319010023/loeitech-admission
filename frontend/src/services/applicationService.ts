@@ -1,4 +1,4 @@
-import api from './api'
+import { apiService as api } from '../utils/api'
 
 export const applicationService = {
     // ดึงหลักสูตร

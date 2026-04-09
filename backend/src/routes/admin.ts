@@ -32,7 +32,9 @@ import {
   updateUser,
   deleteUser
 } from '../controllers/userController'
- 
+import {
+  login
+} from '../controllers/authController'
 
 const router = Router()
 
@@ -63,6 +65,10 @@ router.post('/expense-detail', createExpenseDetail)
 router.put('/expense-detail/:id', updateExpenseDetail)
 router.delete('/expense-detail/:id', deleteExpenseDetail)
 
+// Auth routes
+router.post('/login', login)
+
+// User routes
 router.get('/users', getUsers)
 router.post('/users', createUser)
 router.put('/users/:id', updateUser)

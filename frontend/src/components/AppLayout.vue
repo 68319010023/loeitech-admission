@@ -38,45 +38,61 @@
           <ClipboardDocumentCheckIcon class="w-5 h-5" /> มอบตัว
         </RouterLink>
 
-        <p class="text-white/50 text-xs font-medium px-3 py-2 mt-4">เจ้าหน้าที่</p>
+        <!-- เมนูเจ้าหน้าที่ - แสดงเฉพาะเมื่อ login แล้ว -->
+        <div v-if="authStore.isAuthenticated">
+          <p class="text-white/50 text-xs font-medium px-3 py-2 mt-4">เจ้าหน้าที่</p>
 
-        <RouterLink to="/admin/users"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
-          :class="$route.path.startsWith('/admin/users') ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'">
-          <UserGroupIcon class="w-5 h-5" /> ข้อมูลผู้ใช้
-        </RouterLink>
+          <RouterLink to="/admin/users"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+            :class="$route.path.startsWith('/admin/users') ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'">
+            <UserGroupIcon class="w-5 h-5" /> ข้อมูลผู้ใช้
+          </RouterLink>
 
 
-        <RouterLink to="/admin/manage-users"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
-          :class="$route.path.startsWith('/admin/manage-users') ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'">
-          <UserGroupIcon class="w-5 h-5" /> จัดการสมาชิก
-        </RouterLink>
+          <RouterLink to="/admin/manage-users"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+            :class="$route.path.startsWith('/admin/manage-users') ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'">
+            <UserGroupIcon class="w-5 h-5" /> จัดการสมาชิก
+          </RouterLink>
 
-        <RouterLink to="/admin/settings"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
-          :class="$route.path.startsWith('/admin/settings') ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'">
-          <Cog6ToothIcon class="w-5 h-5" /> แผนการรับสมัครนักศึกษา
-        </RouterLink>
+          <RouterLink to="/admin/settings"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+            :class="$route.path.startsWith('/admin/settings') ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'">
+            <Cog6ToothIcon class="w-5 h-5" /> แผนการรับสมัครนักศึกษา
+          </RouterLink>
 
-        <RouterLink to="/admin/expenses"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
-          :class="$route.path.startsWith('/admin/expenses') ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'">
-          <ReceiptPercentIcon class="w-5 h-5" /> ค่าใช้จ่าย
-        </RouterLink>
+          <RouterLink to="/admin/expenses"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+            :class="$route.path.startsWith('/admin/expenses') ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'">
+            <ReceiptPercentIcon class="w-5 h-5" /> ค่าใช้จ่าย
+          </RouterLink>
 
-        <RouterLink to="/admin/onsite-enrollment"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
-          :class="$route.path === '/admin/onsite-enrollment' ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'">
-          <ClipboardDocumentListIcon class="w-5 h-5" /> บันทึกยอดมอบตัวออนไซต์
-        </RouterLink>
+          <RouterLink to="/admin/onsite-enrollment"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+            :class="$route.path === '/admin/onsite-enrollment' ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'">
+            <ClipboardDocumentListIcon class="w-5 h-5" /> บันทึกยอดมอบตัวออนไซต์
+          </RouterLink>
+        </div>
 
 
       </nav>
 
       <!-- Footer -->
       <div class="p-4 border-t border-white/20">
+        <!-- ปุ่ม Login/Logout -->
+         <div class="text-center text-white/80 text-xs mb-2">
+            สำหรับเจ้าหน้าที่
+         </div>
         <button
+          v-if="!authStore.isAuthenticated"
+          @click="handleLogin"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white hover:bg-white/10 transition-all w-full">
+          <ArrowRightOnRectangleIcon class="w-5 h-5" />
+          เข้าสู่ระบบ
+        </button>
+        <button
+          v-else
+          @click="handleLogout"
           class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white hover:bg-white/10 transition-all w-full">
           <ArrowRightOnRectangleIcon class="w-5 h-5" />
           ออกจากระบบ
@@ -99,7 +115,7 @@
       </header>
 
       <!-- Page Content -->
-      <main class="flex-1 overflow-y-auto p-8">
+      <main class="flex-1 overflow-y-auto" :class="$route.path !== '/login' ? 'p-8' : ''">
         <RouterView />
       </main>
     </div>
@@ -107,6 +123,9 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import { useRouter } from 'vue-router'
 import {
   AcademicCapIcon,
   DocumentTextIcon,
@@ -115,7 +134,25 @@ import {
   MagnifyingGlassIcon,
   ClipboardDocumentCheckIcon,
   ReceiptPercentIcon,
-  ArrowRightOnRectangleIcon,  // ✅ เพิ่ม import ที่หายไป
-    ClipboardDocumentListIcon,
+  ArrowRightOnRectangleIcon,
+  ClipboardDocumentListIcon,
 } from '@heroicons/vue/24/outline'
+
+const authStore = useAuthStore()
+const router = useRouter()
+
+// Computed property for checking authentication status
+const isAdmin = computed(() => authStore.isAuthenticated)
+
+// Login function
+const handleLogin = () => {
+  // สามารถเพิ่ม logic สำหรับเปิด modal หรือ redirect ไปหน้า login
+  router.push('/login')
+}
+
+// Logout function
+const handleLogout = () => {
+  authStore.logout()
+  router.push('/')
+}
 </script>
