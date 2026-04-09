@@ -1,411 +1,210 @@
 -- ============================================================
--- Student Registration System Database Schema
--- วิทยาลัยเทคนิคเลย — โครงสร้างใหม่ (ปรับปรุงรวมทั้งหมด)
+-- DATABASE SCHEMA: ltc_admission_db
+-- วิทยาลัยเทคนิคเลย — ระบบรับสมัครนักเรียนนักศึกษาออนไลน์
+-- Last updated: 2026-04-08
+-- Source of truth: extracted from production ltc_admission_db
 -- ============================================================
 
--- Enable UUID extension (สำหรับ users เท่านั้น)
+-- Required extension for uuid_generate_v4()
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+
 -- ============================================================
--- 1. ตาราง curriculums (หลักสูตร)  ← สร้างก่อนสุด
+-- MASTER DATA TABLES
 -- ============================================================
-CREATE TABLE curriculums (
-    cur_id        SERIAL PRIMARY KEY,
-    cur_name      VARCHAR(200) NOT NULL,   -- ชื่อหลักสูตร เช่น ประกาศนียบัตรวิชาชีพ
-    cur_shortname VARCHAR(50)  NOT NULL,   -- ชื่อย่อ เช่น ปวช / ปวส
-    created_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+
+-- curriculums — หลักสูตร (ปวช. / ปวส.)
+CREATE TABLE public.curriculums (
+    cur_id        serial       NOT NULL,
+    cur_name      varchar(200) NULL,
+    cur_shortname varchar(50)  NULL,
+    CONSTRAINT curriculums_pkey PRIMARY KEY (cur_id)
 );
 
--- ============================================================
--- 2. ตาราง divisions (สาขาวิชา)
--- ============================================================
-CREATE TABLE divisions (
-    div_id     SERIAL PRIMARY KEY,
-    div_name   VARCHAR(100) NOT NULL,                            -- ชื่อสาขา เช่น คอมพิวเตอร์ธุรกิจ
-    cur_id     INTEGER NOT NULL REFERENCES curriculums(cur_id),  -- FK → curriculums
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- divisions — สาขาวิชา (FK → curriculums)
+CREATE TABLE public.divisions (
+    div_id   serial       NOT NULL,
+    div_name varchar(100) NULL,
+    cur_id   int4         NULL,
+    CONSTRAINT divisions_pkey PRIMARY KEY (div_id),
+    CONSTRAINT fk_cur_id FOREIGN KEY (cur_id) REFERENCES public.curriculums(cur_id)
 );
 
--- ============================================================
--- 3. ตาราง admission_plan (แผนรับสมัคร)
--- ============================================================
-CREATE TABLE admission_plan (
-    ap_id      SERIAL PRIMARY KEY,
-    ap_years   VARCHAR(10)  NOT NULL,                              -- ปีการศึกษา เช่น '2568'
-    div_id     INTEGER NOT NULL REFERENCES divisions(div_id),      -- FK → divisions
-    cur_id     INTEGER NOT NULL REFERENCES curriculums(cur_id),    -- FK → curriculums
-    plan_num   INTEGER NOT NULL,                                   -- จำนวนที่เปิดรับสมัคร
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- admission_plan — โควต้าการรับสมัครต่อปีการศึกษา (FK → curriculums, divisions)
+-- plan_num = จำนวนที่นั่งที่เปิดรับ
+-- ที่นั่งว่าง = plan_num - COUNT(applicants ที่เลือก ap_id นี้)
+CREATE TABLE public.admission_plan (
+    ap_id    serial4     NOT NULL,
+    ap_years varchar(10) NULL,
+    div_id   int4        NULL,
+    cur_id   int4        NULL,
+    plan_num int4        NULL,
+    CONSTRAINT admission_plan_pkey PRIMARY KEY (ap_id),
+    CONSTRAINT fk_cur_id FOREIGN KEY (cur_id) REFERENCES public.curriculums(cur_id),
+    CONSTRAINT fk_div_id FOREIGN KEY (div_id) REFERENCES public.divisions(div_id)
 );
 
--- ============================================================
--- 4. ตาราง expense_detail (ค่าใช้จ่าย)
--- ============================================================
-CREATE TABLE expense_detail (
-    exp_id     SERIAL PRIMARY KEY,
-    exp_name   VARCHAR(200) NOT NULL,                              -- ชื่อรายการค่าใช้จ่าย
-    exp_detail TEXT         NOT NULL,                              -- รายละเอียด
-    exp_img    TEXT,                                               -- รูปประกอบ (allow null)
-    cur_id     INTEGER NOT NULL REFERENCES curriculums(cur_id),    -- FK → curriculums
-    exp_cost   DOUBLE PRECISION NOT NULL,                          -- ราคาต่อหน่วย
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- expense_detail — รายการค่าใช้จ่ายต่อหลักสูตร (FK → curriculums)
+-- payment_type: 'mandatory' | 'optional' | 'custom'
+CREATE TABLE public.expense_detail (
+    exp_id       serial       NOT NULL,
+    exp_name     varchar(200) NULL,
+    exp_detail   text         NOT NULL,
+    exp_img      text         NULL,
+    cur_id       int4         NULL,
+    exp_cost     float8       NULL,
+    payment_type varchar(20)  NULL,
+    CONSTRAINT expense_detail_pkey PRIMARY KEY (exp_id),
+    CONSTRAINT fk_cur_id FOREIGN KEY (cur_id) REFERENCES public.curriculums(cur_id)
 );
 
--- ============================================================
--- 5. ตาราง users (ผู้ใช้งานระบบ)
--- ============================================================
-CREATE TABLE users (
-    id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    username   VARCHAR(50)  UNIQUE NOT NULL,
-    email      VARCHAR(100) UNIQUE NOT NULL,
-    password   VARCHAR(255) NOT NULL,
-    role       VARCHAR(20)  DEFAULT 'student' CHECK (role IN ('admin', 'student')),
-    full_name  VARCHAR(100),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- users — เจ้าหน้าที่และผู้ดูแลระบบ
+-- role: 'admin' | 'staff'
+-- password_hash: bcrypt hash
+CREATE TABLE public.users (
+    id            uuid         DEFAULT gen_random_uuid() NOT NULL,
+    username      varchar(100) NOT NULL,
+    password_hash varchar(255) NOT NULL,
+    role          varchar(10)  NOT NULL,
+    created_at    timestamp    DEFAULT now() NULL,
+    CONSTRAINT users_pkey PRIMARY KEY (id),
+    CONSTRAINT users_username_key UNIQUE (username),
+    CONSTRAINT users_role_check CHECK (role IN ('admin', 'staff'))
 );
 
+
 -- ============================================================
--- 6. ตาราง students (นักศึกษา)
+-- TRANSACTION TABLES
 -- ============================================================
-CREATE TABLE students (
-    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    first_name      VARCHAR(50)  NOT NULL,
-    last_name       VARCHAR(50)  NOT NULL,
-    id_card_number  VARCHAR(13)  UNIQUE NOT NULL,
-    birth_date      DATE         NOT NULL,
-    gender          VARCHAR(10)  NOT NULL CHECK (gender IN ('male', 'female')),
-    address         TEXT,
-    phone           VARCHAR(20),
-    email           VARCHAR(100),
-    -- เชื่อมกับโครงสร้างใหม่
-    cur_id          INTEGER REFERENCES curriculums(cur_id),  -- FK → curriculums (ระดับการศึกษา)
-    div_id          INTEGER REFERENCES divisions(div_id),    -- FK → divisions (สาขาวิชา)
-    -- ข้อมูลการศึกษาเดิม
-    school_name     VARCHAR(100),
-    gpa             DECIMAL(3,2),
-    -- ข้อมูลผู้ปกครอง
-    parent_name     VARCHAR(100),
-    parent_phone    VARCHAR(20),
-    -- สถานะ
-    status          VARCHAR(20) DEFAULT 'pending'
-                    CHECK (status IN ('pending', 'approved', 'rejected', 'completed')),
-    created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+
+-- applicants — ข้อมูลผู้สมัคร (ตารางหลัก)
+-- status: 'pending_payment' → 'paid' → 'enrolled'
+-- prev_level: 'm3' | 'm6' | 'pvc'
+-- id_type: 'thai_id' | 'alien_id' | 'passport' | 'g_code' | 'other'
+CREATE TABLE public.applicants (
+    app_id         uuid         DEFAULT uuid_generate_v4() NOT NULL,
+    id_card_number varchar(20)  NOT NULL,
+    prefix         varchar(20)  NOT NULL,
+    full_name      varchar(200) NOT NULL,
+    address        text         NOT NULL,
+    phone          varchar(15)  NOT NULL,
+    email          varchar(200) NOT NULL,
+    prev_school    varchar(200) NOT NULL,
+    prev_level     varchar(10)  NOT NULL,
+    prev_year      varchar(4)   NOT NULL,
+    gpa            varchar(10)  NOT NULL,
+    cur_id         int4         NOT NULL,
+    div_id         int4         NOT NULL,
+    ap_id          int4         NOT NULL,
+    status         varchar(30)  NOT NULL DEFAULT 'pending_payment',
+    created_at     timestamptz  DEFAULT now() NULL,
+    updated_at     timestamptz  DEFAULT now() NULL,
+    id_type        varchar(20)  NOT NULL DEFAULT 'thai_id',
+    CONSTRAINT applicants_pkey PRIMARY KEY (app_id),
+    CONSTRAINT applicants_id_card_number_key UNIQUE (id_card_number),
+    CONSTRAINT fk_ap_id FOREIGN KEY (ap_id) REFERENCES public.admission_plan(ap_id),
+    CONSTRAINT fk_cur_id FOREIGN KEY (cur_id) REFERENCES public.curriculums(cur_id),
+    CONSTRAINT fk_div_id FOREIGN KEY (div_id) REFERENCES public.divisions(div_id)
 );
 
--- ============================================================
--- 7. ตาราง student_images (รูปภาพเอกสาร)
--- ============================================================
-CREATE TABLE student_images (
-    id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    student_id UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
-    image_type VARCHAR(20) NOT NULL
-               CHECK (image_type IN ('id_card', 'education', 'certificate', 'student_card')),
-    image_url  VARCHAR(500) NOT NULL,
-    file_name  VARCHAR(255),
-    file_size  INTEGER,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- documents — ไฟล์เอกสารแนบ (FK → applicants, CASCADE DELETE)
+-- doc_type: 'id_front' | 'id_back' | 'certificate_front' | 'certificate_back'
+--           'letter_front' | 'studentcard_front'
+CREATE TABLE public.documents (
+    doc_id      uuid         DEFAULT uuid_generate_v4() NOT NULL,
+    app_id      uuid         NOT NULL,
+    doc_type    varchar(50)  NOT NULL,
+    file_path   text         NOT NULL,
+    file_name   varchar(200) NOT NULL,
+    file_size   int4         NULL,
+    uploaded_at timestamp    DEFAULT now() NULL,
+    CONSTRAINT documents_pkey PRIMARY KEY (doc_id),
+    CONSTRAINT fk_app_id FOREIGN KEY (app_id)
+        REFERENCES public.applicants(app_id) ON DELETE CASCADE
 );
 
--- ============================================================
--- 8. ตาราง inventory_items (สินค้าคลัง)
--- ============================================================
-CREATE TABLE inventory_items (
-    id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name           VARCHAR(100) NOT NULL,
-    description    TEXT,
-    category       VARCHAR(50)  NOT NULL
-                   CHECK (category IN ('uniform', 'equipment', 'stationery', 'accessories')),
-    target_group   VARCHAR(50)
-                   CHECK (target_group IN ('male', 'female', 'all', 'all_students')),
-    -- เชื่อมกับ curriculums แทน education_level เดิม
-    cur_id         INTEGER REFERENCES curriculums(cur_id),
-    price          DECIMAL(10,2) NOT NULL,
-    stock_quantity INTEGER DEFAULT 0,
-    is_active      BOOLEAN DEFAULT true,
-    created_at     TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at     TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- applicant_expenses — รายการค่าใช้จ่ายของผู้สมัคร (FK → applicants, expense_detail, CASCADE DELETE)
+-- unit_price: ราคา ณ เวลาที่สมัคร (ป้องกันผลกระทบจากราคาที่เปลี่ยนในภายหลัง)
+-- size: XS | S | M | L | XL | XXL (สำหรับรายการเครื่องแบบ)
+CREATE TABLE public.applicant_expenses (
+    ae_id       uuid    DEFAULT uuid_generate_v4() NOT NULL,
+    app_id      uuid    NOT NULL,
+    exp_id      int4    NOT NULL,
+    quantity    int4    DEFAULT 1 NOT NULL,
+    size        varchar(10) NULL,
+    unit_price  float8  NOT NULL,
+    total_price float8  NOT NULL,
+    is_required bool    DEFAULT false NOT NULL,
+    CONSTRAINT applicant_expenses_pkey PRIMARY KEY (ae_id),
+    CONSTRAINT fk_app_id FOREIGN KEY (app_id)
+        REFERENCES public.applicants(app_id) ON DELETE CASCADE,
+    CONSTRAINT fk_exp_id FOREIGN KEY (exp_id)
+        REFERENCES public.expense_detail(exp_id)
 );
 
--- ============================================================
--- 9. ตาราง orders (คำสั่งซื้อ)
--- ============================================================
-CREATE TABLE orders (
-    id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    student_id   UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
-    order_items  JSONB NOT NULL,
-    total_amount DECIMAL(10,2) NOT NULL,
-    status       VARCHAR(20) DEFAULT 'pending'
-                 CHECK (status IN ('pending', 'confirmed', 'shipped', 'delivered', 'cancelled')),
-    notes        TEXT,
-    created_at   TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at   TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- payments — การชำระเงิน (FK → applicants, CASCADE DELETE)
+-- UNIQUE บน app_id: 1 ผู้สมัคร = 1 ใบชำระ
+-- due_date = created_at + 3 วัน (ตั้งค่าโดย application logic)
+CREATE TABLE public.payments (
+    pay_id          uuid    DEFAULT uuid_generate_v4() NOT NULL,
+    app_id          uuid    NOT NULL,
+    total_amount    float8  NOT NULL,
+    required_amount float8  NOT NULL,
+    optional_amount float8  DEFAULT 0 NOT NULL,
+    slip_path       text    NULL,
+    slip_name       varchar(200) NULL,
+    paid_at         timestamp NULL,
+    due_date        timestamp NOT NULL,
+    verified_at     timestamp NULL,
+    verified_by     varchar(200) NULL,
+    CONSTRAINT payments_pkey PRIMARY KEY (pay_id),
+    CONSTRAINT payments_app_id_key UNIQUE (app_id),
+    CONSTRAINT fk_app_id FOREIGN KEY (app_id)
+        REFERENCES public.applicants(app_id) ON DELETE CASCADE
 );
 
--- ============================================================
--- 10. ตาราง order_items (รายการสินค้าในคำสั่งซื้อ)
--- ============================================================
-CREATE TABLE order_items (
-    id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    order_id          UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
-    inventory_item_id UUID REFERENCES inventory_items(id),
-    quantity          INTEGER       NOT NULL,
-    unit_price        DECIMAL(10,2) NOT NULL,
-    total_price       DECIMAL(10,2) NOT NULL,
-    created_at        TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- enrollments — การมอบตัว (FK → applicants, CASCADE DELETE)
+-- UNIQUE บน app_id: 1 ผู้สมัคร = 1 การมอบตัว
+-- ต้อง status = 'paid' ก่อนจึงจะมอบตัวได้
+CREATE TABLE public.enrollments (
+    enroll_id          uuid DEFAULT uuid_generate_v4() NOT NULL,
+    app_id             uuid NOT NULL,
+    tabien_self_path   text NULL,
+    tabien_father_path text NULL,
+    tabien_mother_path text NULL,
+    enrolled_at        timestamp DEFAULT now() NULL,
+    verified_at        timestamp NULL,
+    verified_by        varchar(200) NULL,
+    CONSTRAINT enrollments_pkey PRIMARY KEY (enroll_id),
+    CONSTRAINT enrollments_app_id_key UNIQUE (app_id),
+    CONSTRAINT fk_app_id FOREIGN KEY (app_id)
+        REFERENCES public.applicants(app_id) ON DELETE CASCADE
 );
 
--- ============================================================
--- 11. ตาราง payments (การชำระเงิน)
--- ============================================================
-CREATE TABLE payments (
-    id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    student_id    UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
-    order_id      UUID REFERENCES orders(id) ON DELETE CASCADE,
-    amount        DECIMAL(10,2) NOT NULL,
-    slip_url      VARCHAR(500),
-    slip_file_name VARCHAR(255),
-    status        VARCHAR(20) DEFAULT 'pending'
-                  CHECK (status IN ('pending', 'verified', 'rejected')),
-    verified_by   UUID REFERENCES users(id),
-    verified_at   TIMESTAMP WITH TIME ZONE,
-    notes         TEXT,
-    created_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
 
 -- ============================================================
--- 12. ตาราง system_settings (ตั้งค่าระบบ)
+-- FUNCTIONS & TRIGGERS
 -- ============================================================
-CREATE TABLE system_settings (
-    id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    setting_key   VARCHAR(100) UNIQUE NOT NULL,
-    setting_value TEXT,
-    description   TEXT,
-    created_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
 
--- ============================================================
--- 13. ตาราง audit_logs (บันทึกการใช้งาน)
--- ============================================================
-CREATE TABLE audit_logs (
-    id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id    UUID REFERENCES users(id),
-    action     VARCHAR(50) NOT NULL,
-    table_name VARCHAR(50),
-    record_id  UUID,
-    old_values JSONB,
-    new_values JSONB,
-    ip_address INET,
-    user_agent TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- ============================================================
--- INDEXES
--- ============================================================
-CREATE INDEX idx_divisions_cur_id          ON divisions(cur_id);
-CREATE INDEX idx_admission_plan_div_id     ON admission_plan(div_id);
-CREATE INDEX idx_admission_plan_cur_id     ON admission_plan(cur_id);
-CREATE INDEX idx_admission_plan_years      ON admission_plan(ap_years);
-CREATE INDEX idx_expense_detail_cur_id     ON expense_detail(cur_id);
-CREATE INDEX idx_students_id_card_number   ON students(id_card_number);
-CREATE INDEX idx_students_status           ON students(status);
-CREATE INDEX idx_students_cur_id           ON students(cur_id);
-CREATE INDEX idx_students_div_id           ON students(div_id);
-CREATE INDEX idx_student_images_student_id ON student_images(student_id);
-CREATE INDEX idx_student_images_type       ON student_images(image_type);
-CREATE INDEX idx_orders_student_id         ON orders(student_id);
-CREATE INDEX idx_orders_status             ON orders(status);
-CREATE INDEX idx_payments_student_id       ON payments(student_id);
-CREATE INDEX idx_payments_status           ON payments(status);
-CREATE INDEX idx_inventory_items_category  ON inventory_items(category);
-CREATE INDEX idx_audit_logs_user_id        ON audit_logs(user_id);
-CREATE INDEX idx_audit_logs_created_at     ON audit_logs(created_at);
-
--- ============================================================
--- TRIGGERS — auto update updated_at
--- ============================================================
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+-- อัพเดท updated_at อัตโนมัติทุกครั้งที่ applicants ถูก UPDATE
+CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
 BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
-$$ LANGUAGE 'plpgsql';
+$function$
+;
 
-CREATE TRIGGER update_curriculums_updated_at    BEFORE UPDATE ON curriculums    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_divisions_updated_at      BEFORE UPDATE ON divisions      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_admission_plan_updated_at BEFORE UPDATE ON admission_plan FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_expense_detail_updated_at BEFORE UPDATE ON expense_detail FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_users_updated_at          BEFORE UPDATE ON users          FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_students_updated_at       BEFORE UPDATE ON students       FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_orders_updated_at         BEFORE UPDATE ON orders         FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_payments_updated_at       BEFORE UPDATE ON payments       FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_inventory_items_updated_at BEFORE UPDATE ON inventory_items FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_system_settings_updated_at BEFORE UPDATE ON system_settings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
+CREATE TRIGGER set_updated_at
+    BEFORE UPDATE ON public.applicants
+    FOR EACH ROW
+    EXECUTE FUNCTION public.update_updated_at_column();
 
 
 -- ============================================================
--- VALIDATE THAI ID
--- ============================================================
-CREATE OR REPLACE FUNCTION validate_thai_id(id_number VARCHAR(13))
-RETURNS BOOLEAN AS $$
-DECLARE
-    sum INTEGER := 0;
-    i INTEGER;
-    digit INTEGER;
-    checksum INTEGER;
-BEGIN
-    IF LENGTH(id_number) != 13 OR id_number ~ '[^0-9]' THEN
-        RETURN FALSE;
-    END IF;
-    FOR i IN 1..12 LOOP
-        digit := CAST(SUBSTRING(id_number, i, 1) AS INTEGER);
-        sum := sum + (digit * (13 - i + 1));
-    END LOOP;
-    checksum := (11 - (sum % 11)) % 10;
-    RETURN checksum = CAST(SUBSTRING(id_number, 13, 1) AS INTEGER);
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION validate_student_id_card()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NOT validate_thai_id(NEW.id_card_number) THEN
-        RAISE EXCEPTION 'Invalid Thai ID number format';
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER validate_student_id_card_trigger
-    BEFORE INSERT OR UPDATE ON students
-    FOR EACH ROW EXECUTE FUNCTION validate_student_id_card();
-
--- ============================================================
--- VIEWS
--- ============================================================
-CREATE VIEW student_statistics AS
-SELECT
-    COUNT(*)                                        AS total_students,
-    COUNT(*) FILTER (WHERE cur_id = 1)              AS total_pavoc,   -- ปวช
-    COUNT(*) FILTER (WHERE cur_id = 2)              AS total_pavas,   -- ปวส
-    COUNT(*) FILTER (WHERE status = 'pending')      AS pending_students,
-    COUNT(*) FILTER (WHERE status = 'approved')     AS approved_students,
-    COUNT(*) FILTER (WHERE status = 'completed')    AS completed_students,
-    COUNT(*) FILTER (WHERE gender = 'male')         AS male_students,
-    COUNT(*) FILTER (WHERE gender = 'female')       AS female_students
-FROM students;
-
-CREATE VIEW payment_statistics AS
-SELECT
-    COUNT(*)                                            AS total_payments,
-    SUM(amount)                                         AS total_amount,
-    COUNT(*) FILTER (WHERE status = 'pending')          AS pending_payments,
-    COUNT(*) FILTER (WHERE status = 'verified')         AS verified_payments,
-    SUM(amount) FILTER (WHERE status = 'verified')      AS verified_amount
-FROM payments;
-
-CREATE VIEW order_statistics AS
-SELECT
-    COUNT(*)                                            AS total_orders,
-    SUM(total_amount)                                   AS total_order_amount,
-    COUNT(*) FILTER (WHERE status = 'pending')          AS pending_orders,
-    COUNT(*) FILTER (WHERE status = 'confirmed')        AS confirmed_orders,
-    COUNT(*) FILTER (WHERE status = 'delivered')        AS delivered_orders
-FROM orders;
-
--- ============================================================
--- SEED DATA (ข้อมูลตั้งต้น)
--- ============================================================
-
--- หลักสูตร
-INSERT INTO curriculums (cur_name, cur_shortname) VALUES
-('ประกาศนียบัตรวิชาชีพ',       'ปวช'),
-('ประกาศนียบัตรวิชาชีพชั้นสูง', 'ปวส');
-
--- สาขาวิชา
-INSERT INTO divisions (div_name, cur_id) VALUES
-('คอมพิวเตอร์ธุรกิจ',  1),  -- ปวช
-('ช่างไฟฟ้า',          1),
-('ช่างกลโรงงาน',       1),
-('ช่างยนต์',           1),
-('การบัญชี',           1),
-('เทคโนโลยีสารสนเทศ',  2),  -- ปวส
-('คอมพิวเตอร์ธุรกิจ',  2),
-('ช่างไฟฟ้ากำลัง',     2);
-
--- แผนรับสมัคร ปีการศึกษา 2568
-INSERT INTO admission_plan (ap_years, div_id, cur_id, plan_num) VALUES
-('2568', 1, 1, 30),
-('2568', 2, 1, 30),
-('2568', 3, 1, 30),
-('2568', 4, 1, 30),
-('2568', 5, 1, 30),
-('2568', 6, 2, 20),
-('2568', 7, 2, 20),
-('2568', 8, 2, 20);
-
--- ค่าใช้จ่าย
-INSERT INTO expense_detail (exp_name, exp_detail, cur_id, exp_cost) VALUES
-('ค่าธรรมเนียมการเรียน ปวช', 'ค่าธรรมเนียมประจำภาคเรียน สำหรับนักศึกษา ปวช', 1, 2000.00),
-('ค่าธรรมเนียมการเรียน ปวส', 'ค่าธรรมเนียมประจำภาคเรียน สำหรับนักศึกษา ปวส', 2, 2500.00),
-('ค่าประกันอุบัติเหตุ',       'ค่าประกันอุบัติเหตุประจำปี',                    1, 100.00),
-('ค่าประกันอุบัติเหตุ',       'ค่าประกันอุบัติเหตุประจำปี',                    2, 100.00);
-
--- สินค้าคลัง
-INSERT INTO inventory_items (name, description, category, target_group, price, stock_quantity) VALUES
-('เสื้อยืดนักศึกษา', 'เสื้อยืดประจำสถาบัน',   'uniform',     'all_students', 150,  100),
-('กางเกงขาสั้น',     'กางเกงขาสั้นนักศึกษา',  'uniform',     'all_students', 200,  100),
-('ชุดพละ',           'ชุดพละนักศึกษา',          'uniform',     'all_students', 300,   50),
-('เข็มขัด',         'เข็มขัดนักศึกษา',         'uniform',     'male',         100,  100),
-('เข็มกลัด',        'เข็มกลัดประจำสถาบัน',      'accessories', 'all_students',  50,  200),
-('กระดุม',          'กระดุมเครื่องแบบ',          'accessories', 'female',         10,  500),
-('ปากกา',           'ปากกาลูกลื่น',             'stationery',  'all_students',  10, 1000),
-('สมุด',            'สมุดเขียน',                'stationery',  'all_students',  15,  500),
-('ดินสอกด',         'ดินสอกด',                  'stationery',  'all_students',   5, 1000),
-('วงเวียน',         'วงเวียน',                   'stationery',  'all_students',   8,  500);
-
--- ตั้งค่าระบบ
-INSERT INTO system_settings (setting_key, setting_value, description) VALUES
-('college_name',        'วิทยาลัยเทคนิคเลย',                    'ชื่อวิทยาลัย'),
-('college_address',     '-',                                      'ที่อยู่วิทยาลัย'),
-('college_phone',       '042-xxxxxx',                             'เบอร์โทรศัพท์วิทยาลัย'),
-('college_email',       'info@loeitech.ac.th',                    'อีเมลวิทยาลัย'),
-('bank_account_name',   'ร้านค้าสวัสดิการวิทยาลัยเทคนิคเลย',     'ชื่อบัญชีธนาคาร'),
-('bank_account_number', 'xxxx-x-xxxxx-x',                         'เลขที่บัญชีธนาคาร'),
-('bank_name',           'ธนาคารกรุงไทย',                         'ชื่อธนาคาร'),
-('registration_fee',    '100',                                    'ค่าธรรมเนียมการสมัคร'),
-('max_file_size',       '10485760',                               'ขนาดไฟล์สูงสุด (bytes)');
-
--- Admin user (password: admin123)
-INSERT INTO users (username, email, password, role, full_name) VALUES
-('admin', 'admin@loeitech.ac.th', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 'ผู้ดูแลระบบ');
-
--- ============================================================
--- สรุปความสัมพันธ์ตาราง
--- ============================================================
---
---  curriculums (ปวช/ปวส)
---      ├── divisions          (สาขาวิชา)
---      │       └── admission_plan  (แผนรับสมัคร)
---      ├── expense_detail     (ค่าใช้จ่าย)
---      ├── inventory_items    (สินค้า — optional)
---      └── students
---              ├── student_images
---              ├── orders
---              │       └── order_items
---              └── payments
---
---  users ──── audit_logs
---        └─── payments (verified_by)
---
+-- STATUS FLOW
+-- pending_payment → paid → enrolled
 -- ============================================================

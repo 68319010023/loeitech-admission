@@ -17,6 +17,7 @@ export interface PaymentPDFData {
   courseLabel: string
   branchName: string
   totalPrice: number
+  dueDate?: string // optional — ถ้าไม่ส่งมาจะ generate +3 วันเอง
 }
 
 export async function exportPaymentPDF(data: PaymentPDFData) {
@@ -30,11 +31,15 @@ export async function exportPaymentPDF(data: PaymentPDFData) {
   doc.addFont('THSarabunNew-Bold.ttf', 'THSarabun', 'bold')
   doc.setFont('THSarabun')
 
-  const dueDate = new Date()
-  dueDate.setDate(dueDate.getDate() + 3)
-  const dueDateStr = dueDate.toLocaleDateString('th-TH', {
-    year: 'numeric', month: 'long', day: 'numeric'
-  })
+  // ใช้ dueDate ที่ส่งมา หรือ generate +3 วัน
+  let dueDateStr = data.dueDate || ''
+  if (!dueDateStr) {
+    const dueDate = new Date()
+    dueDate.setDate(dueDate.getDate() + 3)
+    dueDateStr = dueDate.toLocaleDateString('th-TH', {
+      year: 'numeric', month: 'long', day: 'numeric'
+    })
+  }
 
   const pageW = 210
   let y = 20
@@ -50,7 +55,6 @@ export async function exportPaymentPDF(data: PaymentPDFData) {
   doc.text('วิทยาลัยเทคนิคเลย — ระบบรับสมัครนักเรียนนักศึกษาออนไลน์', pageW / 2, y, { align: 'center' })
   y += 10
 
-  // เส้นคั่น
   doc.setDrawColor(16, 185, 130)
   doc.setLineWidth(0.8)
   doc.line(15, y, pageW - 15, y)
@@ -63,18 +67,18 @@ export async function exportPaymentPDF(data: PaymentPDFData) {
   y += 8
 
   doc.setFontSize(13)
-  const info = [
-    ['ชื่อ - สกุล', `${data.prefix}${data.fullName}`],
-    ['เลขประจำตัวประชาชน', data.idCard],
-    ['เบอร์โทรศัพท์', data.phone],
-    ['หลักสูตร', data.courseLabel],
-    ['สาขาวิชา', data.branchName],
+  const info: [string, string][] = [
+    ['ชื่อ - สกุล', `${data.prefix || ''} ${data.fullName || ''}`.trim()],
+    ['เลขประจำตัวประชาชน', data.idCard || '-'],
+    ['เบอร์โทรศัพท์', data.phone || '-'],
+    ['หลักสูตร', data.courseLabel || '-'],
+    ['สาขาวิชา', data.branchName || '-'],
   ]
   info.forEach(([label, value]) => {
     doc.setFont('THSarabun', 'bold')
     doc.text(`${label} :`, 20, y)
     doc.setFont('THSarabun', 'normal')
-    doc.text(value, 80, y)
+    doc.text(String(value), 80, y)
     y += 7
   })
 
@@ -91,7 +95,7 @@ export async function exportPaymentPDF(data: PaymentPDFData) {
   y += 8
 
   doc.setFontSize(13)
-  const bankInfo = [
+  const bankInfo: [string, string][] = [
     ['ธนาคาร', 'กรุงไทย สาขาเลย'],
     ['เลขบัญชี', '403-0-87831-8'],
     ['ชื่อบัญชี', 'ร้านค้าสวัสดิการวิทยาลัยเทคนิคเลย'],
@@ -150,5 +154,5 @@ export async function exportPaymentPDF(data: PaymentPDFData) {
   doc.setTextColor(150, 150, 150)
   doc.text(`พิมพ์เมื่อ: ${new Date().toLocaleString('th-TH')}`, pageW / 2, y + 10, { align: 'center' })
 
-  doc.save(`ใบชำระเงิน-${data.idCard}.pdf`)
+  doc.save(`ใบชำระเงิน-${data.idCard || 'unknown'}.pdf`)
 }

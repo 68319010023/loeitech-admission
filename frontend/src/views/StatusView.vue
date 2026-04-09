@@ -1,8 +1,5 @@
 <template>
   <div class="max-w-4xl mx-auto">
-
-    
-
     <div class="bg-white rounded-2xl shadow-sm p-8">
       
       <!-- Document List -->
@@ -11,60 +8,39 @@
           <DocumentTextIcon class="w-5 h-5 text-emerald-500" /> โปรดเตรียมภาพถ่ายเอกสาร ให้พร้อม
         </h2>
         <div class="space-y-4">
-          <!-- Document Item 1 -->
           <div class="flex items-start space-x-4 p-4 bg-emerald-50 rounded-xl border border-emerald-200">
             <div class="flex-shrink-0 w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center">
               <span class="text-white font-bold">1</span>
             </div>
             <div class="flex-1">
-              <h3 class="text-lg font-semibold text-gray-800 mb-1">
-                สลิปการโอนชำระค่าบำรุงการศึกษาและเครื่องแบบ
-              </h3>
-              <p class="text-gray-600 text-sm">
-                กรุณาเตรียมสลิปการโอนเงินที่แสดงการชำระค่าบำรุงการศึกษาและค่าเครื่องแบบให้เรียบร้อย
-              </p>
+              <h3 class="text-lg font-semibold text-gray-800 mb-1">สำเนาทะเบียนบ้านของตนเอง</h3>
+              <p class="text-gray-600 text-sm">เตรียมสำเนาทะเบียนบ้านของนักเรียนโดยต้องเป็นเอกสารที่ชัดเจนและสมบูรณ์</p>
             </div>
           </div>
-
-          <!-- Document Item 2 -->
           <div class="flex items-start space-x-4 p-4 bg-green-50 rounded-xl border border-green-200">
             <div class="flex-shrink-0 w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
               <span class="text-white font-bold">2</span>
             </div>
             <div class="flex-1">
-              <h3 class="text-lg font-semibold text-gray-800 mb-1">
-                สำเนาทะเบียนบ้านของตนเอง
-              </h3>
-              <p class="text-gray-600 text-sm">
-                เตรียมสำเนาทะเบียนบ้านของนักเรียนโดยต้องเป็นเอกสารที่ชัดเจนและสมบูรณ์
-              </p>
+              <h3 class="text-lg font-semibold text-gray-800 mb-1">สำเนาทะเบียนบ้านของบิดา-มารดา</h3>
+              <p class="text-gray-600 text-sm">เตรียมสำเนาทะเบียนบ้านของบิดาหรือมารดา หรือผู้ปกครองที่รับผิดชอบ</p>
             </div>
           </div>
-
-          <!-- Document Item 3 -->
           <div class="flex items-start space-x-4 p-4 bg-teal-50 rounded-xl border border-teal-200">
             <div class="flex-shrink-0 w-10 h-10 bg-teal-600 rounded-full flex items-center justify-center">
               <span class="text-white font-bold">3</span>
             </div>
             <div class="flex-1">
-              <h3 class="text-lg font-semibold text-gray-800 mb-1">
-                สำเนาทะเบียนบ้านของบิดา-มารดา
-              </h3>
-              <p class="text-gray-600 text-sm">
-                เตรียมสำเนาทะเบียนบ้านของบิดาหรือมารดา หรือผู้ปกครองที่รับผิดชอบ
-              </p>
+              <h3 class="text-lg font-semibold text-gray-800 mb-1">สลิปการโอนชำระค่าบำรุงการศึกษาและเครื่องแบบ</h3>
+              <p class="text-gray-600 text-sm">กรุณาเตรียมสลิปการโอนเงินที่แสดงการชำระค่าบำรุงการศึกษาและค่าเครื่องแบบให้เรียบร้อย</p>
             </div>
           </div>
         </div>
-
-        <!-- Important Notice -->
-      
       </div>
 
-      <!-- Divider -->
       <div class="border-t border-gray-200"></div>
 
-      <!-- ID Card Input Section -->
+      <!-- ID Card Input -->
       <div class="mt-8">
         <h3 class="text-lg font-semibold text-gray-700 flex items-center gap-2 mb-4">
           <UserIcon class="w-5 h-5 text-emerald-500" /> ข้อมูลส่วนตัว
@@ -87,14 +63,20 @@
             <p v-if="errorMessage" class="mt-2 text-sm text-red-600">{{ errorMessage }}</p>
           </div>
 
-          <!-- Submit Button -->
           <div class="flex justify-center mt-6">
             <button 
               @click="handleSubmit"
-              :disabled="!isValidIdCard"
+              :disabled="!isValidIdCard || isLoading"
               class="px-8 py-3 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105"
             >
-              มอบตัว
+              <span v-if="isLoading" class="flex items-center gap-2">
+                <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                </svg>
+                กำลังตรวจสอบ...
+              </span>
+              <span v-else>ดำเนินการต่อ</span>
             </button>
           </div>
         </div>
@@ -103,59 +85,68 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import {
-  DocumentTextIcon,
-  UserIcon,
-  DocumentArrowUpIcon,
-  BanknotesIcon,
-  CheckCircleIcon,
-  CheckIcon
-} from '@heroicons/vue/24/outline'
+import { DocumentTextIcon, UserIcon } from '@heroicons/vue/24/outline'
+
+import api from '@/services/httpClient.ts'
 
 const router = useRouter()
-const currentStep = ref(2) // Current step is confirmation
-
-const steps = [
-  { label: 'อัปโหลดเอกสารเพิ่มเติม', sub: 'เอกสารประกอบการสมัคร', icon: DocumentArrowUpIcon },
-  { label: 'อัปโหลดหลักฐานการชำระเงิน', sub: 'สลิปการโอนเงิน', icon: BanknotesIcon },
-  { label: 'ยืนยันข้อมูล', sub: 'มอบตัว', icon: CheckCircleIcon },
-]
-
 const idCard = ref('')
 const errorMessage = ref('')
 const isValidIdCard = ref(false)
+const isLoading = ref(false)
 
-const validateIdCard = (event) => {
-  const value = event.target.value
-  
-  // อนุญาตให้กรอกเฉพาะตัวเลขเท่านั้น
+const validateIdCard = (event: Event) => {
+  const value = (event.target as HTMLInputElement).value
   if (!/^\d*$/.test(value)) {
-    event.target.value = value.replace(/\D/g, '')
+    (event.target as HTMLInputElement).value = value.replace(/\D/g, '')
     return
   }
-  
-  idCard.value = event.target.value
-  
-  // ตรวจสอบความถูกต้อง
+  idCard.value = value
   if (value.length === 0) {
     errorMessage.value = ''
     isValidIdCard.value = false
   } else if (value.length < 13) {
     errorMessage.value = 'กรุณากรอกเลขบัตรประชาชนให้ครบ 13 หลัก'
     isValidIdCard.value = false
-  } else if (value.length === 13) {
+  } else {
     errorMessage.value = ''
     isValidIdCard.value = true
   }
 }
 
-const handleSubmit = () => {
-  if (isValidIdCard.value) {
-    // นำทางไปยังหน้า SuccessView
-    router.push('/success')
+const handleSubmit = async () => {
+  if (!isValidIdCard.value) return
+  isLoading.value = true
+  errorMessage.value = ''
+
+  try {
+    // ตรวจสอบว่ามีในระบบและชำระเงินแล้ว
+    const res = await api.get(`/applications/check/${idCard.value}`)
+    const status = res.data?.data?.status
+
+    if (status === 'enrolled') {
+      errorMessage.value = 'ท่านได้ทำการมอบตัวแล้ว'
+      return
+    }
+    if (status !== 'paid') {
+      errorMessage.value = 'ยังไม่ได้ชำระเงิน หรือยังไม่ได้รับการยืนยัน'
+      return
+    }
+
+    // ผ่านแล้ว → ไปหน้าอัปโหลดเอกสาร พร้อมส่ง idCard ไปด้วย
+    router.push(`/enrollment/${idCard.value}`)
+
+  } catch (error: any) {
+    if (error.response?.status === 404) {
+      errorMessage.value = 'ไม่พบข้อมูลการสมัครในระบบ'
+    } else {
+      errorMessage.value = 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง'
+    }
+  } finally {
+    isLoading.value = false
   }
 }
 </script>

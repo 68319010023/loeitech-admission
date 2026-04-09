@@ -32,6 +32,8 @@ jobs:
           context: ./frontend
           push: true
           tags: ${{ secrets.REGISTRY_URL }}/loeitech-frontend:prod
+          build-args: |
+            VITE_API_URL=https://api-admission.loeitech.ac.th
 
       - name: Deploy to Server
         uses: appleboy/ssh-action@v1.0.3
@@ -39,14 +41,15 @@ jobs:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 223
           script: |
-            cd /home/adm1n_ltc/loeitech-admission \
+            cd /home/adm1n_ltc/loeitech-admission
             STACK_NAME=ltc-admission-prod \
             IMAGE_TAG=prod \
-            BACKEND_PORT=3001 \
+            BACKEND_PORT=3003 \
             FRONTEND_PORT=5173 \
             REGISTRY_URL=${{ secrets.REGISTRY_URL }} \
             DATABASE_URL=${{ secrets.DATABASE_URL_PROD }} \
             JWT_SECRET=${{ secrets.JWT_SECRET_PROD }} \
             FRONTEND_URL=https://admission.loeitech.ac.th \
-            ./deploy.sh
+            bash deploy.sh

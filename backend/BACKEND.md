@@ -247,16 +247,6 @@ GET http://localhost:3001/api/health
 | `file_path` | VARCHAR | path ไฟล์ที่บันทึก |
 | `created_at` | TIMESTAMP | วันที่อัพโหลด |
 
-### ตาราง `branches`
-เก็บข้อมูลสาขาวิชา
-
-| Column | Type | หน้าที่ |
-|---|---|---|
-| `id` | INTEGER | Primary key |
-| `name` | VARCHAR | ชื่อสาขาวิชา |
-| `course_type` | VARCHAR | ปวช. หรือ ปวส. |
-| `quota` | INTEGER | จำนวนที่รับ |
-| `is_active` | BOOLEAN | เปิดรับสมัครหรือไม่ |
 
 ### ตาราง `users` (เจ้าหน้าที่)
 
@@ -268,7 +258,4 @@ GET http://localhost:3001/api/health
 | `role` | VARCHAR | admin / staff |
 | `created_at` | TIMESTAMP | วันที่สร้าง |
 
----
 
-## 👥 ทีมพัฒนา
-วิทยาลัยเทคนิคเลย — ปีการศึกษา 2569

@@ -5,15 +5,17 @@ const router = createRouter({
   routes: [
     { path: '/', component: () => import('../views/HomeView.vue') },
     { path: '/register', component: () => import('../views/RegisterView.vue') },
-    // --- รวม Route ที่ต้องการเข้าด้วยกัน และลบเครื่องหมาย <<<<< ===== >>>>> ออกให้หมด ---
-    { path: '/status', component: () => import('../views/StatusView.vue') },
-    { path: '/success', component: () => import('../views/SuccessView.vue') },
-    { path: '/enrollment', component: () => import('../views/StatusView.vue') },
     { path: '/check-status', component: () => import('../views/CheckStatusView.vue') },
-    // --------------------------------------------------------------------------
+    { path: '/enrollment', component: () => import('../views/StatusView.vue') },
+    { path: '/enrollment/:idCard', component: () => import('../views/SuccessView.vue') },
+    { path: '/check-status', component: () => import('../views/CheckStatusView.vue') },
+    { path: '/login', component: () => import('../views/LoginView.vue') },
+
     { path: '/admin/users', component: () => import('../views/AdminUsersView.vue') },
+    { path: '/admin/manage-users', component: () => import('../views/AdminManageUsersView.vue') },
     { path: '/admin/settings', component: () => import('../views/AdminSettingsView.vue') },
     { path: '/admin/expenses', component: () => import('../views/AdminExpensesView.vue') },
+    { path: '/admin/onsite-enrollment', component: () => import('../views/OnsiteEnrollmentView.vue') },
   ],
 })
 
