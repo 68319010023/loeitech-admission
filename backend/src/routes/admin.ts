@@ -25,7 +25,6 @@ import {
   deleteDivision,
   getDivisionChildren
 } from '../controllers/divisionController'
-
 import {
   getUsers,
   createUser,
@@ -35,16 +34,16 @@ import {
 import {
   login
 } from '../controllers/authController'
+import { getApplicants } from '../controllers/adminControllers'
 
 const router = Router()
-
 
 // Curriculum routes
 router.get('/curriculums', getCurriculums)
 router.post('/curriculums', createCurriculum)
 router.put('/curriculums/:id', updateCurriculum)
 router.delete('/curriculums/:id', deleteCurriculum)
-router.get('/curriculums/:id/children', getCurriculumChildren)  
+router.get('/curriculums/:id/children', getCurriculumChildren)
 
 // Division routes
 router.get('/divisions', getDivisions)
@@ -73,5 +72,7 @@ router.get('/users', getUsers)
 router.post('/users', createUser)
 router.put('/users/:id', updateUser)
 router.delete('/users/:id', deleteUser)
+
+router.get('/applicants', getApplicants)
 
 export default router

@@ -1,4 +1,6 @@
-import { apiService as api } from '../utils/api'
+
+import api from './httpClient.ts'
+
 
 export const applicationService = {
     // ดึงหลักสูตร

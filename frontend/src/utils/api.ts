@@ -256,6 +256,10 @@ class ApiService {
       body: JSON.stringify(data),
     })
   }
+    // ── Applicants API ─────────────────────────────────────
+    async getApplicants() {
+    return this.request<any[]>('/admin/applicants')
+  }
 }
 
 export const apiService = new ApiService()

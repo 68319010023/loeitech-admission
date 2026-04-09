@@ -383,7 +383,7 @@ import {
   CheckIcon, DocumentTextIcon, PhotoIcon, CheckBadgeIcon, ArrowDownTrayIcon
 } from '@heroicons/vue/24/outline'
 import jsPDF from 'jspdf'
-import api from '@/services/api'
+import api from '@/services/httpClient.ts'
 
 interface HouseDoc {
   front: File | null
