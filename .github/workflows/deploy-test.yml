@@ -33,7 +33,7 @@ jobs:
           push: true
           tags: ${{ secrets.REGISTRY_URL }}/loeitech-frontend:test
           build-args: |
-            VITE_API_URL=https://test-api-admission.loeitech.ac.th
+            VITE_API_URL=https://test-api-admission.loeitech.ac.th/api
 
       - name: Copy deployment files to Server
         uses: appleboy/scp-action@v0.1.7
