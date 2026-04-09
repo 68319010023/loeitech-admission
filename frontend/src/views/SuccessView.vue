@@ -423,11 +423,13 @@ const steps = [
   { label: 'เสร็จสิ้น', sub: 'สำเร็จ', icon: CheckBadgeIcon },
 ]
 
+// ✅ onMounted เดียว รวมทั้งดึงข้อมูล + รูปเดิม
 onMounted(async () => {
   if (!idCard) { router.push('/check-status'); return }
   try {
     const res = await api.get(`/applications/check/${idCard}`)
     const data = res.data?.data
+
     userData.value = {
       fullName: data.full_name,
       prefix: data.prefix,
@@ -435,6 +437,16 @@ onMounted(async () => {
       divName: data.div_name,
       totalAmount: Number(data.total_amount) || 0
     }
+
+    // ดึงรูปที่เคยอัพไว้มาแสดง (ถ้ามี)
+    if (data.self_front_url) selfHouseRegistration.frontPreview = data.self_front_url
+    if (data.self_back_url) selfHouseRegistration.backPreview = data.self_back_url
+    if (data.father_front_url) fatherHouseRegistration.frontPreview = data.father_front_url
+    if (data.father_back_url) fatherHouseRegistration.backPreview = data.father_back_url
+    if (data.mother_front_url) motherHouseRegistration.frontPreview = data.mother_front_url
+    if (data.mother_back_url) motherHouseRegistration.backPreview = data.mother_back_url
+    if (data.payment_slip_url) paymentSlip.frontPreview = data.payment_slip_url
+
   } catch {
     showToast('error', 'โหลดข้อมูลไม่สำเร็จ', 'ไม่สามารถดึงข้อมูลได้ กรุณาลองใหม่')
     setTimeout(() => router.push('/check-status'), 2000)
@@ -443,9 +455,12 @@ onMounted(async () => {
   }
 })
 
+// ✅ เช็ค Preview แทน File (รองรับรูปเดิมที่โหลดมาจาก API)
 const isAllDocumentsUploaded = computed(() => {
-  if (currentStep.value === 0) return selfHouseRegistration.front && selfHouseRegistration.back
-  if (currentStep.value === 1) return paymentSlip.front
+  if (currentStep.value === 0) {
+    return selfHouseRegistration.frontPreview && selfHouseRegistration.backPreview
+  }
+  if (currentStep.value === 1) return paymentSlip.frontPreview
   return true
 })
 
@@ -473,12 +488,13 @@ const handleNextClick = () => {
   }
 }
 
+// ✅ handleConfirmation เดียว ส่งเฉพาะไฟล์ที่เปลี่ยนใหม่
 const handleConfirmation = async () => {
-  console.log('idCard ที่ส่งไป:', idCard)
   isLoading.value = true
   try {
     const formData = new FormData()
     formData.append('idCard', idCard)
+
     if (selfHouseRegistration.front) formData.append('self_front', selfHouseRegistration.front)
     if (selfHouseRegistration.back) formData.append('self_back', selfHouseRegistration.back)
     if (fatherHouseRegistration.front) formData.append('father_front', fatherHouseRegistration.front)
@@ -492,7 +508,6 @@ const handleConfirmation = async () => {
     })
 
     await Promise.all([generateCertificatePDF(), generateUniformOrderPDF()])
-
     currentStep.value = 3
 
   } catch (error: any) {
@@ -551,7 +566,7 @@ const showToast = (type: 'success' | 'error', title: string, message: string) =>
   toast.value = { show: true, type, title, message }
   toastTimer = setTimeout(() => { toast.value.show = false }, 4000)
 }
-</script>
+</script> 
 
 <style scoped>
 .toast-enter-active, .toast-leave-active { transition: all 0.4s ease; }

@@ -258,25 +258,33 @@ export const checkStatus = async (req: Request, res: Response) => {
       `
       SELECT
         a.app_id, a.prefix, a.full_name, a.status, a.created_at,
+        a.phone, a.id_card_number,
         c.cur_name, d.div_name,
         p.total_amount, p.required_amount, p.due_date,
         p.paid_at, p.verified_at,
-        e.enrolled_at, e.verified_at AS enroll_verified_at
+        e.enrolled_at, e.verified_at AS enroll_verified_at,
+        -- ดึง URL รูปที่เคยอัพไว้
+        MAX(CASE WHEN doc.doc_type = 'self_house_front'   THEN doc.file_path END) AS self_front_url,
+        MAX(CASE WHEN doc.doc_type = 'self_house_back'    THEN doc.file_path END) AS self_back_url,
+        MAX(CASE WHEN doc.doc_type = 'father_house_front' THEN doc.file_path END) AS father_front_url,
+        MAX(CASE WHEN doc.doc_type = 'father_house_back'  THEN doc.file_path END) AS father_back_url,
+        MAX(CASE WHEN doc.doc_type = 'mother_house_front' THEN doc.file_path END) AS mother_front_url,
+        MAX(CASE WHEN doc.doc_type = 'mother_house_back'  THEN doc.file_path END) AS mother_back_url,
+        MAX(CASE WHEN doc.doc_type = 'payment_slip'       THEN doc.file_path END) AS payment_slip_url
       FROM applicants a
       JOIN curriculums c ON c.cur_id = a.cur_id
       JOIN divisions d ON d.div_id = a.div_id
       LEFT JOIN payments p ON p.app_id = a.app_id
       LEFT JOIN enrollments e ON e.app_id = a.app_id
+      LEFT JOIN documents doc ON doc.app_id = a.app_id
       WHERE a.id_card_number = $1
-    `,
-      [idCard],
-    );
+    `, [idCard])
 
     if (result.rows.length === 0) {
       return sendError(res, "ไม่พบข้อมูลการสมัคร", 404);
     }
 
-    sendSuccess(res, result.rows[0]);
+    sendSuccess(res, result.rows[0])
   } catch (err) {
     sendError(res, "เกิดข้อผิดพลาด", 500, err);
   }
@@ -339,6 +347,9 @@ export const getStats = async (_req: Request, res: Response) => {
   GROUP BY ap.ap_id, d.div_id, d.div_name, c.cur_id, c.cur_shortname, ap.plan_num
   ORDER BY c.cur_id, d.div_id
 `);
+
+
+    
 
     sendSuccess(res, {
       overview: overview.rows[0],
