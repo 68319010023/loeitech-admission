@@ -4,6 +4,7 @@ import helmet from 'helmet'
 import morgan from 'morgan'
 import dotenv from 'dotenv'
 import pool from './config/db'
+import path from 'path'
 
 import authRoutes from './routes/auth'
 import applicationRoutes from './routes/applications'
@@ -29,7 +30,9 @@ const corsOptions = {
 app.options('*', cors(corsOptions))
 app.use(cors(corsOptions))
 
-app.use(helmet())
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}))
 
 app.use(cors({ origin: ['http://localhost:13000', 'http://localhost:5173'], credentials: true }))
 app.use(morgan('dev'))
@@ -42,6 +45,9 @@ app.use('/api/applications', applicationRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/enrollments', enrollmentRoutes) 
 
+// ให้ browser เข้าถึงรูปได้
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
+
 // Health check
 app.get('/api/health', async (_req, res) => {
   try {
@@ -51,6 +57,7 @@ app.get('/api/health', async (_req, res) => {
     res.status(500).json({ success: false, message: 'DB connection failed' })
   }
 })
+
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`)

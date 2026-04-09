@@ -203,23 +203,55 @@ export const checkStatus = async (req: Request, res: Response) => {
     const result = await pool.query(`
       SELECT
         a.app_id, a.prefix, a.full_name, a.status, a.created_at,
+        a.phone, a.id_card_number,
         c.cur_name, d.div_name,
         p.total_amount, p.required_amount, p.due_date,
         p.paid_at, p.verified_at,
-        e.enrolled_at, e.verified_at AS enroll_verified_at
+        e.enrolled_at, e.verified_at AS enroll_verified_at,
+        -- ดึง URL รูปที่เคยอัพไว้
+        MAX(CASE WHEN doc.doc_type = 'self_house_front'   THEN doc.file_path END) AS self_front_url,
+        MAX(CASE WHEN doc.doc_type = 'self_house_back'    THEN doc.file_path END) AS self_back_url,
+        MAX(CASE WHEN doc.doc_type = 'father_house_front' THEN doc.file_path END) AS father_front_url,
+        MAX(CASE WHEN doc.doc_type = 'father_house_back'  THEN doc.file_path END) AS father_back_url,
+        MAX(CASE WHEN doc.doc_type = 'mother_house_front' THEN doc.file_path END) AS mother_front_url,
+        MAX(CASE WHEN doc.doc_type = 'mother_house_back'  THEN doc.file_path END) AS mother_back_url,
+        MAX(CASE WHEN doc.doc_type = 'payment_slip'       THEN doc.file_path END) AS payment_slip_url
       FROM applicants a
       JOIN curriculums c ON c.cur_id = a.cur_id
       JOIN divisions d ON d.div_id = a.div_id
       LEFT JOIN payments p ON p.app_id = a.app_id
       LEFT JOIN enrollments e ON e.app_id = a.app_id
+      LEFT JOIN documents doc ON doc.app_id = a.app_id
       WHERE a.id_card_number = $1
+      GROUP BY a.app_id, c.cur_name, d.div_name,
+               p.total_amount, p.required_amount, p.due_date,
+               p.paid_at, p.verified_at,
+               e.enrolled_at, e.verified_at
     `, [idCard])
 
     if (result.rows.length === 0) {
       return sendError(res, 'ไม่พบข้อมูลการสมัคร', 404)
     }
 
-    sendSuccess(res, result.rows[0])
+    const BASE_URL = process.env.BASE_URL || 'http://localhost:3001'
+    const row = result.rows[0]
+
+    const toUrl = (filePath: string | null) => {
+      if (!filePath) return null
+      const normalized = filePath.replace(/\\/g, '/')
+      return `${BASE_URL}/${normalized}`
+    }
+
+    sendSuccess(res, {
+      ...row,
+      self_front_url:   toUrl(row.self_front_url),
+      self_back_url:    toUrl(row.self_back_url),
+      father_front_url: toUrl(row.father_front_url),
+      father_back_url:  toUrl(row.father_back_url),
+      mother_front_url: toUrl(row.mother_front_url),
+      mother_back_url:  toUrl(row.mother_back_url),
+      payment_slip_url: toUrl(row.payment_slip_url),
+    })
   } catch (err) {
     sendError(res, 'เกิดข้อผิดพลาด', 500, err)
   }
@@ -264,6 +296,9 @@ export const getStats = async (_req: Request, res: Response) => {
       GROUP BY d.div_id, d.div_name, c.cur_shortname, ap.plan_num
       ORDER BY c.cur_id, d.div_id
     `)
+
+
+    
 
     sendSuccess(res, {
       overview: overview.rows[0],
