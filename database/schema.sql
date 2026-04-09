@@ -17,14 +17,14 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE public.curriculums (
     cur_id        serial       NOT NULL,
     cur_name      varchar(200) NULL,
-    cur_shortname varchar(20)  NULL,
+    cur_shortname varchar(50)  NULL,
     CONSTRAINT curriculums_pkey PRIMARY KEY (cur_id)
 );
 
 -- divisions — สาขาวิชา (FK → curriculums)
 CREATE TABLE public.divisions (
     div_id   serial       NOT NULL,
-    div_name varchar(200) NULL,
+    div_name varchar(100) NULL,
     cur_id   int4         NULL,
     CONSTRAINT divisions_pkey PRIMARY KEY (div_id),
     CONSTRAINT fk_cur_id FOREIGN KEY (cur_id) REFERENCES public.curriculums(cur_id)
