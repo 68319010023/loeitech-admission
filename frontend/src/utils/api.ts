@@ -256,9 +256,14 @@ class ApiService {
       body: JSON.stringify(data),
     })
   }
-    // ── Applicants API ─────────────────────────────────────
-    async getApplicants() {
+  // ── Applicants API ─────────────────────────────────────
+  async getApplicants() {
     return this.request<any[]>('/admin/applicants')
+  }
+
+  // เพิ่มใน ApiService class
+  async getStats() {
+    return this.request<any>('/applications/stats')
   }
 }
 

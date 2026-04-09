@@ -170,7 +170,7 @@ export const getEnrollmentSummary = async (_req: Request, res: Response) => {
       SELECT
         ap.ap_id, ap.ap_years, ap.plan_num,
         c.cur_name, c.cur_shortname,c.cur_id,
-        d.div_name,
+        d.div_name,d.div_id,
         COUNT(DISTINCT a.app_id) FILTER (WHERE a.status = 'enrolled') AS online_enrolled,
         COALESCE(o.count, 0) AS onsite_enrolled,
         COUNT(DISTINCT a.app_id) FILTER (WHERE a.status = 'enrolled') + COALESCE(o.count, 0) AS total_enrolled,
@@ -183,7 +183,7 @@ export const getEnrollmentSummary = async (_req: Request, res: Response) => {
       LEFT JOIN applicants a ON a.ap_id = ap.ap_id
       LEFT JOIN onsite_enrollments o ON o.ap_id = ap.ap_id
       GROUP BY ap.ap_id, ap.ap_years, ap.plan_num,c.cur_id,
-               c.cur_name, c.cur_shortname, d.div_name, o.count
+               c.cur_name, c.cur_shortname, d.div_name, o.count,d.div_id
       ORDER BY ap.ap_years DESC, c.cur_id, d.div_name
     `)
     sendSuccess(res, result.rows)
