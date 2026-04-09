@@ -35,14 +35,14 @@ jobs:
           build-args: |
             VITE_API_URL=https://test-api-admission.loeitech.ac.th
 
-      - name: Copy docker-compose.yml to Server
+      - name: Copy deployment files to Server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 223
-          source: "docker-compose.yml"
+          source: "docker-compose.yml,deploy.sh"
           target: /home/adm1n_ltc/loeitech-admission/
 
       - name: Deploy to Server
@@ -54,6 +54,7 @@ jobs:
           port: 223
           script: |
             cd /home/adm1n_ltc/loeitech-admission
+            chmod +x deploy.sh
             STACK_NAME=ltc-admission-test \
             IMAGE_TAG=test \
             BACKEND_PORT=3002 \
