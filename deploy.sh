@@ -30,4 +30,7 @@ docker compose --env-file .env.$STACK_NAME pull
 # Restart the containers
 docker compose --env-file .env.$STACK_NAME up -d --remove-orphans
 
+# Remove dangling images (old untagged images left after pull)
+docker image prune -f
+
 echo "✅ Deployment successful for $STACK_NAME"
