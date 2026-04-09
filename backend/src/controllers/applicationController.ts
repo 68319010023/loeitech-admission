@@ -278,6 +278,13 @@ export const checkStatus = async (req: Request, res: Response) => {
       LEFT JOIN enrollments e ON e.app_id = a.app_id
       LEFT JOIN documents doc ON doc.app_id = a.app_id
       WHERE a.id_card_number = $1
+        GROUP BY
+        a.app_id, a.prefix, a.full_name, a.status, a.created_at,
+        a.phone, a.id_card_number,
+        c.cur_name, d.div_name,
+        p.total_amount, p.required_amount, p.due_date,
+        p.paid_at, p.verified_at,
+        e.enrolled_at, e.verified_at
     `, [idCard])
 
     if (result.rows.length === 0) {

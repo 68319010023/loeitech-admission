@@ -1,6 +1,65 @@
 import { Request, Response } from 'express'
 import pool from '../config/db'
 import { sendSuccess, sendError } from '../utils/response'
+import axios from 'axios'
+import fs from 'fs'
+import FormData from 'form-data'
+
+
+
+////////ฟังก์ชัน สลิป
+
+export const verifySlip = async (req: Request, res: Response) => {
+  try {
+    const file = req.file
+    if (!file) return sendError(res, 'ไม่พบไฟล์สลิป', 400)
+
+       console.log('🔑 API Key:', `[${process.env.SLIPOK_API_KEY}]`)
+    console.log('🔑 Branch ID:', `[${process.env.SLIPOK_BRANCH_ID}]`)
+
+    const formData = new FormData()
+    formData.append('files', fs.createReadStream(file.path), file.originalname)
+
+  const slipokRes = await axios.post(
+  `https://api.slipok.com/api/line/apikey/${process.env.SLIPOK_BRANCH_ID}`,
+  formData,
+  {
+    headers: {
+      ...formData.getHeaders(),
+       'x-authorization': process.env.SLIPOK_API_KEY
+    }
+  }
+)
+
+    // ลบไฟล์ temp หลังตรวจแล้ว
+    fs.unlinkSync(file.path)
+
+    const data = slipokRes.data
+
+    if (data.success) {
+      return sendSuccess(res, {
+        valid:    true,
+        amount:   data.data.amount,
+        date:     data.data.transDate,
+        sender:   data.data.sender?.displayName   ?? '-',
+        receiver: data.data.receiver?.displayName ?? '-',
+      })
+    }
+
+    // สลิปไม่ผ่าน
+    sendSuccess(res, { valid: false, message: data.message ?? 'สลิปไม่ถูกต้อง' })
+
+  } catch (err: any) {
+      console.error('❌ verifySlip error:', err.message)           // เพิ่ม
+    console.error('❌ Slipok response:', err.response?.data)  
+    if (req.file?.path && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path)
+    }
+    sendError(res, 'ตรวจสอบสลิปไม่สำเร็จ', 500, err)
+  }
+}
+
+/////////////////////////////////////////////////////////////////////////////
 
 export const confirmEnrollment = async (req: Request, res: Response) => {
   const client = await pool.connect()
