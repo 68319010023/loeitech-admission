@@ -7,7 +7,7 @@ export const getAdmissionPlans = async (_req: Request, res: Response) => {
     const query = `
       SELECT 
         ap.*,
-        c.cur_name,
+        c.*,
         d.div_name
       FROM admission_plan ap
       JOIN curriculums c ON ap.cur_id = c.cur_id
@@ -22,7 +22,8 @@ export const getAdmissionPlans = async (_req: Request, res: Response) => {
       plan_num: row.plan_num,
       curriculum: {
         cur_id: row.cur_id,
-        cur_name: row.cur_name
+        cur_name: row.cur_name,
+        cur_shortname: row.cur_shortname
       },
       division: {
         div_id: row.div_id,

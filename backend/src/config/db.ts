@@ -5,17 +5,12 @@ dotenv.config()
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: false,
-  max: 10,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  ssl: process.env.DB_SSL === 'false' ? false : undefined,
 })
 
 pool.connect((err, _client, release) => {
   if (err) {
-    console.error('❌ DB Error full:', err)
-    console.error('❌ DB Error message:', err.message)
-    console.error('❌ DB Error code:', (err as any).code)
+    console.error('❌ DB Error:', err.message)
   } else {
     console.log('✅ DB Connected!')
     release()

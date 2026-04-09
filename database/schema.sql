@@ -30,7 +30,7 @@ CREATE TABLE public.divisions (
     CONSTRAINT fk_cur_id FOREIGN KEY (cur_id) REFERENCES public.curriculums(cur_id)
 );
 
--- admission_plan — โควต้าการรับสมัครต่อปีการศึกษา (FK → curriculums, divisions)
+-- admission_plan — จำนวนที่เปิดรับสมัครต่อปีการศึกษา (FK → curriculums, divisions)
 -- plan_num = จำนวนที่นั่งที่เปิดรับ
 -- ที่นั่งว่าง = plan_num - COUNT(applicants ที่เลือก ap_id นี้)
 CREATE TABLE public.admission_plan (
