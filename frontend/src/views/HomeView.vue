@@ -49,17 +49,18 @@
       </h2>
       <div class="bg-white rounded-2xl shadow-sm p-6">
         <div class="grid grid-cols-2 gap-8">
-          <!-- ขั้นตอน -->
           <div>
             <p class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-4">ขั้นตอน</p>
             <div class="flex flex-col">
               <div v-for="(step, i) in howToSteps" :key="i" class="flex gap-3">
                 <div class="flex flex-col items-center">
-                  <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                  <div
+                    class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
                     style="background: linear-gradient(135deg, rgba(20,184,166,0.9), rgba(101,163,13,0.9))">
                     {{ i + 1 }}
                   </div>
-                  <div v-if="i < howToSteps.length - 1" class="w-0.5 bg-gray-100 flex-1 my-1" style="min-height: 20px;" />
+                  <div v-if="i < howToSteps.length - 1" class="w-0.5 bg-gray-100 flex-1 my-1"
+                    style="min-height: 20px;" />
                 </div>
                 <div class="pb-4">
                   <p class="font-medium text-gray-800 text-sm">{{ step.title }}</p>
@@ -68,13 +69,10 @@
               </div>
             </div>
           </div>
-
-          <!-- เอกสารที่ต้องใช้ -->
           <div>
             <p class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-4">เอกสารที่ต้องใช้</p>
             <div class="space-y-2">
-              <div v-for="doc in documents" :key="doc.label"
-                class="flex items-start gap-2.5 p-3 rounded-xl bg-gray-50">
+              <div v-for="doc in documents" :key="doc.label" class="flex items-start gap-2.5 p-3 rounded-xl bg-gray-50">
                 <div class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
                   :class="doc.type === 'required' ? 'bg-emerald-100' : doc.type === 'either' ? 'bg-orange-100' : 'bg-blue-100'">
                   <component :is="doc.icon" class="w-3.5 h-3.5"
@@ -84,9 +82,8 @@
                   <p class="text-xs font-medium text-gray-700">{{ doc.label }}</p>
                   <p class="text-xs text-gray-400 mt-0.5">{{ doc.desc }}</p>
                 </div>
-                <span class="text-xs px-2 py-0.5 rounded-full flex-shrink-0 font-medium"
-                  :class="doc.type === 'required' ? 'bg-emerald-100 text-emerald-600'
-                    : doc.type === 'either' ? 'bg-orange-100 text-orange-500'
+                <span class="text-xs px-2 py-0.5 rounded-full flex-shrink-0 font-medium" :class="doc.type === 'required' ? 'bg-emerald-100 text-emerald-600'
+                  : doc.type === 'either' ? 'bg-orange-100 text-orange-500'
                     : 'bg-blue-100 text-blue-500'">
                   {{ doc.type === 'required' ? 'จำเป็น' : doc.type === 'either' ? 'อย่างใดอย่างหนึ่ง' : 'เพิ่มเติม' }}
                 </span>
@@ -94,7 +91,6 @@
             </div>
           </div>
         </div>
-
         <RouterLink to="/register"
           class="mt-6 w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium text-white transition-all"
           style="background: linear-gradient(to right, rgba(20,184,166,0.9), rgba(101,163,13,0.9))">
@@ -106,13 +102,18 @@
     <!-- สถิติการรับสมัคร -->
     <div id="stats">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-base font-semibold text-gray-700 flex items-center gap-2">
-          <ChartBarIcon class="w-5 h-5 text-emerald-500" /> สถิติการรับสมัคร ปีการศึกษา 2569
+        <h2 class="text-3xl font-semibold text-gray-700 flex items-center gap-2">
+          <ChartBarIcon class=" w-7 h-7 text-emerald-500" /> สถิติการรับสมัครนักเรียน นักศึกษา ปีการศึกษา 2569
         </h2>
-        <div class="flex gap-2">
+      </div>
+      <div class="flex items-center gap-3">
+        <!-- Loading indicator -->
+        <span v-if="isLoading" class="text-xs text-gray-400 flex items-center gap-1">
+          <ArrowPathIcon class="w-3 h-3 animate-spin" /> กำลังโหลด...
+        </span>
+        <div class="flex gap-2 mb-4">
           <button v-for="f in filters" :key="f.id" @click="activeFilter = f.id"
-            class="px-4 py-1.5 rounded-xl text-xs font-medium transition-all border"
-            :class="activeFilter === f.id
+            class="px-4 py-1.5 rounded-xl text-xs font-medium transition-all border" :class="activeFilter === f.id
               ? 'bg-emerald-500 text-white border-emerald-500'
               : 'bg-white text-gray-500 border-gray-200 hover:border-emerald-300'">
             {{ f.label }}
@@ -121,123 +122,136 @@
       </div>
 
       <!-- ภาพรวม -->
-      <div v-if="activeFilter === 'all'" class="grid grid-cols-3 gap-4 mb-4">
+      <div v-if="activeFilter === 'all'" class="grid grid-cols-2 gap-4 my-4">
         <div v-for="stat in overviewStats" :key="stat.label" class="bg-white rounded-2xl p-5 shadow-sm">
           <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
             :style="`background-color: ${stat.bgColor}`">
             <component :is="stat.icon" class="w-5 h-5" :style="`color: ${stat.color}`" />
           </div>
-          <p class="text-2xl font-bold text-gray-800">{{ stat.value }}</p>
+          <p class="text-2xl font-bold text-gray-800">{{ stat.value.toLocaleString() }}</p>
           <p class="text-xs text-gray-400 mt-0.5">{{ stat.label }}</p>
           <p class="text-xs mt-1" :style="`color: ${stat.color}`">{{ stat.desc }}</p>
         </div>
       </div>
 
-      <!-- กราฟเปรียบเทียบ ปวช./ปวส. -->
-      <div v-if="activeFilter === 'all' || activeFilter === 'course'" class="bg-white rounded-2xl shadow-sm p-6 mb-4">
-        <p class="text-sm font-semibold text-gray-700 mb-5">เปรียบเทียบ ปวช. vs ปวส.</p>
-        <div class="space-y-5">
-          <div v-for="c in courseStats" :key="c.name">
-            <div class="flex items-center justify-between mb-2">
-              <div class="flex items-center gap-2">
-                <span class="text-sm font-semibold" :class="c.name === 'ปวช.' ? 'text-emerald-600' : 'text-blue-600'">
-                  {{ c.name }}
-                </span>
-                <span class="text-xs text-gray-400">โควต้า {{ c.quota }} ที่นั่ง</span>
-              </div>
-            </div>
-            <div class="relative h-8 bg-gray-100 rounded-xl overflow-hidden">
-              <div class="absolute inset-0 flex items-center px-3">
-                <span class="text-xs text-gray-400 z-10">โควต้า {{ c.quota }}</span>
-              </div>
-              <div class="absolute left-0 top-0 h-full rounded-xl flex items-center px-3 transition-all"
-                :style="`width: ${c.applicantPct}%; background-color: ${c.name === 'ปวช.' ? '#6ee7b7' : '#93c5fd'}`">
-              </div>
-              <div class="absolute left-0 top-0 h-full rounded-xl transition-all"
-                :style="`width: ${c.enrolledPct}%; background-color: ${c.name === 'ปวช.' ? '#10b981' : '#3b82f6'}`">
-              </div>
-            </div>
-            <div class="flex items-center gap-4 mt-2">
-              <div class="flex items-center gap-1.5">
-                <div class="w-3 h-3 rounded-full" :class="c.name === 'ปวช.' ? 'bg-emerald-500' : 'bg-blue-500'" />
-                <span class="text-xs text-gray-500">มอบตัวแล้ว {{ c.enrolled }} คน</span>
-              </div>
-              <div class="flex items-center gap-1.5">
-                <div class="w-3 h-3 rounded-full" :class="c.name === 'ปวช.' ? 'bg-emerald-200' : 'bg-blue-200'" />
-                <span class="text-xs text-gray-500">ผู้สมัคร {{ c.applicant }} คน</span>
-              </div>
-              <div class="flex items-center gap-1.5">
-                <div class="w-3 h-3 rounded-full bg-gray-200" />
-                <span class="text-xs text-gray-500">ที่ว่าง {{ c.quota - c.applicant }} ที่นั่ง</span>
-              </div>
-            </div>
+      <!-- กราฟ ปวช. vs ปวส. -->
+      <div v-for="c in courseStats" :key="c.name" class="mt-4">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <span class="text-xl font-semibold" :class="c.name === 'ปวช.' ? 'text-emerald-600' : 'text-blue-600'">
+              {{ c.name }}
+            </span>
+            <span class="text-xs text-gray-400">เปิดรับ {{ c.quota }} ที่นั่ง</span>
+          </div>
+        </div>
+        <div class="relative h-8 bg-gray-100 rounded-xl overflow-hidden">
+          <div class="absolute left-0 top-0 h-full rounded-xl transition-all"
+            :style="`width: ${c.quota > 0 ? (c.applicant / c.quota) * 100 : 0}%; background-color: ${c.name === 'ปวช.' ? '#6ee7b7' : '#93c5fd'}`" />
+          <div class="absolute left-0 top-0 h-full rounded-xl transition-all"
+            :style="`width: ${c.quota > 0 ? (c.enrolled / c.quota) * 100 : 0}%; background-color: ${c.name === 'ปวช.' ? '#10b981' : '#3b82f6'}`" />
+        </div>
+        <div class="flex items-center gap-4 mt-2">
+          <div class="flex items-center gap-1.5">
+            <div class="w-3 h-3 rounded-full" :class="c.name === 'ปวช.' ? 'bg-emerald-500' : 'bg-blue-500'" />
+            <span class="text-xs text-gray-500">มอบตัวแล้ว {{ c.enrolled }} คน</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <div class="w-3 h-3 rounded-full" :class="c.name === 'ปวช.' ? 'bg-emerald-200' : 'bg-blue-200'" />
+            <span class="text-xs text-gray-500">ผู้สมัคร {{ c.applicant }} คน</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <div class="w-3 h-3 rounded-full bg-gray-200" />
+            <!-- ที่ว่าง = จำนวนเปิดรับ - มอบตัวรวม (online+onsite) -->
+            <span class="text-xs text-gray-500">ที่ว่าง {{ c.quota - c.enrolled }} ที่นั่ง</span>
           </div>
         </div>
       </div>
 
       <!-- กราฟสาขา ปวช. -->
-      <div v-if="activeFilter === 'all' || activeFilter === 'pvc'" class="bg-white rounded-2xl shadow-sm p-6 mb-4">
+      <div v-if="activeFilter === 'all' || activeFilter === 'pvc'" class="bg-white rounded-2xl shadow-sm p-6 mt-4">
         <p class="text-sm font-semibold text-gray-700 mb-1">
           สาขาวิชา <span class="text-emerald-600">ปวช.</span>
         </p>
-        <p class="text-xs text-gray-400 mb-4">เปรียบเทียบโควต้า — ผู้สมัคร — มอบตัวแล้ว</p>
         <div class="space-y-3">
           <div v-for="b in pvcStats" :key="b.name">
             <div class="flex items-center justify-between mb-1">
-              <p class="text-xs font-medium text-gray-600">{{ b.name }}</p>
-              <div class="flex items-center gap-2 text-xs text-gray-400">
-                <span class="text-emerald-600 font-medium">{{ b.enrolled }}</span> /
-                <span class="text-gray-600 font-medium">{{ b.applicant }}</span> /
-                <span>{{ b.quota }}</span>
-                <span v-if="b.applicant >= b.quota" class="text-red-500 font-medium text-xs px-1.5 py-0.5 bg-red-50 rounded-md">เต็ม</span>
+              <p class="text-xs font-medium text-gray-600">{{ b.name }} <span
+                  class="text-xs font-normal text-gray-400">เปิดรับ {{ b.quota }} ที่นั่ง</span></p>
+              <div class="flex items-center gap-1 text-xs text-gray-400">
+                <span class="font-medium" :class="b.name.includes('ปวช') ? 'text-emerald-600' : 'text-blue-600'">
+                  มอบตัว {{ b.enrolled }}
+                </span>
+                <span class="mx-1">/</span>
+                <span>ที่ว่าง {{ b.remaining }}</span>
+                <span v-if="b.remaining <= 0"
+                  class="text-red-500 font-medium text-xs px-1.5 py-0.5 bg-red-50 rounded-md ml-1">เต็ม</span>
               </div>
             </div>
             <div class="relative h-4 bg-gray-100 rounded-full overflow-hidden">
-              <div class="absolute left-0 top-0 h-full bg-emerald-200 rounded-full"
-                :style="`width: ${(b.applicant / b.quota) * 100}%`" />
-              <div class="absolute left-0 top-0 h-full bg-emerald-500 rounded-full"
-                :style="`width: ${(b.enrolled / b.quota) * 100}%`" />
+              <div class="absolute left-0 top-0 h-full bg-emerald-200 rounded-full transition-all"
+                :style="`width: ${b.quota > 0 ? (b.applicant / b.quota) * 100 : 0}%`" />
+              <div class="absolute left-0 top-0 h-full bg-emerald-500 rounded-full transition-all"
+                :style="`width: ${b.quota > 0 ? (b.enrolled / b.quota) * 100 : 0}%`" />
             </div>
           </div>
         </div>
         <div class="flex items-center gap-4 mt-4 pt-3 border-t border-gray-100">
-          <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-full bg-emerald-500" /><span class="text-xs text-gray-400">มอบตัวแล้ว</span></div>
-          <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-full bg-emerald-200" /><span class="text-xs text-gray-400">ผู้สมัคร</span></div>
-          <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-full bg-gray-100" /><span class="text-xs text-gray-400">โควต้า</span></div>
+          <div class="flex items-center gap-1.5">
+            <div class="w-3 h-3 rounded-full bg-emerald-500" /><span class="text-xs text-gray-400">มอบตัวแล้ว</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <div class="w-3 h-3 rounded-full bg-emerald-200" /><span class="text-xs text-gray-400">ผู้สมัคร</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <div class="w-3 h-3 rounded-full bg-gray-100" /><span class="text-xs text-gray-400">จำนวนเปิดรับ</span>
+          </div>
         </div>
       </div>
 
       <!-- กราฟสาขา ปวส. -->
-      <div v-if="activeFilter === 'all' || activeFilter === 'pvs'" class="bg-white rounded-2xl shadow-sm p-6">
+      <div v-if="activeFilter === 'all' || activeFilter === 'pvs'" class="bg-white rounded-2xl shadow-sm p-6 mt-4">
         <p class="text-sm font-semibold text-gray-700 mb-1">
           สาขาวิชา <span class="text-blue-600">ปวส.</span>
         </p>
-        <p class="text-xs text-gray-400 mb-4">เปรียบเทียบโควต้า — ผู้สมัคร — มอบตัวแล้ว</p>
         <div class="space-y-3">
-          <div v-for="b in pvsStats" :key="b.name">
+          <div v-for="b in pvsStats" :key="`${b.name}-${b.curLabel}`">
             <div class="flex items-center justify-between mb-1">
-              <p class="text-xs font-medium text-gray-600">{{ b.name }}</p>
-              <div class="flex items-center gap-2 text-xs text-gray-400">
-                <span class="text-blue-600 font-medium">{{ b.enrolled }}</span> /
-                <span class="text-gray-600 font-medium">{{ b.applicant }}</span> /
-                <span>{{ b.quota }}</span>
-                <span v-if="b.applicant >= b.quota" class="text-red-500 font-medium text-xs px-1.5 py-0.5 bg-red-50 rounded-md">เต็ม</span>
+              <div>
+                <p class="text-xs font-medium text-gray-600">{{ b.name }}. <span
+                    class="font-normal text-xs text-gray-400">{{ b.curLabel }}</span>
+                  <span class="text-xs font-normal text-gray-400"> - เปิดรับ {{ b.quota }} ที่นั่ง</span>
+                </p>
+
+              </div>
+              <div class="flex items-center gap-1 text-xs text-gray-400">
+                <span class="text-blue-600 font-medium">มอบตัว {{ b.enrolled }}</span>
+                <span class="mx-1">/</span>
+                <span> ที่ว่าง {{ b.remaining }}</span>
+                <span v-if="b.remaining <= 0"
+                  class="text-red-500 font-medium text-xs px-1.5 py-0.5 bg-red-50 rounded-md ml-1">เต็ม</span>
               </div>
             </div>
-            <div class="relative h-4 bg-gray-100 rounded-full overflow-hidden">
-              <div class="absolute left-0 top-0 h-full bg-blue-200 rounded-full"
-                :style="`width: ${(b.applicant / b.quota) * 100}%`" />
-              <div class="absolute left-0 top-0 h-full bg-blue-500 rounded-full"
-                :style="`width: ${(b.enrolled / b.quota) * 100}%`" />
+            <div class="relative h-4 bg-gray-100 rounded-full overflow-hidden mb-3">
+              <div class="absolute left-0 top-0 h-full bg-blue-200 rounded-full transition-all"
+                :style="`width: ${b.quota > 0 ? (b.applicant / b.quota) * 100 : 0}%`" />
+              <div class="absolute left-0 top-0 h-full bg-blue-500 rounded-full transition-all"
+                :style="`width: ${b.quota > 0 ? (b.enrolled / b.quota) * 100 : 0}%`" />
             </div>
           </div>
         </div>
         <div class="flex items-center gap-4 mt-4 pt-3 border-t border-gray-100">
-          <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-full bg-blue-500" /><span class="text-xs text-gray-400">มอบตัวแล้ว</span></div>
-          <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-full bg-blue-200" /><span class="text-xs text-gray-400">ผู้สมัคร</span></div>
-          <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-full bg-gray-100" /><span class="text-xs text-gray-400">โควต้า</span></div>
+          <div class="flex items-center gap-1.5">
+            <div class="w-3 h-3 rounded-full bg-blue-500" /><span class="text-xs text-gray-400">มอบตัวแล้ว</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <div class="w-3 h-3 rounded-full bg-blue-200" /><span class="text-xs text-gray-400">ผู้สมัคร</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <div class="w-3 h-3 rounded-full bg-gray-100" /><span class="text-xs text-gray-400">จำนวนเปิดรับ</span>
+          </div>
         </div>
       </div>
+
     </div>
 
     <!-- ปุ่มขึ้นบนสุด -->
@@ -252,10 +266,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { apiService } from '../utils/api'
 import {
   AcademicCapIcon, PencilSquareIcon, MagnifyingGlassIcon,
-  ChartBarIcon, ListBulletIcon, ChevronUpIcon,
+  ChartBarIcon, ListBulletIcon, ChevronUpIcon, ArrowPathIcon,
   UserGroupIcon, CheckBadgeIcon, ClockIcon,
   IdentificationIcon, DocumentTextIcon, PhotoIcon, DocumentDuplicateIcon,
   HomeIcon
@@ -263,6 +278,11 @@ import {
 
 const activeFilter = ref('all')
 const showScrollTop = ref(false)
+const isLoading = ref(false)
+
+// ข้อมูลจาก API
+const statsData = ref<any>(null)
+const summaryData = ref<any[]>([])
 
 const quickNav = [
   { id: 'howto', label: 'ขั้นตอนการสมัคร', icon: ListBulletIcon },
@@ -295,42 +315,113 @@ const documents = [
   { label: 'สำเนาทะเบียนบ้าน (มารดา)', desc: 'ใช้ตอนมอบตัวผ่านระบบ', icon: HomeIcon, type: 'enrollment' },
 ]
 
-const overviewStats = [
-  { label: 'ผู้สมัครทั้งหมด', value: '1,284', desc: 'กรอกข้อมูลเสร็จแล้ว', color: '#10b981', bgColor: '#d1fae5', icon: UserGroupIcon },
-  { label: 'รอชำระเงิน / ดำเนินการ', value: '388', desc: 'ยังไม่ได้ชำระเงินหรือมอบตัว', color: '#f59e0b', bgColor: '#fef3c7', icon: ClockIcon },
-  { label: 'มอบตัวแล้ว (เป็นนักเรียน)', value: '896', desc: 'ยืนยันการมอบตัวผ่านระบบแล้ว', color: '#3b82f6', bgColor: '#dbeafe', icon: CheckBadgeIcon },
-]
+// ===== Computed จาก API data =====
 
-const courseStats = [
-  { name: 'ปวช.', quota: 1200, applicant: 842, enrolled: 620, applicantPct: 70, enrolledPct: 52 },
-  { name: 'ปวส.', quota: 800, applicant: 442, enrolled: 276, applicantPct: 55, enrolledPct: 35 },
-]
+const overviewStats = computed(() => {
+  const overview = statsData.value?.overview
+  // applicant_count = คนที่ยังไม่มอบตัว (pending_payment + paid)
+  const pendingCount = Number(overview?.applicant_count || 0)
+  const onlineEnrolled = summaryData.value.reduce((s, r) => s + Number(r.online_enrolled || 0), 0)
+  const onsiteEnrolled = summaryData.value.reduce((s, r) => s + Number(r.onsite_enrolled || 0), 0)
+  const totalEnrolled = onlineEnrolled + onsiteEnrolled
 
-const pvcStats = [
-  { name: 'ช่างยนต์', quota: 100, applicant: 85, enrolled: 60 },
-  { name: 'ช่างกลโรงงาน', quota: 100, applicant: 92, enrolled: 70 },
-  { name: 'ช่างเชื่อมโลหะ', quota: 100, applicant: 100, enrolled: 80 },
-  { name: 'ช่างไฟฟ้า', quota: 100, applicant: 80, enrolled: 55 },
-  { name: 'ช่างอิเล็กทรอนิกส์', quota: 100, applicant: 95, enrolled: 72 },
-  { name: 'เมคคาทรอนิกส์', quota: 100, applicant: 88, enrolled: 60 },
-  { name: 'ช่างก่อสร้าง', quota: 100, applicant: 100, enrolled: 85 },
-  { name: 'โยธา', quota: 100, applicant: 93, enrolled: 68 },
-  { name: 'สถาปัตยกรรม', quota: 100, applicant: 90, enrolled: 65 },
-  { name: 'เทคโนโลยีสารสนเทศ (IT)', quota: 100, applicant: 97, enrolled: 75 },
-  { name: 'เทคโนโลยีคอมพิวเตอร์', quota: 100, applicant: 82, enrolled: 58 },
-  { name: 'เทคโนโลยีปัญญาประดิษฐ์ (AI)', quota: 100, applicant: 100, enrolled: 72 },
-]
+  return [
+    {
+      label: 'มอบตัวแล้ว (รวมออนไลน์+ออนไซต์)',
+      value: totalEnrolled,
+      desc: `ออนไลน์ ${onlineEnrolled} | ออนไซต์ ${onsiteEnrolled}`,
+      color: '#3b82f6', bgColor: '#dbeafe', icon: CheckBadgeIcon,
+    },
+    {
+      label: 'รอชำระเงิน / ดำเนินการมอบตัว',
+      value: pendingCount,
+      desc: 'ยังไม่ได้มอบตัว',
+      color: '#f59e0b', bgColor: '#fef3c7', icon: ClockIcon,
+    },
 
-const pvsStats = [
-  { name: 'เทคนิคยานยนต์ (ม.6/ปวช.ต่างสาขา)', quota: 100, applicant: 90, enrolled: 65 },
-  { name: 'เทคนิคยานยนต์ (ปวช.ตรงสาขา)', quota: 100, applicant: 100, enrolled: 80 },
-  { name: 'เทคนิคยานยนต์ (ทวิภาคี)', quota: 100, applicant: 94, enrolled: 70 },
-  { name: 'เทคนิคการผลิต (ม.6/ปวช.ต่างสาขา)', quota: 100, applicant: 92, enrolled: 68 },
-  { name: 'เทคนิคการผลิต (ปวช.ตรงสาขา)', quota: 100, applicant: 86, enrolled: 60 },
-  { name: 'เทคนิคการผลิต (ทวิภาคี)', quota: 100, applicant: 100, enrolled: 78 },
-  { name: 'เทคนิคโลหะ (ม.6/ปวช.ต่างสาขา)', quota: 100, applicant: 95, enrolled: 72 },
-  { name: 'เทคนิคโลหะ (ปวช.ตรงสาขา)', quota: 100, applicant: 80, enrolled: 55 },
-]
+  ]
+})
+
+const courseStats = computed(() => {
+  const byCourse = statsData.value?.by_course || []
+  const result = byCourse.map((c: any) => {
+    const isPvc = c.cur_group === 'ปวช.'
+    const onsiteForGroup = summaryData.value
+      .filter(r => isPvc ? r.cur_shortname === 'ปวช.' : r.cur_shortname !== 'ปวช.')
+      .reduce((s: number, r: any) => s + Number(r.onsite_enrolled || 0), 0)
+    const enrolled = Number(c.enrolled || 0) + onsiteForGroup
+    const quota = Number(c.quota || 0)
+    // applicant = สมัครแล้วแต่ยังไม่มอบตัว
+    const applicant = Number(c.applicants || 0) - Number(c.enrolled || 0)
+    return { name: c.cur_group, quota, applicant, enrolled }
+  })
+  return result.sort((a: any, b: any) => a.name === 'ปวช.' ? -1 : 1)
+})
+
+const pvcStats = computed(() => {
+  const byDiv = statsData.value?.by_division || []
+  return byDiv
+    .filter((d: any) => d.cur_shortname === 'ปวช.')
+    .map((d: any) => {
+      // หา onsite จาก summaryData ด้วย ap_id (ตรงกว่า div_id)
+      const summaryRow = summaryData.value
+        .find((r: any) => Number(r.ap_id) === Number(d.ap_id))
+      const onsiteCount = Number(summaryRow?.onsite_enrolled || 0)
+      const enrolled = Number(d.enrolled || 0) + onsiteCount
+      return {
+        name: d.div_name,
+        quota: Number(d.quota || 0),
+        applicant: Number(d.applicants || 0) - Number(d.enrolled || 0),
+        enrolled,
+        remaining: Number(d.quota || 0) - enrolled,
+      }
+    })
+})
+
+const pvsStats = computed(() => {
+  const byDiv = statsData.value?.by_division || []
+  const pvsDiv = byDiv.filter((d: any) => d.cur_shortname !== 'ปวช.')
+  return pvsDiv.map((d: any) => {
+    const summaryRow = summaryData.value
+      .find((r: any) => Number(r.ap_id) === Number(d.ap_id))
+    const onsiteCount = Number(summaryRow?.onsite_enrolled || 0)
+    const enrolled = Number(d.enrolled || 0) + onsiteCount
+    return {
+      name: d.div_name,
+      curLabel: d.cur_shortname,
+      quota: Number(d.quota || 0),
+      applicant: Number(d.applicants || 0) - Number(d.enrolled || 0),
+      enrolled,
+      remaining: Number(d.quota || 0) - enrolled,
+    }
+  }).sort((a: any, b: any) => {
+    if (a.name !== b.name) return a.name.localeCompare(b.name, 'th')
+    const order: Record<string, number> = {
+      'ปวส. (ม.6/ต่างสาขา)': 1,
+      'ปวส. (สายตรง)': 2,
+      'ปวส. ทวิภาคี': 3,
+    }
+    return (order[a.curLabel] || 99) - (order[b.curLabel] || 99)
+  })
+})
+
+// ===== Load Data =====
+
+async function loadStats() {
+  isLoading.value = true
+  try {
+    const [statsRes, summaryRes] = await Promise.all([
+      apiService.getStats(),
+      apiService.getEnrollmentSummary(),
+    ])
+    statsData.value = statsRes.data
+    summaryData.value = summaryRes.data
+  } catch (err) {
+    console.error('โหลดสถิติไม่สำเร็จ', err)
+  } finally {
+    isLoading.value = false
+  }
+}
 
 function scrollToTop() {
   window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -340,11 +431,21 @@ function onScroll() {
   showScrollTop.value = window.scrollY > 300
 }
 
-onMounted(() => window.addEventListener('scroll', onScroll))
+onMounted(() => {
+  window.addEventListener('scroll', onScroll)
+  loadStats()
+})
 onUnmounted(() => window.removeEventListener('scroll', onScroll))
 </script>
 
 <style scoped>
-.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
 </style>

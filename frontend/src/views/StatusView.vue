@@ -123,20 +123,8 @@ const handleSubmit = async () => {
   errorMessage.value = ''
 
   try {
-    // ตรวจสอบว่ามีในระบบและชำระเงินแล้ว
     const res = await api.get(`/applications/check/${idCard.value}`)
-    const status = res.data?.data?.status
-
-    if (status === 'enrolled') {
-      errorMessage.value = 'ท่านได้ทำการมอบตัวแล้ว'
-      return
-    }
-    if (status !== 'paid') {
-      errorMessage.value = 'ยังไม่ได้ชำระเงิน หรือยังไม่ได้รับการยืนยัน'
-      return
-    }
-
-    // ผ่านแล้ว → ไปหน้าอัปโหลดเอกสาร พร้อมส่ง idCard ไปด้วย
+    // ลบบรรทัด const status = res.data?.data?.status ออก ไม่ได้ใช้แล้ว
     router.push(`/enrollment/${idCard.value}`)
 
   } catch (error: any) {

@@ -63,8 +63,9 @@
 
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ plan.ap_years }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-              {{ plan.curriculum?.cur_shortname || plan.curriculum?.cur_name || 'N/A' }} - {{ plan.division?.div_name ||
-                'N/A' }}
+              {{ plan.curriculum?.cur_shortname}}
+               - 
+               {{ plan.division?.div_name ||'N/A' }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ plan.plan_num }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-center">
@@ -134,7 +135,7 @@
                   <div class="space-y-4">
                     <div>
                       <label class="block text-gray-700 text-sm font-bold mb-2">ปีการศึกษา</label>
-                      <input v-model="formData.ap_years" type="text" placeholder="เช่น 2568"
+                      <input v-model="formData.ap_years" type="text" placeholder="เช่น 2569"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
                         required />
                     </div>
@@ -162,7 +163,7 @@
                     </div>
                     <div>
                       <label class="block text-gray-700 text-sm font-bold mb-2">จำนวนที่เปิดรับสมัคร</label>
-                      <input v-model.number="formData.plan_num" type="number" min="1"
+                      <input v-model.number="formData.plan_num" type="number" min="0"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
                         required />
                     </div>
@@ -391,15 +392,23 @@ const handleSubmit = async () => {
     closeModal()
   } catch (error) {
     console.error('Error saving admission plan:', error)
+  }finally {
+    isSubmitting.value = false
   }
 }
 
 const editAdmissionPlan = (plan: AdmissionPlan) => {
+  console.log('plan to edit:', plan)
+  
+  // ใช้ค่าจาก nested object ด้วยถ้า root ไม่มี
+  const curId = plan.cur_id || plan.curriculum?.cur_id || 0
+  const divId = plan.div_id || plan.division?.div_id || 0
+
   formData.value = {
     ap_id: plan.ap_id,
     ap_years: plan.ap_years,
-    div_id: plan.div_id,
-    cur_id: plan.cur_id,
+    div_id: Number(divId),
+    cur_id: Number(curId),
     plan_num: plan.plan_num
   }
   showEditModal.value = true
@@ -479,6 +488,7 @@ const deleteAdmissionPlan = async (id: number) => {
 const closeModal = () => {
   showAddModal.value = false
   showEditModal.value = false
+  isSubmitting.value = false
   formData.value = { ap_id: 0, ap_years: '', div_id: 0, cur_id: 0, plan_num: 0 }
 }
 

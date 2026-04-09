@@ -72,12 +72,11 @@
                     <tr v-for="row in filteredSummary" :key="row.ap_id" class="hover:bg-gray-50 transition-all">
                         <!-- หลักสูตร/สาขา -->
                         <td class="px-6 py-4">
-                            <span class="text-sm px-2 py-0.5 rounded-full  mr-2"
+                            <p class="text-xs px-2 py-0.5 rounded-full  mr-2"
                                 :class="row.cur_shortname === 'ปวช.' ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600'">
                                 {{ row.cur_shortname }}
-                            </span>
+                            </p>
                             <span class="text-sm text-gray-800">{{ row.div_name }}</span>
-                            <span class="text-sm text-gray-400 ml-2">ปี {{ row.ap_years }}</span>
                         </td>
                         <!-- แผนรับ -->
                         <td class="px-6 py-4 text-center text-sm font-medium text-gray-700">

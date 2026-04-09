@@ -5,15 +5,17 @@
       style="background: linear-gradient(to bottom, rgba(20, 184, 166, 0.9), rgba(101, 163, 13, 0.9))">
       <!-- Logo -->
       <div class="p-6 border-b border-white/20">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-white/20 rounded flex items-center justify-center">
-            <AcademicCapIcon class="w-7 h-7 text-white" />
+        <RouterLink to="/" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-white/20 rounded flex items-center justify-center">
+              <AcademicCapIcon class="w-7 h-7 text-white" />
+            </div>
+            <div>
+              <p class="text-white font-semibold text-sm">วิทยาลัยเทคนิคเลย</p>
+              <p class="text-white/70 text-xs">LoeiTech <br /> Online Admission System</p>
+            </div>
           </div>
-          <div>
-            <p class="text-white font-semibold text-sm">วิทยาลัยเทคนิคเลย</p>
-            <p class="text-white/70 text-xs">LoeiTech <br /> Online Admission System</p>
-          </div>
-        </div>
+        </RouterLink>
       </div>
 
       <!-- Menu -->
@@ -80,19 +82,15 @@
       <!-- Footer -->
       <div class="p-4 border-t border-white/20">
         <!-- ปุ่ม Login/Logout -->
-         <div class="text-center text-white/80 text-xs mb-2">
-            สำหรับเจ้าหน้าที่
-         </div>
-        <button
-          v-if="!authStore.isAuthenticated"
-          @click="handleLogin"
+        <div class="text-center text-white/80 text-xs mb-2">
+          สำหรับเจ้าหน้าที่
+        </div>
+        <button v-if="!authStore.isAuthenticated" @click="handleLogin"
           class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white hover:bg-white/10 transition-all w-full">
           <ArrowRightOnRectangleIcon class="w-5 h-5" />
           เข้าสู่ระบบ
         </button>
-        <button
-          v-else
-          @click="handleLogout"
+        <button v-else @click="handleLogout"
           class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white hover:bg-white/10 transition-all w-full">
           <ArrowRightOnRectangleIcon class="w-5 h-5" />
           ออกจากระบบ
