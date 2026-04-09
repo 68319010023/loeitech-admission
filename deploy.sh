@@ -25,9 +25,9 @@ FRONTEND_URL=$FRONTEND_URL
 EOF
 
 # Pull the latest images
-docker-compose --env-file .env.$STACK_NAME pull
+docker compose --env-file .env.$STACK_NAME pull
 
 # Restart the containers
-docker-compose --env-file .env.$STACK_NAME up -d --remove-orphans
+docker compose --env-file .env.$STACK_NAME up -d --remove-orphans
 
 echo "✅ Deployment successful for $STACK_NAME"
