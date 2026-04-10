@@ -5,6 +5,7 @@ import {
   getOnsiteEnrollments,
   upsertOnsiteEnrollment,
   getEnrollmentSummary,
+   verifySlip,
 } from '../controllers/enrollmentController'
 import { upload } from '../middleware/upload'
 
@@ -21,6 +22,9 @@ router.post('/confirm', upload.fields([
   { name: 'mother_back',  maxCount: 1 },
   { name: 'payment_slip', maxCount: 1 },
 ]), confirmEnrollment)
+
+// ตรวจสอบสลิป
+router.post('/verify-slip', upload.single('slip'), verifySlip) 
 
 // ตรวจสอบสถานะ
 router.get('/status/:idCard', getEnrollmentStatus)
