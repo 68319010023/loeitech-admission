@@ -33,9 +33,9 @@ export const getExpenses = async (req: Request, res: Response) => {
   try {
     const { cur_id } = req.query;
     const query = cur_id
-      ? `SELECT exp_id, exp_name, exp_detail, exp_img, cur_id, exp_cost, payment_type
+      ? `SELECT exp_id, exp_name, exp_detail, exp_img, cur_id, exp_cost, payment_type, exp_sizes
          FROM expense_detail WHERE cur_id = $1 ORDER BY payment_type DESC, exp_id`
-      : `SELECT exp_id, exp_name, exp_detail, exp_img, cur_id, exp_cost, payment_type
+      : `SELECT exp_id, exp_name, exp_detail, exp_img, cur_id, exp_cost, payment_type, exp_sizes
          FROM expense_detail ORDER BY payment_type DESC, exp_id`;
     const result = await pool.query(query, cur_id ? [cur_id] : []);
     sendSuccess(res, result.rows);
@@ -254,6 +254,7 @@ export const createApplication = async (req: Request, res: Response) => {
     );
   } catch (err: any) {
     await client.query("ROLLBACK");
+     console.error('❌ createApplication error:', err.message, err.stack)
     sendError(res, "เกิดข้อผิดพลาดในการส่งใบสมัคร", 500, err);
   } finally {
     client.release();

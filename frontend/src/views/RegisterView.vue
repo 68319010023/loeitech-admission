@@ -54,7 +54,6 @@
               </div>
             </div>
           </div>
-          <!-- แทนที่ช่อง เลขประจำตัวประชาชน เดิม -->
           <div class="col-span-2">
             <label class="text-sm text-gray-600 mb-1 block">ประเภทเอกสารแสดงตน *</label>
             <select v-model="form.idType" class="input-field" @change="form.idCard = ''">
@@ -66,15 +65,10 @@
               <option value="other">เอกสารราชการอื่น ๆ</option>
             </select>
           </div>
-
           <div v-if="form.idType" class="col-span-2">
-            <label class="text-sm text-gray-600 mb-1 block">
-              {{ idTypeLabel }} *
-            </label>
-            <!-- Thai ID: รับแค่ตัวเลข -->
+            <label class="text-sm text-gray-600 mb-1 block">{{ idTypeLabel }} *</label>
             <input v-if="form.idType === 'thai_id'" v-model="form.idCard" type="text" inputmode="numeric"
               :placeholder="idTypePlaceholder" maxlength="13" class="input-field" @keydown="blockNonDigit" />
-            <!-- อื่น ๆ: รับทั้งตัวเลขและตัวอักษร -->
             <input v-else v-model="form.idCard" type="text" :placeholder="idTypePlaceholder" maxlength="20"
               class="input-field" @input="form.idCard = form.idCard.toUpperCase()" />
             <p class="text-xs text-gray-400 mt-1">{{ idTypeHint }}</p>
@@ -146,13 +140,9 @@
             <input v-model="form.gpa" type="text" inputmode="decimal" placeholder="เช่น 4.00" class="input-field"
               @input="validateGPA" maxlength="4" />
             <Transition name="fade">
-              <p v-if="gpaWarning" class="text-red-500 text-xs mt-1">
-                กรุณากรอกเลขไม่เกิน 4.00
-              </p>
+              <p v-if="gpaWarning" class="text-red-500 text-xs mt-1">กรุณากรอกเลขไม่เกิน 4.00</p>
             </Transition>
           </div>
-
-          <!-- แสดงหลักสูตรที่สมัครได้ -->
           <div v-if="form.prevLevel" class="col-span-2 p-4 rounded-xl border"
             :class="form.prevLevel === 'm3' ? 'bg-blue-50 border-blue-200' : 'bg-emerald-50 border-emerald-200'">
             <p class="text-sm font-medium mb-1" :class="form.prevLevel === 'm3' ? 'text-blue-700' : 'text-emerald-700'">
@@ -160,13 +150,10 @@
             </p>
             <p class="text-sm" :class="form.prevLevel === 'm3' ? 'text-blue-600' : 'text-emerald-600'">
               <span v-if="form.prevLevel === 'm3'">✅ ประกาศนียบัตรวิชาชีพ (ปวช.) เท่านั้น</span>
-              <span v-else-if="form.prevLevel === 'm6'">✅ ประกาศนียบัตรวิชาชีพชั้นสูง (ปวส.) — ทุกสาขาที่รับผู้จบ
-                ม.6</span>
+              <span v-else-if="form.prevLevel === 'm6'">✅ ประกาศนียบัตรวิชาชีพชั้นสูง (ปวส.) — ทุกสาขาที่รับผู้จบ ม.6</span>
               <span v-else-if="form.prevLevel === 'pvc'">✅ ประกาศนียบัตรวิชาชีพชั้นสูง (ปวส.) — ทุกสาขา</span>
             </p>
           </div>
-
-          <!-- อัพโหลดหลักฐานการศึกษา -->
           <div class="col-span-2 mt-2">
             <p class="text-sm font-medium text-gray-700 mb-3">หลักฐานการศึกษา *</p>
             <div class="grid grid-cols-3 gap-3 mb-4">
@@ -215,23 +202,19 @@
         <h2 class="text-lg font-semibold text-gray-700 flex items-center gap-2 mb-6">
           <AcademicCapIcon class="w-5 h-5 text-emerald-500" /> เลือกสาขาวิชาที่ต้องการสมัคร
         </h2>
-
-        <div
-          class="mb-5 inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-xl text-sm font-medium">
+        <div class="mb-5 inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-xl text-sm font-medium">
           <AcademicCapIcon class="w-4 h-4" />
           หลักสูตร: {{ fixedCourseLabel }}
         </div>
-
         <div v-if="isLoading" class="text-center py-8 text-gray-400">กำลังโหลดข้อมูล...</div>
-
         <div v-else-if="admissionPlans.length === 0" class="text-center py-8 text-gray-400">
           ไม่พบข้อมูลสาขาวิชา กรุณาตรวจสอบวุฒิการศึกษา
         </div>
-
         <div v-else class="grid grid-cols-1 gap-3">
           <div v-for="plan in admissionPlans" :key="plan.ap_id"
             @click="Number(plan.remaining) > 0 && selectPlan(plan.ap_id, plan.cur_id)"
-            class="flex items-center justify-between border-2 rounded-xl px-5 py-4 transition-all" :class="Number(plan.remaining) <= 0
+            class="flex items-center justify-between border-2 rounded-xl px-5 py-4 transition-all"
+            :class="Number(plan.remaining) <= 0
               ? 'border-gray-100 bg-gray-50 cursor-not-allowed opacity-60'
               : form.apId === plan.ap_id
                 ? 'border-emerald-500 bg-emerald-50 cursor-pointer'
@@ -263,21 +246,42 @@
 
         <div v-else class="space-y-3">
           <div v-for="exp in expenses" :key="exp.exp_id"
-            class="flex items-center justify-between border rounded-xl px-4 py-3"
+            class="flex items-center justify-between border rounded-xl px-4 py-3 transition-all"
             :class="exp.payment_type === 'mandatory' ? 'border-gray-200 bg-gray-50' : 'border-gray-200'">
 
-            <!-- ชื่อรายการ + ราคา -->
+            <!-- ชื่อรายการ -->
             <div class="flex items-center gap-3">
-              <div class="w-2 h-2 rounded-full flex-shrink-0"
-                :class="exp.payment_type === 'mandatory' ? 'bg-red-400' : 'bg-emerald-400'" />
+              <!-- Thumbnail รูปภาพ -->
+              <div v-if="exp.exp_img"
+                @click="viewingImage = exp.exp_img"
+                class="w-12 h-12 rounded-xl overflow-hidden border border-gray-200 cursor-pointer flex-shrink-0 hover:ring-2 hover:ring-emerald-400 hover:scale-105 transition-all shadow-sm"
+                title="คลิกเพื่อดูรูปภาพ">
+                <img :src="exp.exp_img" class="w-full h-full object-cover" />
+              </div>
+              <div v-else
+                class="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center flex-shrink-0 border border-gray-200">
+                <ShoppingBagIcon class="w-5 h-5 text-gray-300" />
+              </div>
+
               <div>
                 <p class="text-sm font-medium text-gray-800">{{ exp.exp_name }}</p>
-                <p class="text-xs text-gray-400">
+                <p class="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
                   {{ exp.exp_cost.toLocaleString() }} บาท
                   <span class="ml-1 px-1.5 py-0.5 rounded text-xs"
                     :class="exp.payment_type === 'mandatory' ? 'bg-red-100 text-red-500' : 'bg-emerald-100 text-emerald-600'">
                     {{ exp.payment_type === 'mandatory' ? 'บังคับจ่าย' : 'ไม่บังคับจ่าย' }}
                   </span>
+                </p>
+                <!-- ป้ายบอกว่ามีรูป ถ้ามี exp_img -->
+                <p v-if="exp.exp_img" class="text-xs text-emerald-500 mt-0.5 flex items-center gap-1 cursor-pointer hover:text-emerald-600"
+                  @click="viewingImage = exp.exp_img">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  ดูตัวอย่างสินค้า
                 </p>
               </div>
             </div>
@@ -287,14 +291,17 @@
               {{ exp.exp_cost.toLocaleString() }} บาท
             </div>
             <div v-else class="flex items-center gap-3">
-              <select
-                v-if="exp.exp_name.includes('เครื่องแบบ') || exp.exp_name.includes('กางเกง') || exp.exp_name.includes('รองเท้า') || exp.exp_name.includes('เสื้อ')"
+              <select v-if="exp.exp_sizes && exp.exp_sizes.length > 0"
                 :value="form.expenseOrders[exp.exp_id]?.size"
-                @input="form.expenseOrders[exp.exp_id] = { ...form.expenseOrders[exp.exp_id], size: ($event.target as HTMLSelectElement).value, qty: form.expenseOrders[exp.exp_id]?.qty || 1 }"
-                class="input-field !w-20 !py-1.5 text-xs">
-                <option value="">ไซส์</option>
-                <option v-for="s in ['XS', 'S', 'M', 'L', 'XL', 'XXL']" :key="s">{{ s }}</option>
+                @change="onSizeChange(exp.exp_id, ($event.target as HTMLSelectElement).value)"
+                class="input-field !w-40 !py-1.5 text-xs">
+                <option value="">เลือกไซส์</option>
+                <option v-for="s in exp.exp_sizes" :key="s" :value="s">{{ s }}</option>
               </select>
+              <input v-if="form.expenseOrders[exp.exp_id]?.size?.startsWith('พิเศษ')"
+                v-model="form.expenseOrders[exp.exp_id].customSize"
+                type="text" placeholder="ระบุขนาดเป็นนิ้ว เช่น 48"
+                class="input-field !w-32 !py-1.5 text-xs" />
               <div class="flex items-center gap-2">
                 <button @click="changeQty(exp.exp_id, -1)"
                   class="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-gray-500 hover:bg-gray-100 text-lg leading-none">−</button>
@@ -321,6 +328,10 @@
             <span class="text-lg font-bold text-emerald-600">{{ totalPrice.toLocaleString() }} บาท</span>
           </div>
         </div>
+
+        <p v-if="showError" class="text-red-500 text-sm mt-4">
+          ⚠️ กรุณาเลือกไซส์ให้ครบ และระบุขนาดนิ้วสำหรับไซส์พิเศษ
+        </p>
       </div>
 
       <!-- Step 5: ยืนยันและปริ้นท์ -->
@@ -417,6 +428,36 @@
       </div>
     </div>
 
+    <!-- View Image Modal -->
+    <Teleport to="body">
+      <transition name="modal">
+        <div v-if="viewingImage" class="fixed inset-0 z-[9999] flex items-center justify-center px-4"
+          @click="viewingImage = ''">
+          <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" />
+          <div class="relative z-[10000] max-w-lg w-full" @click.stop>
+            <!-- ปุ่มปิด -->
+            <button @click="viewingImage = ''"
+              class="absolute -top-12 right-0 w-9 h-9 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-all">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <!-- รูปภาพ -->
+            <div class="bg-white rounded-2xl overflow-hidden shadow-2xl">
+              <img :src="viewingImage" class="w-full object-contain max-h-[70vh]" />
+              <div class="px-4 py-3 bg-gray-50 flex items-center justify-between">
+                <p class="text-xs text-gray-400">คลิกนอกรูปเพื่อปิด</p>
+                <button @click="viewingImage = ''"
+                  class="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5 bg-white border border-gray-200 rounded-lg transition-colors">
+                  ปิด
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </Teleport>
+
     <ConfirmToast :show="showConfirm" @confirm="onConfirmed" @cancel="showConfirm = false" />
   </div>
 </template>
@@ -438,6 +479,7 @@ const isSubmitting = ref(false)
 const isLoading = ref(false)
 const gpaWarning = ref(false)
 const yearWarning = ref(false)
+const viewingImage = ref('')
 
 // ข้อมูลจาก API
 const curriculums = ref<any[]>([])
@@ -459,92 +501,62 @@ const docTypes = [
 ]
 
 const form = reactive({
-  // Step 1
   prefix: '', fullName: '', idCard: '', address: '', phone: '', email: '',
   idFront: null as File | null, idBack: null as File | null,
   idFrontPreview: '', idBackPreview: '', idType: '',
-  // Step 2
   prevSchool: '', prevLevel: '', prevYear: '', gpa: '',
   docType: '',
   eduFront: null as File | null, eduFrontPreview: '',
   eduBack: null as File | null, eduBackPreview: '',
-  // Step 3
   curId: 0, apId: 0,
-  // Step 4
-  expenseOrders: {} as Record<number, { qty: number; size?: string }>,
+  expenseOrders: {} as Record<number, { qty: number; size?: string; customSize?: string }>,
 })
 
-// ===== Computed =====
 const idTypeLabel = computed(() => {
   const map: Record<string, string> = {
-    thai_id: 'เลขประจำตัวประชาชน',
-    alien_id: 'เลขประจำตัวคนต่างด้าว',
-    passport: 'เลขหนังสือเดินทาง',
-    g_code: 'G-Code',
-    other: 'เลขเอกสารราชการ',
+    thai_id: 'เลขประจำตัวประชาชน', alien_id: 'เลขประจำตัวคนต่างด้าว',
+    passport: 'เลขหนังสือเดินทาง', g_code: 'G-Code', other: 'เลขเอกสารราชการ',
   }
   return map[form.idType] || 'หมายเลขประจำตัว'
 })
 
 const idTypePlaceholder = computed(() => {
   const map: Record<string, string> = {
-    thai_id: 'เลขประจำตัวประชาชน 13 หลัก',
-    alien_id: 'เช่น 6-1234-56789-12-3',
-    passport: 'เช่น AA1234567',
-    g_code: 'เช่น G-1234567',
-    other: 'หมายเลขเอกสาร',
+    thai_id: 'เลขประจำตัวประชาชน 13 หลัก', alien_id: 'เช่น 6-1234-56789-12-3',
+    passport: 'เช่น AA1234567', g_code: 'เช่น G-1234567', other: 'หมายเลขเอกสาร',
   }
   return map[form.idType] || ''
 })
 
 const idTypeHint = computed(() => {
   const map: Record<string, string> = {
-    thai_id: 'กรอกตัวเลข 13 หลัก ไม่มีขีด',
-    alien_id: 'ตามที่ระบุในบัตรประจำตัวคนต่างด้าว',
-    passport: 'ตัวอักษรและตัวเลข ตามหน้าหนังสือเดินทาง',
-    g_code: 'รหัส G ที่ออกโดยกรมการปกครอง',
+    thai_id: 'กรอกตัวเลข 13 หลัก ไม่มีขีด', alien_id: 'ตามที่ระบุในบัตรประจำตัวคนต่างด้าว',
+    passport: 'ตัวอักษรและตัวเลข ตามหน้าหนังสือเดินทาง', g_code: 'รหัส G ที่ออกโดยกรมการปกครอง',
     other: 'หมายเลขตามเอกสารราชการที่ใช้แสดงตน',
   }
   return map[form.idType] || ''
 })
 
-
-const fixedCourseLabel = computed(() => {
-  if (form.prevLevel === 'm3') return 'ประกาศนียบัตรวิชาชีพ (ปวช.)'
-  return 'ประกาศนียบัตรวิชาชีพชั้นสูง (ปวส.)'
-})
+const fixedCourseLabel = computed(() =>
+  form.prevLevel === 'm3' ? 'ประกาศนียบัตรวิชาชีพ (ปวช.)' : 'ประกาศนียบัตรวิชาชีพชั้นสูง (ปวส.)'
+)
 
 const prevLevelLabel = computed(() => {
   const map: Record<string, string> = { m3: 'ม.3', m6: 'ม.6', pvc: 'ปวช.' }
   return map[form.prevLevel] || ''
 })
 
-const selectedPlan = computed(() =>
-  admissionPlans.value.find(p => p.ap_id === form.apId)
-)
+const selectedPlan = computed(() => admissionPlans.value.find(p => p.ap_id === form.apId))
+const requiredExpenses = computed(() => expenses.value.filter(e => e.payment_type === 'mandatory'))
+const requiredTotal = computed(() => requiredExpenses.value.reduce((sum, e) => sum + e.exp_cost, 0))
 
-const requiredExpenses = computed(() =>
-  expenses.value.filter(e => e.payment_type === 'mandatory')
-)
-
-// ยอดบังคับจ่าย (qty = 1 เสมอ)
-const requiredTotal = computed(() =>
-  requiredExpenses.value.reduce((sum, e) => sum + e.exp_cost, 0)
-)
-
-// ยอดรวมทั้งหมด
 const totalPrice = computed(() => {
   let total = requiredTotal.value
-  expenses.value
-    .filter(e => e.payment_type !== 'mandatory')
-    .forEach(e => {
-      const qty = form.expenseOrders[e.exp_id]?.qty || 0
-      total += e.exp_cost * qty
-    })
+  expenses.value.filter(e => e.payment_type !== 'mandatory').forEach(e => {
+    total += e.exp_cost * (form.expenseOrders[e.exp_id]?.qty || 0)
+  })
   return total
 })
-
-// ===== Functions =====
 
 onMounted(async () => {
   try {
@@ -555,13 +567,9 @@ onMounted(async () => {
   }
 })
 
-// เมื่อเปลี่ยนวุฒิการศึกษา → ดึงสาขาใหม่
 async function onPrevLevelChange() {
-  form.apId = 0
-  form.curId = 0
-  admissionPlans.value = []
-  expenses.value = []
-
+  form.apId = 0; form.curId = 0
+  admissionPlans.value = []; expenses.value = []
   if (!form.prevLevel) return
   isLoading.value = true
   try {
@@ -574,18 +582,18 @@ async function onPrevLevelChange() {
   }
 }
 
-// เมื่อเลือกสาขา → ดึงค่าใช้จ่าย
 function selectPlan(ap_id: number, cur_id: number) {
-  form.apId = ap_id
-  form.curId = cur_id
+   console.log('full plan:', admissionPlans.value.find(p => p.ap_id === ap_id))
+  form.apId = ap_id; form.curId = cur_id
   loadExpenses(cur_id)
 }
 
 async function loadExpenses(curId: number) {
+   console.log('loadExpenses called with curId:', curId)
   try {
     const res = await applicationService.getExpenses(curId)
+     console.log('expenses response:', res.data) 
     expenses.value = res.data.data
-    // init orders  default qty = 1  1
     expenses.value.forEach((e: any) => {
       if (!form.expenseOrders[e.exp_id]) {
         form.expenseOrders[e.exp_id] = { qty: 1, size: '' }
@@ -598,9 +606,14 @@ async function loadExpenses(curId: number) {
 
 function changeQty(expId: number, delta: number) {
   const current = form.expenseOrders[expId]?.qty || 0
+  form.expenseOrders[expId] = { ...form.expenseOrders[expId], qty: Math.max(0, current + delta) }
+}
+
+function onSizeChange(expId: number, value: string) {
   form.expenseOrders[expId] = {
     ...form.expenseOrders[expId],
-    qty: Math.max(0, current + delta),
+    size: value, customSize: '',
+    qty: form.expenseOrders[expId]?.qty || 1
   }
 }
 
@@ -618,62 +631,24 @@ function formatPhone(e: Event) {
 
 function validateGPA(e: Event) {
   const input = e.target as HTMLInputElement
-  let value = input.value
-
-  // Allow only digits and one decimal point
-  value = value.replace(/[^0-9.]/g, '')
-
-  // Remove multiple decimal points
+  let value = input.value.replace(/[^0-9.]/g, '')
   const parts = value.split('.')
-  if (parts.length > 2) {
-    value = parts[0] + '.' + parts.slice(1).join('')
-  }
-
-  // Auto add decimal point for single digits (except 4) - only if input is longer than current value
+  if (parts.length > 2) value = parts[0] + '.' + parts.slice(1).join('')
   const currentValue = form.gpa || ''
-  if (value.length === 1 && value !== '4' && !value.includes('.') && value.length > currentValue.length) {
-    value = value + '.'
-  }
-
-  // Limit to 4.00 with warning
+  if (value.length === 1 && value !== '4' && !value.includes('.') && value.length > currentValue.length) value = value + '.'
   const numValue = parseFloat(value)
-  if (numValue > 4) {
-    // Show warning instead of auto-correcting
-    input.value = form.gpa // Revert to previous value
-    gpaWarning.value = true
-    return
-  } else if (parts[1] && parts[1].length > 2) {
-    value = parts[0] + '.' + parts[1].slice(0, 2)
-  } else {
-    // Hide warning when value is valid
-    gpaWarning.value = false
-  }
-
+  if (numValue > 4) { input.value = form.gpa; gpaWarning.value = true; return }
+  else if (parts[1] && parts[1].length > 2) value = parts[0] + '.' + parts[1].slice(0, 2)
+  else gpaWarning.value = false
   form.gpa = value
 }
 
 function validateYear(e: Event) {
   const input = e.target as HTMLInputElement
-  let value = input.value
-
-  // Allow only digits
-  value = value.replace(/[^0-9]/g, '')
-
-  // Get current year in Buddhist calendar
+  let value = input.value.replace(/[^0-9]/g, '')
   const currentYear = new Date().getFullYear() + 543
-
-  // Validate year range
-  const yearValue = parseInt(value)
-  if (yearValue > currentYear) {
-    // Show warning and revert to previous value
-    input.value = form.prevYear
-    yearWarning.value = true
-    return
-  } else {
-    // Hide warning when value is valid
-    yearWarning.value = false
-  }
-
+  if (parseInt(value) > currentYear) { input.value = form.prevYear; yearWarning.value = true; return }
+  else yearWarning.value = false
   form.prevYear = value
 }
 
@@ -695,13 +670,12 @@ function handleUpload(field: 'idFront' | 'idBack' | 'eduFront' | 'eduBack', even
 function validateStep() {
   if (currentStep.value === 0) {
     return !!(form.idType && form.idCard && form.idCard.length >= 5
-      && form.prefix && form.fullName
-      && form.address && form.phone.replace(/\D/g, '').length === 10
+      && form.prefix && form.fullName && form.address
+      && form.phone.replace(/\D/g, '').length === 10
       && form.email && form.idFront && form.idBack)
   }
   if (currentStep.value === 1) {
-    const eduValid = form.docType && form.eduFront &&
-      (form.docType !== 'certificate' || form.eduBack)
+    const eduValid = form.docType && form.eduFront && (form.docType !== 'certificate' || form.eduBack)
     const gpaValue = parseFloat(form.gpa)
     const gpaValid = form.gpa && gpaValue <= 4.00 && !isNaN(gpaValue)
     const yearValue = parseInt(form.prevYear)
@@ -710,6 +684,17 @@ function validateStep() {
     return !!(form.prevSchool && form.prevLevel && yearValid && gpaValid && eduValid)
   }
   if (currentStep.value === 2) return !!form.apId
+  if (currentStep.value === 3) {
+    const missingSize = expenses.value
+      .filter(e => e.payment_type !== 'mandatory' && e.exp_sizes?.length > 0 && (form.expenseOrders[e.exp_id]?.qty || 0) > 0)
+      .some(e => {
+        const order = form.expenseOrders[e.exp_id]
+        if (!order?.size) return true
+        if (order.size.startsWith('พิเศษ') && !order.customSize) return true
+        return false
+      })
+    if (missingSize) return false
+  }
   return true
 }
 
@@ -719,9 +704,7 @@ function nextStep() {
   currentStep.value++
 }
 
-function submitForm() {
-  showConfirm.value = true
-}
+function submitForm() { showConfirm.value = true }
 
 async function onConfirmed() {
   showConfirm.value = false
@@ -748,7 +731,6 @@ async function onConfirmed() {
     fd.append('div_id', String(selectedPlan.value?.div_id || 0))
     fd.append('ap_id', String(form.apId))
 
-    // รวม required (qty=1) + optional (ตามที่เลือก)
     const expenseList = expenses.value
       .filter(e => {
         if (e.payment_type === 'mandatory') return true
@@ -757,7 +739,12 @@ async function onConfirmed() {
       .map(e => ({
         exp_id: e.exp_id,
         quantity: e.payment_type === 'mandatory' ? 1 : (form.expenseOrders[e.exp_id]?.qty || 1),
-        size: form.expenseOrders[e.exp_id]?.size || null,
+        size: (() => {
+          const order = form.expenseOrders[e.exp_id]
+          if (!order?.size) return null
+          if (order.size.startsWith('พิเศษ') && order.customSize) return `พิเศษ ${order.customSize} นิ้ว`
+          return order.size
+        })(),
         unit_price: e.exp_cost,
         is_required: e.payment_type === 'mandatory',
       }))
@@ -767,15 +754,12 @@ async function onConfirmed() {
     const { total_amount } = res.data.data
 
     await exportPaymentPDF({
-      prefix: form.prefix,
-      fullName: form.fullName,
-      idCard: form.idCard,
-      phone: form.phone,
+      prefix: form.prefix, fullName: form.fullName,
+      idCard: form.idCard, phone: form.phone,
       courseLabel: fixedCourseLabel.value,
       branchName: selectedPlan.value?.div_name || '-',
       totalPrice: total_amount,
     })
-
   } catch (err: any) {
     alert(err.response?.data?.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง')
   } finally {

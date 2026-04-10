@@ -164,6 +164,8 @@
                     {{ showAddModal ? 'เพิ่มรายการค่าใช้จ่าย' : 'แก้ไขรายการค่าใช้จ่าย' }}
                   </h3>
                   <div class="space-y-4">
+
+                    <!-- ชื่อรายการ -->
                     <div>
                       <label class="block text-gray-700 text-sm font-bold mb-2">ชื่อรายการค่าใช้จ่าย</label>
                       <input
@@ -173,6 +175,8 @@
                         required
                       />
                     </div>
+
+                    <!-- รายละเอียด -->
                     <div>
                       <label class="block text-gray-700 text-sm font-bold mb-2">รายละเอียด</label>
                       <textarea
@@ -182,33 +186,39 @@
                         required
                       ></textarea>
                     </div>
-                    <div>
-                      <label class="block text-gray-700 text-sm font-bold mb-2">หลักสูตร</label>
-                      <select
-                        v-model="formData.cur_id"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-                        required
-                      >
-                        <option value="">เลือกหลักสูตร</option>
-                        <option v-for="curriculum in curriculums" :key="curriculum.cur_id" :value="curriculum.cur_id">
-                          {{ curriculum.cur_name }}
-                        </option>
-                      </select>
+
+                    <!-- หลักสูตร + ประเภทชำระ -->
+                    <div class="grid grid-cols-2 gap-3">
+                      <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2">หลักสูตร</label>
+                        <select
+                          v-model="formData.cur_id"
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                          required
+                        >
+                          <option value="">เลือกหลักสูตร</option>
+                          <option v-for="curriculum in curriculums" :key="curriculum.cur_id" :value="curriculum.cur_id">
+                            {{ curriculum.cur_name }}
+                          </option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2">ประเภทการชำระเงิน</label>
+                        <select
+                          v-model="formData.payment_type"
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                          required
+                        >
+                          <option value="">เลือกประเภท</option>
+                          <option value="mandatory">บังคับชำระ</option>
+                          <option value="optional">ไม่บังคับชำระ</option>
+                        </select>
+                      </div>
                     </div>
+
+                    <!-- ราคา -->
                     <div>
-                      <label class="block text-gray-700 text-sm font-bold mb-2">ประเภทการชำระเงิน</label>
-                      <select
-                        v-model="formData.payment_type"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-                        required
-                      >
-                        <option value="">เลือกประเภทการชำระเงิน</option>
-                        <option value="mandatory">บังคับชำระ</option>
-                        <option value="optional">ไม่บังคับชำระ</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label class="block text-gray-700 text-sm font-bold mb-2">ราคาต่อหน่วย</label>
+                      <label class="block text-gray-700 text-sm font-bold mb-2">ราคาต่อหน่วย (บาท)</label>
                       <input
                         v-model.number="formData.exp_cost"
                         type="number"
@@ -218,60 +228,134 @@
                         required
                       />
                     </div>
-                    <div>
-                      <label class="block text-gray-700 text-sm font-bold mb-2">
-                        ขนาดเสื้อ
-                        <span class="text-gray-400 font-normal text-xs ml-1">(ถ้าไม่มีให้เว้นว่าง)</span>
-                      </label>
-                      <div class="flex flex-wrap gap-2 mb-2 min-h-[34px]">
-                        <span
-                          v-for="(size, i) in formData.exp_sizes"
-                          :key="i"
-                          class="inline-flex items-center px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-sm font-medium"
-                        >
-                          {{ size }}
-                          <button
-                            type="button"
-                            @click="removeSize(i)"
-                            class="ml-2 text-emerald-500 hover:text-red-500 transition-colors leading-none"
-                          >✕</button>
-                        </span>
-                        <span v-if="formData.exp_sizes.length === 0" class="text-gray-400 text-xs self-center">
-                          ยังไม่มีไซส์
-                        </span>
-                      </div>
-                      <div class="flex gap-2">
-                        <input
-                          v-model="newSizeInput"
-                          type="text"
-                          placeholder="เช่น M 42, L 44, XL 46, พิเศษ"
-                          class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-sm"
-                          @keydown.enter.prevent="addSize"
-                        />
-                        <button
-                          type="button"
-                          @click="addSize"
-                          class="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors text-sm font-medium whitespace-nowrap"
-                        >
-                          + เพิ่ม
-                        </button>
-                      </div>
-                      <p class="text-xs text-gray-400 mt-1">พิมพ์ไซส์แล้วกด Enter หรือกดปุ่ม "+ เพิ่ม"</p>
-                    </div>
+
+                    <!-- รูปภาพ -->
                     <div>
                       <label class="block text-gray-700 text-sm font-bold mb-2">รูปภาพ</label>
+                      <div
+                        class="relative border-2 border-dashed rounded-xl overflow-hidden transition-colors cursor-pointer"
+                        :class="(imagePreview || formData.exp_img) ? 'border-emerald-300 hover:border-emerald-400' : 'border-gray-300 hover:border-emerald-400'"
+                        @click="triggerFileInput"
+                      >
+                        <!-- มีรูปแล้ว -->
+                        <div v-if="imagePreview || formData.exp_img" class="relative group">
+                          <img
+                            :src="imagePreview || formData.exp_img"
+                            alt="รูปภาพ"
+                            class="w-full h-48 object-contain bg-gray-50"
+                          />
+                          <div class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center">
+                            <span class="text-white text-sm font-medium bg-black/50 px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                              คลิกเพื่อเปลี่ยนรูป
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            @click.stop="clearImage"
+                            class="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow"
+                          >
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+
+                        <!-- ยังไม่มีรูป -->
+                        <div v-else class="flex flex-col items-center justify-center py-10 gap-2 text-gray-400">
+                          <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <p class="text-sm font-medium">คลิกเพื่ออัปโหลดรูปภาพ</p>
+                          <p class="text-xs">PNG, JPG ขนาดไม่เกิน 5MB</p>
+                        </div>
+                      </div>
                       <input
+                        ref="fileInputRef"
                         type="file"
                         accept="image/*"
+                        class="hidden"
                         @change="handleImageUpload"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
                       />
-                      <div v-if="imagePreview || formData.exp_img" class="mt-2">
-                        <img :src="imagePreview || formData.exp_img" alt="รูปภาพ" class="w-20 h-20 object-cover rounded" />
+                    </div>
+
+                    <!-- ขนาดเสื้อ -->
+                    <div class="border border-gray-200 rounded-xl overflow-hidden">
+                      <div class="flex items-center gap-2 px-4 py-2.5 bg-gray-50 border-b border-gray-200">
+                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.57a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.57a2 2 0 00-1.34-2.23z" />
+                        </svg>
+                        <span class="text-sm font-bold text-gray-700">ขนาดเสื้อ</span>
+                        <span class="text-xs text-gray-400">(ถ้าไม่มีให้เว้นว่าง)</span>
+                      </div>
+
+                      <div class="px-4 py-3 space-y-3">
+                        <!-- Tags ที่เพิ่มแล้ว -->
+                        <div class="flex flex-wrap gap-2 min-h-[28px]">
+                          <span
+                            v-for="size in formData.exp_sizes"
+                            :key="size"
+                            class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-sm font-medium"
+                          >
+                            {{ size }}
+                            <button
+                              type="button"
+                              @click="removeSize(size)"
+                              class="text-emerald-500 hover:text-red-500 transition-colors leading-none text-base"
+                            >×</button>
+                          </span>
+                          <span v-if="formData.exp_sizes.length === 0" class="text-xs text-gray-400 self-center">
+                            ยังไม่ได้เลือกไซส์
+                          </span>
+                        </div>
+
+                        <!-- M / L / XL พร้อมกรอกเบอร์ -->
+                        <div class="space-y-2">
+                          <div
+                            v-for="size in SIZES_WITH_NUMBER"
+                            :key="size"
+                            class="flex items-center gap-2"
+                          >
+                            <span class="w-8 text-sm font-semibold text-gray-700 shrink-0">{{ size }}</span>
+                            <input
+                              v-model="sizeNumbers[size]"
+                              type="text"
+                              :placeholder="`เบอร์`"
+                              class="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                              @keydown.enter.prevent="addSizeWithNumber(size)"
+                            />
+                            <button
+                              type="button"
+                              @click="addSizeWithNumber(size)"
+                              class="px-3 py-1.5 text-sm bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors font-medium whitespace-nowrap shrink-0"
+                            >
+                              + เพิ่ม
+                            </button>
+                          </div>
+                        </div>
+
+                        <!-- พิเศษ — กดปุ่มได้เลย -->
+                        <div class="pt-2 border-t border-gray-100 flex items-center gap-3">
+                          <button
+                            type="button"
+                            @click="toggleSpecial"
+                            :class="[
+                              'px-5 py-2 rounded-lg text-sm font-medium border transition-colors',
+                              formData.exp_sizes.includes('พิเศษ')
+                                ? 'bg-emerald-500 text-white border-emerald-500'
+                                : 'bg-white text-gray-600 border-gray-300 hover:border-emerald-400 hover:text-emerald-600'
+                            ]"
+                          >
+                            {{ formData.exp_sizes.includes('พิเศษ') ? '✓ พิเศษ' : 'พิเศษ' }}
+                          </button>
+                          <span class="text-xs text-gray-400">ไม่ต้องระบุเบอร์</span>
+                        </div>
+
                       </div>
                     </div>
+
                   </div>
                 </div>
+
                 <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex flex-row-reverse gap-3">
                   <button
                     type="submit"
@@ -367,6 +451,9 @@ import { ref, onMounted } from 'vue'
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import { apiService } from '@/utils/api'
 
+// ── Constants ──────────────────────────────────────────
+const SIZES_WITH_NUMBER = ['M', 'L', 'XL'] as const
+
 // ── Interfaces ─────────────────────────────────────────
 interface Curriculum {
   cur_id: number
@@ -398,7 +485,9 @@ const isSubmitting = ref(false)
 const isDeleting = ref(false)
 const imagePreview = ref<string>('')
 const viewingImage = ref<string>('')
-const newSizeInput = ref('')
+const fileInputRef = ref<HTMLInputElement | null>(null)
+
+const sizeNumbers = ref<Record<string, string>>({ M: '', L: '', XL: '' })
 
 const showAddModal = ref(false)
 const showEditModal = ref(false)
@@ -432,6 +521,14 @@ const showToast = (type: 'success' | 'error', title: string, message: string) =>
 }
 
 // ── Image ──────────────────────────────────────────────
+const triggerFileInput = () => fileInputRef.value?.click()
+
+const clearImage = () => {
+  imagePreview.value = ''
+  formData.value.exp_img = ''
+  if (fileInputRef.value) fileInputRef.value.value = ''
+}
+
 const viewImage = (imageUrl: string) => {
   viewingImage.value = imageUrl
 }
@@ -450,16 +547,28 @@ const handleImageUpload = (event: Event) => {
 }
 
 // ── Sizes ──────────────────────────────────────────────
-const addSize = () => {
-  const val = newSizeInput.value.trim()
-  if (val && !formData.value.exp_sizes.includes(val)) {
+const addSizeWithNumber = (size: string) => {
+  const num = sizeNumbers.value[size]?.trim()
+  if (!num) return
+  const val = `${size} ${num}`
+  if (!formData.value.exp_sizes.includes(val)) {
     formData.value.exp_sizes.push(val)
-    newSizeInput.value = ''
+  }
+  sizeNumbers.value[size] = ''
+}
+
+const toggleSpecial = () => {
+  const idx = formData.value.exp_sizes.indexOf('พิเศษ')
+  if (idx === -1) {
+    formData.value.exp_sizes.push('พิเศษ')
+  } else {
+    formData.value.exp_sizes.splice(idx, 1)
   }
 }
 
-const removeSize = (index: number) => {
-  formData.value.exp_sizes.splice(index, 1)
+const removeSize = (size: string) => {
+  const idx = formData.value.exp_sizes.indexOf(size)
+  if (idx !== -1) formData.value.exp_sizes.splice(idx, 1)
 }
 
 // ── Fetch ──────────────────────────────────────────────
@@ -517,6 +626,7 @@ const editExpense = (expense: ExpenseDetail) => {
     exp_sizes: expense.exp_sizes ? [...expense.exp_sizes] : []
   }
   imagePreview.value = ''
+  sizeNumbers.value = { M: '', L: '', XL: '' }
   showEditModal.value = true
 }
 
@@ -524,7 +634,8 @@ const closeModal = () => {
   showAddModal.value = false
   showEditModal.value = false
   imagePreview.value = ''
-  newSizeInput.value = ''
+  sizeNumbers.value = { M: '', L: '', XL: '' }
+  if (fileInputRef.value) fileInputRef.value.value = ''
   formData.value = {
     exp_id: 0,
     exp_name: '',
