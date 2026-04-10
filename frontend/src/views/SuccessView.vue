@@ -200,68 +200,18 @@
             </div>
           </div>
 
-          <!-- ผลตรวจสอบ ผ่าน ✅ -->
           <div v-if="slipVerifyResult?.valid && !isVerifyingSlip"
-            class="mt-4 rounded-xl overflow-hidden border border-emerald-200 shadow-sm">
-
-            <!-- Header -->
-            <div class="bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-3 flex items-center gap-2">
-              <div class="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center">
-                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <p class="text-white font-semibold text-sm">สลิปผ่านการตรวจสอบแล้ว</p>
+            class="mt-4 flex items-center gap-3 bg-emerald-50 border border-emerald-200 p-4 rounded-xl">
+            <div class="w-9 h-9 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+              </svg>
             </div>
-
-            <!-- Body -->
-            <div class="bg-white px-5 py-4 grid grid-cols-2 gap-4">
-              <div class="flex items-center gap-3">
-                <div class="w-9 h-9 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span class="text-lg">💰</span>
-                </div>
-                <div>
-                  <p class="text-xs text-gray-400">ยอดโอน</p>
-                  <p class="text-sm font-bold text-emerald-600">{{ slipVerifyResult.amount?.toLocaleString() }} บาท</p>
-                </div>
-              </div>
-              <div class="flex items-center gap-3">
-                <div class="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span class="text-lg">📅</span>
-                </div>
-                <div>
-                  <p class="text-xs text-gray-400">วันที่โอน</p>
-                  <p class="text-sm font-semibold text-gray-700">{{ slipVerifyResult.date }}</p>
-                </div>
-              </div>
-              <div class="flex items-center gap-3">
-                <div class="w-9 h-9 bg-purple-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span class="text-lg">👤</span>
-                </div>
-                <div>
-                  <p class="text-xs text-gray-400">ผู้โอน</p>
-                  <p class="text-sm font-semibold text-gray-700">{{ slipVerifyResult.sender }}</p>
-                </div>
-              </div>
-              <div class="flex items-center gap-3">
-                <div class="w-9 h-9 bg-orange-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span class="text-lg">🏦</span>
-                </div>
-                <div>
-                  <p class="text-xs text-gray-400">ผู้รับ</p>
-                  <p class="text-sm font-semibold text-gray-700">{{ slipVerifyResult.receiver }}</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Footer -->
-            <div class="bg-emerald-50 px-5 py-2.5 flex items-center gap-2 border-t border-emerald-100">
-              <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-              <p class="text-xs text-emerald-600 font-medium">ยืนยันโดยระบบ SlipOK · กดถัดไปเพื่อดำเนินการต่อ</p>
-            </div>
+            <p class="text-sm font-semibold text-emerald-700">สลิปผ่านการตรวจสอบแล้ว</p>
+            <div class="ml-auto w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
           </div>
 
-          <div class="flex justify-between gap-4 mt-8">
+          <div class="flex justify-between gap-4 mt-6">
             <button @click="goBackStep"
               class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium">ย้อนกลับ</button>
             <button @click="handleNextClick" :disabled="isVerifyingSlip"
@@ -470,6 +420,7 @@ interface UserData {
   curName: string
   divName: string
   totalAmount: number
+   status: string 
 }
 
 interface SlipVerifyResult {
@@ -493,7 +444,7 @@ const isLoadingData = ref(true)
 const slipVerifyResult = ref<SlipVerifyResult | null>(null)
 const isVerifyingSlip = ref(false)
 
-const userData = ref<UserData>({ fullName: '', prefix: '', curName: '', divName: '', totalAmount: 0 })
+const userData = ref<UserData>({ fullName: '', prefix: '', curName: '', divName: '', totalAmount: 0, status: ''  })
 
 const createHouseDoc = (): HouseDoc => ({ front: null, frontPreview: '', back: null, backPreview: '' })
 const selfHouseRegistration = reactive<HouseDoc>(createHouseDoc())
@@ -519,7 +470,8 @@ onMounted(async () => {
       prefix: data.prefix,
       curName: data.cur_name,
       divName: data.div_name,
-      totalAmount: Number(data.total_amount) || 0
+      totalAmount: Number(data.total_amount) || 0,
+       status: data.status 
     }
 
     if (data.self_front_url) selfHouseRegistration.frontPreview = data.self_front_url
@@ -548,7 +500,8 @@ const isAllDocumentsUploaded = computed(() => {
     return selfHouseRegistration.frontPreview && selfHouseRegistration.backPreview
   }
   if (currentStep.value === 1) {
-    return paymentSlip.frontPreview && slipVerifyResult.value?.valid === true
+     const hasExistingSlip = paymentSlip.frontPreview && !paymentSlip.front
+  return hasExistingSlip || (paymentSlip.frontPreview && slipVerifyResult.value?.valid === true)
   }
   return true
 })
@@ -585,10 +538,13 @@ const handleSlipUpload = async (event: Event) => {
   try {
     const form = new FormData()
     form.append('slip', file)
+    form.append('idCard', idCard)
 
     const res = await api.post('/enrollments/verify-slip', form, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
+
+  
 
     const result: SlipVerifyResult = res.data.data
     slipVerifyResult.value = result
@@ -603,7 +559,7 @@ const handleSlipUpload = async (event: Event) => {
       showToast('error', 'สลิปไม่ถูกต้อง ❌', result.message || 'กรุณาอัปโหลดสลิปใหม่อีกครั้ง')
     }
 
-  } catch {
+  } catch  {
     paymentSlip.front = null
     paymentSlip.frontPreview = ''
     slipVerifyResult.value = null
@@ -647,7 +603,10 @@ const handleConfirmation = async () => {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
 
-    await Promise.all([generateCertificatePDF(), generateUniformOrderPDF()])
+     if (userData.value.status !== 'enrolled') {
+      await Promise.all([generateCertificatePDF(), generateUniformOrderPDF()])
+    }
+
     currentStep.value = 3
 
   } catch (error: any) {

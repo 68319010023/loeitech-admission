@@ -291,7 +291,28 @@ export const checkStatus = async (req: Request, res: Response) => {
       return sendError(res, "ไม่พบข้อมูลการสมัคร", 404);
     }
 
-    sendSuccess(res, result.rows[0])
+    const row = result.rows[0]
+    console.log('self_front_url from DB:', row.self_front_url)
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3001'
+
+const toUrl = (filePath: string | null) => {
+  if (!filePath) return null
+   const filename = filePath.replace(/\\/g, '/').split('/').pop()
+  return `${BASE_URL}/uploads/${filename}`
+}
+
+sendSuccess(res, {
+  ...row,
+  self_front_url:   toUrl(row.self_front_url),
+  self_back_url:    toUrl(row.self_back_url),
+  father_front_url: toUrl(row.father_front_url),
+  father_back_url:  toUrl(row.father_back_url),
+  mother_front_url: toUrl(row.mother_front_url),
+  mother_back_url:  toUrl(row.mother_back_url),
+  payment_slip_url: toUrl(row.payment_slip_url),
+})
+
+
   } catch (err) {
     sendError(res, "เกิดข้อผิดพลาด", 500, err);
   }

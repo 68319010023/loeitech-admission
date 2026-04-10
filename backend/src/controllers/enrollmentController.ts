@@ -8,53 +8,72 @@ import FormData from 'form-data'
 
 
 ////////ฟังก์ชัน สลิป
-
 export const verifySlip = async (req: Request, res: Response) => {
   try {
     const file = req.file
     if (!file) return sendError(res, 'ไม่พบไฟล์สลิป', 400)
 
-       console.log('🔑 API Key:', `[${process.env.SLIPOK_API_KEY}]`)
-    console.log('🔑 Branch ID:', `[${process.env.SLIPOK_BRANCH_ID}]`)
+    // ✅ ดึง idCard จาก body
+    const { idCard } = req.body
+    if (!idCard) return sendError(res, 'ไม่พบเลขบัตรประชาชน', 400)
 
     const formData = new FormData()
     formData.append('files', fs.createReadStream(file.path), file.originalname)
 
-  const slipokRes = await axios.post(
-  `https://api.slipok.com/api/line/apikey/${process.env.SLIPOK_BRANCH_ID}`,
-  formData,
-  {
-    headers: {
-      ...formData.getHeaders(),
-       'x-authorization': process.env.SLIPOK_API_KEY
-    }
-  }
-)
+    const slipokRes = await axios.post(
+      `https://api.slipok.com/api/line/apikey/${process.env.SLIPOK_BRANCH_ID}`,
+      formData,
+      {
+        headers: {
+          ...formData.getHeaders(),
+          'x-authorization': process.env.SLIPOK_API_KEY
+        }
+      }
+    )
 
-    // ลบไฟล์ temp หลังตรวจแล้ว
     fs.unlinkSync(file.path)
-
     const data = slipokRes.data
 
     if (data.success) {
+      const slipAmount = Number(data.data.amount)
+
+      // ✅ ดึงยอดที่ต้องชำระ
+      const paymentResult = await pool.query(`
+        SELECT p.total_amount
+        FROM payments p
+        JOIN applicants a ON a.app_id = p.app_id
+        WHERE a.id_card_number = $1
+      `, [idCard])
+
+      const requiredAmount = Number(paymentResult.rows[0]?.total_amount)
+
+      // ✅ เช็คยอดเงิน
+      if (slipAmount < requiredAmount) {
+        return sendSuccess(res, {
+          valid: false,
+          message: `ยอดโอนไม่ครบ โอนมา ${slipAmount.toLocaleString()} บาท แต่ต้องชำระ ${requiredAmount.toLocaleString()} บาท`
+        })
+      }
+
       return sendSuccess(res, {
-        valid:    true,
-        amount:   data.data.amount,
-        date:     data.data.transDate,
-        sender:   data.data.sender?.displayName   ?? '-',
+        valid: true,
+        amount: slipAmount,
+        date: data.data.transDate,
+        sender: data.data.sender?.displayName ?? '-',
         receiver: data.data.receiver?.displayName ?? '-',
       })
     }
 
-    // สลิปไม่ผ่าน
-    sendSuccess(res, { valid: false, message: data.message ?? 'สลิปไม่ถูกต้อง' })
+    return sendSuccess(res, { valid: false, message: data.message ?? 'สลิปไม่ถูกต้อง' })
 
   } catch (err: any) {
-      console.error('❌ verifySlip error:', err.message)           // เพิ่ม
-    console.error('❌ Slipok response:', err.response?.data)  
-    if (req.file?.path && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path)
+    if (req.file?.path && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path)
+
+    const slipokError = err.response?.data
+    if (slipokError?.code) {
+      return sendSuccess(res, { valid: false, message: slipokError.message ?? 'สลิปไม่ถูกต้อง' })
     }
+
     sendError(res, 'ตรวจสอบสลิปไม่สำเร็จ', 500, err)
   }
 }
@@ -83,16 +102,20 @@ export const confirmEnrollment = async (req: Request, res: Response) => {
     const { app_id } = applicant.rows[0]
 
     await client.query('BEGIN')
+    await client.query(
+      `UPDATE applicants SET status = 'enrolled' WHERE app_id = $1`,
+      [app_id]
+    )
 
     const files = req.files as Record<string, Express.Multer.File[]>
 
     const docEntries = [
-      { key: 'self_front',   type: 'self_house_front' },
-      { key: 'self_back',    type: 'self_house_back' },
+      { key: 'self_front', type: 'self_house_front' },
+      { key: 'self_back', type: 'self_house_back' },
       { key: 'father_front', type: 'father_house_front' },
-      { key: 'father_back',  type: 'father_house_back' },
+      { key: 'father_back', type: 'father_house_back' },
       { key: 'mother_front', type: 'mother_house_front' },
-      { key: 'mother_back',  type: 'mother_house_back' },
+      { key: 'mother_back', type: 'mother_house_back' },
       { key: 'payment_slip', type: 'payment_slip' },
     ]
 
