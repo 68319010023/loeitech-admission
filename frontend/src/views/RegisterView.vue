@@ -583,7 +583,7 @@ async function onPrevLevelChange() {
 }
 
 function selectPlan(ap_id: number, cur_id: number) {
-   console.log('full plan:', admissionPlans.value.find(p => p.ap_id === ap_id))
+   console.log('selectPlan ap_id:', ap_id, 'cur_id:', cur_id)
   form.apId = ap_id; form.curId = cur_id
   loadExpenses(cur_id)
 }
