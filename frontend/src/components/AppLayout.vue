@@ -40,6 +40,12 @@
           <ClipboardDocumentCheckIcon class="w-5 h-5" /> มอบตัว
         </RouterLink>
 
+        <RouterLink to="/guide"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+          :class="$route.path === '/guide' ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'">
+          <BookOpenIcon class="w-5 h-5" /> คู่มือการสมัครเรียนและมอบตัว
+        </RouterLink>
+
         <!-- เมนูเจ้าหน้าที่ - แสดงเฉพาะเมื่อ login แล้ว -->
         <div v-if="authStore.isAuthenticated">
           <p class="text-white/50 text-xs font-medium px-3 py-2 mt-4">เจ้าหน้าที่</p>
@@ -134,6 +140,7 @@ import {
   ReceiptPercentIcon,
   ArrowRightOnRectangleIcon,
   ClipboardDocumentListIcon,
+  BookOpenIcon,
 } from '@heroicons/vue/24/outline'
 
 const authStore = useAuthStore()
