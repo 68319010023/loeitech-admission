@@ -22,6 +22,7 @@ export const getExpenseDetails = async (_req: Request, res: Response) => {
       exp_img: row.exp_img,
       exp_cost: parseFloat(row.exp_cost),
       payment_type: row.payment_type || 'mandatory',
+       exp_sizes: row.exp_sizes || [],
       curriculum: {
         cur_id: row.cur_id,
         cur_name: row.cur_name,
@@ -39,21 +40,22 @@ export const getExpenseDetails = async (_req: Request, res: Response) => {
 // Create new expense detail
 export const createExpenseDetail = async (req: Request, res: Response) => {
   try {
-    const { exp_name, exp_detail, exp_img, cur_id, exp_cost, payment_type } = req.body
+    console.log('req.body:', req.body)
+      const { exp_name, exp_detail, exp_img, cur_id, exp_cost, payment_type, exp_sizes } = req.body
     
-    if (!exp_name || !exp_detail || !cur_id || !exp_cost) {
+    if (!exp_name || !exp_detail || !cur_id || exp_cost === undefined || exp_cost === null || exp_cost === '') {
       return res.status(400).json({ 
         success: false, 
         message: 'All required fields must be provided' 
       })
     }
 
-    const query = `
-      INSERT INTO expense_detail (exp_name, exp_detail, exp_img, cur_id, exp_cost, payment_type)
-      VALUES ($1, $2, $3, $4, $5, $6)
+       const query = `
+      INSERT INTO expense_detail (exp_name, exp_detail, exp_img, cur_id, exp_cost, payment_type, exp_sizes)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
     `
-    const result = await pool.query(query, [exp_name, exp_detail, exp_img, cur_id, exp_cost, payment_type || 'mandatory'])
+    const result = await pool.query(query, [exp_name, exp_detail, exp_img, cur_id, exp_cost, payment_type || 'mandatory', JSON.stringify(exp_sizes || []) ])
     
     res.status(201).json({ 
       success: true, 
@@ -70,15 +72,16 @@ export const createExpenseDetail = async (req: Request, res: Response) => {
 export const updateExpenseDetail = async (req: Request, res: Response) => {
   try {
     const { id } = req.params
-    const { exp_name, exp_detail, exp_img, cur_id, exp_cost, payment_type } = req.body
+      const { exp_name, exp_detail, exp_img, cur_id, exp_cost, payment_type, exp_sizes } = req.body
     
-    const query = `
+   const query = `
       UPDATE expense_detail 
-      SET exp_name = $1, exp_detail = $2, exp_img = $3, cur_id = $4, exp_cost = $5, payment_type = $6
-      WHERE exp_id = $7
+      SET exp_name = $1, exp_detail = $2, exp_img = $3, cur_id = $4, 
+          exp_cost = $5, payment_type = $6, exp_sizes = $7
+      WHERE exp_id = $8
       RETURNING *
     `
-    const result = await pool.query(query, [exp_name, exp_detail, exp_img, cur_id, exp_cost, payment_type, id])
+    const result = await pool.query(query, [exp_name, exp_detail, exp_img, cur_id, exp_cost, payment_type, JSON.stringify(exp_sizes || []), id])
     
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Expense detail not found' })
