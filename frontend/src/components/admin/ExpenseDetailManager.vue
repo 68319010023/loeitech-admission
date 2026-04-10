@@ -62,11 +62,19 @@
                 <div class="text-gray-500 text-xs">
                   {{ expense.exp_detail.length > 50 ? expense.exp_detail.substring(0, 50) + '...' : expense.exp_detail }}
                 </div>
+                <div v-if="expense.exp_sizes && expense.exp_sizes.length > 0" class="flex flex-wrap gap-1 mt-1">
+                  <span
+                    v-for="size in expense.exp_sizes"
+                    :key="size"
+                    class="inline-flex items-center px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-xs"
+                  >
+                    {{ size }}
+                  </span>
+                </div>
               </div>
             </td>
             <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
               {{ expense.curriculum?.cur_shortname ?? '-' }}
-
             </td>
             <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
               {{ expense.exp_cost.toLocaleString() }} บาท
@@ -211,6 +219,46 @@
                       />
                     </div>
                     <div>
+                      <label class="block text-gray-700 text-sm font-bold mb-2">
+                        ขนาดเสื้อ
+                        <span class="text-gray-400 font-normal text-xs ml-1">(ถ้าไม่มีให้เว้นว่าง)</span>
+                      </label>
+                      <div class="flex flex-wrap gap-2 mb-2 min-h-[34px]">
+                        <span
+                          v-for="(size, i) in formData.exp_sizes"
+                          :key="i"
+                          class="inline-flex items-center px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-sm font-medium"
+                        >
+                          {{ size }}
+                          <button
+                            type="button"
+                            @click="removeSize(i)"
+                            class="ml-2 text-emerald-500 hover:text-red-500 transition-colors leading-none"
+                          >✕</button>
+                        </span>
+                        <span v-if="formData.exp_sizes.length === 0" class="text-gray-400 text-xs self-center">
+                          ยังไม่มีไซส์
+                        </span>
+                      </div>
+                      <div class="flex gap-2">
+                        <input
+                          v-model="newSizeInput"
+                          type="text"
+                          placeholder="เช่น M 42, L 44, XL 46, พิเศษ"
+                          class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-sm"
+                          @keydown.enter.prevent="addSize"
+                        />
+                        <button
+                          type="button"
+                          @click="addSize"
+                          class="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors text-sm font-medium whitespace-nowrap"
+                        >
+                          + เพิ่ม
+                        </button>
+                      </div>
+                      <p class="text-xs text-gray-400 mt-1">พิมพ์ไซส์แล้วกด Enter หรือกดปุ่ม "+ เพิ่ม"</p>
+                    </div>
+                    <div>
                       <label class="block text-gray-700 text-sm font-bold mb-2">รูปภาพ</label>
                       <input
                         type="file"
@@ -334,6 +382,7 @@ interface ExpenseDetail {
   cur_id: number
   exp_cost: number
   payment_type?: string
+  exp_sizes?: string[]
   curriculum?: Curriculum
   created_at: string
 }
@@ -349,6 +398,7 @@ const isSubmitting = ref(false)
 const isDeleting = ref(false)
 const imagePreview = ref<string>('')
 const viewingImage = ref<string>('')
+const newSizeInput = ref('')
 
 const showAddModal = ref(false)
 const showEditModal = ref(false)
@@ -362,7 +412,8 @@ const formData = ref({
   exp_cost: 0,
   exp_img: '',
   cur_id: 0 as number | '',
-  payment_type: ''
+  payment_type: '',
+  exp_sizes: [] as string[]
 })
 
 const toast = ref({
@@ -396,6 +447,19 @@ const handleImageUpload = (event: Event) => {
     }
     reader.readAsDataURL(file)
   }
+}
+
+// ── Sizes ──────────────────────────────────────────────
+const addSize = () => {
+  const val = newSizeInput.value.trim()
+  if (val && !formData.value.exp_sizes.includes(val)) {
+    formData.value.exp_sizes.push(val)
+    newSizeInput.value = ''
+  }
+}
+
+const removeSize = (index: number) => {
+  formData.value.exp_sizes.splice(index, 1)
 }
 
 // ── Fetch ──────────────────────────────────────────────
@@ -449,7 +513,8 @@ const editExpense = (expense: ExpenseDetail) => {
     exp_img: expense.exp_img || '',
     cur_id: expense.cur_id,
     exp_cost: expense.exp_cost,
-    payment_type: expense.payment_type || ''
+    payment_type: expense.payment_type || '',
+    exp_sizes: expense.exp_sizes ? [...expense.exp_sizes] : []
   }
   imagePreview.value = ''
   showEditModal.value = true
@@ -459,6 +524,7 @@ const closeModal = () => {
   showAddModal.value = false
   showEditModal.value = false
   imagePreview.value = ''
+  newSizeInput.value = ''
   formData.value = {
     exp_id: 0,
     exp_name: '',
@@ -466,7 +532,8 @@ const closeModal = () => {
     exp_cost: 0,
     exp_img: '',
     cur_id: '',
-    payment_type: ''
+    payment_type: '',
+    exp_sizes: []
   }
 }
 
