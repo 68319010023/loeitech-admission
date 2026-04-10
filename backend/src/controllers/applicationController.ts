@@ -46,44 +46,54 @@ export const getExpenses = async (req: Request, res: Response) => {
 
 export const getAdmissionPlan = async (req: Request, res: Response) => {
   try {
-    const { prev_level, ap_years } = req.query;
+    const { prev_level, ap_years } = req.query
 
-    // map prev_level → cur_shortname
-    let curShortname: string | null = null;
-    if (prev_level === "m3") curShortname = "ปวช.";
-    else if (prev_level === "m6" || prev_level === "pvc") curShortname = "ปวส.";
+    // map prev_level → filter condition
+    // m3  → ปวช. เท่านั้น
+    // m6  → ปวส. ม.6/ต่างสาขา เท่านั้น
+    // pvc → ปวส. ทุกแบบ (ม.6/ต่างสาขา + สายตรง + ทวิภาคี)
+    let curIds: number[] | null = null
 
-    const result = await pool.query(
-      `
-  SELECT
-    ap.ap_id, ap.ap_years, ap.plan_num,
-    ap.cur_id, c.cur_name, c.cur_shortname,
-    ap.div_id, d.div_name,
-    COUNT(DISTINCT a.app_id) FILTER (WHERE a.status = 'enrolled') AS online_enrolled,
-    COALESCE(o.count, 0) AS onsite_enrolled,
-    ap.plan_num - (
-      COUNT(DISTINCT a.app_id) FILTER (WHERE a.status = 'enrolled') + COALESCE(o.count, 0)
-    ) AS remaining,
-    CASE WHEN ap.plan_num - (
-      COUNT(DISTINCT a.app_id) FILTER (WHERE a.status = 'enrolled') + COALESCE(o.count, 0)
-    ) <= 0 THEN true ELSE false END AS is_full
-  FROM admission_plan ap
-  JOIN curriculums c ON c.cur_id = ap.cur_id
-  JOIN divisions d ON d.div_id = ap.div_id
-  LEFT JOIN applicants a ON a.ap_id = ap.ap_id
-  LEFT JOIN onsite_enrollments o ON o.ap_id = ap.ap_id
-  WHERE ($1::varchar IS NULL OR c.cur_shortname = $1)
-    AND ($2::varchar IS NULL OR ap.ap_years = $2)
-  GROUP BY ap.ap_id, c.cur_name, c.cur_shortname, d.div_name, o.count
-  ORDER BY ap.cur_id, ap.div_id
-`,
-      [curShortname, ap_years || null],
-    );
-    sendSuccess(res, result.rows);
+    if (prev_level === 'm3') {
+      // ดึง cur_id ที่เป็น ปวช. เท่านั้น
+    }
+
+    const result = await pool.query(`
+      SELECT
+        ap.ap_id, ap.ap_years, ap.plan_num,
+        ap.cur_id, c.cur_name, c.cur_shortname,
+        ap.div_id, d.div_name,
+        COUNT(DISTINCT a.app_id) FILTER (WHERE a.status = 'enrolled') AS online_enrolled,
+        COALESCE(o.count, 0) AS onsite_enrolled,
+        ap.plan_num - (
+          COUNT(DISTINCT a.app_id) FILTER (WHERE a.status = 'enrolled') + COALESCE(o.count, 0)
+        ) AS remaining,
+        CASE WHEN ap.plan_num - (
+          COUNT(DISTINCT a.app_id) FILTER (WHERE a.status = 'enrolled') + COALESCE(o.count, 0)
+        ) <= 0 THEN true ELSE false END AS is_full
+      FROM admission_plan ap
+      JOIN curriculums c ON c.cur_id = ap.cur_id
+      JOIN divisions d ON d.div_id = ap.div_id
+      LEFT JOIN applicants a ON a.ap_id = ap.ap_id
+      LEFT JOIN onsite_enrollments o ON o.ap_id = ap.ap_id
+      WHERE (
+        CASE
+          WHEN $1 = 'm3'  THEN c.cur_shortname = 'ปวช.'
+          WHEN $1 = 'm6'  THEN c.cur_shortname LIKE '%ม.6%'
+          WHEN $1 = 'pvc' THEN c.cur_shortname LIKE 'ปวส.%'
+          ELSE true
+        END
+      )
+      AND ($2::varchar IS NULL OR ap.ap_years = $2)
+      GROUP BY ap.ap_id, ap.cur_id, ap.div_id, c.cur_id, c.cur_name, c.cur_shortname, d.div_name, o.count
+      ORDER BY c.cur_id, d.div_name
+    `, [prev_level || null, ap_years || null])
+
+    sendSuccess(res, result.rows)
   } catch (err) {
-    sendError(res, "ไม่สามารถดึงข้อมูลแผนการรับสมัครได้", 500, err);
+    sendError(res, 'ไม่สามารถดึงข้อมูลแผนการรับสมัครได้', 500, err)
   }
-};
+}
 
 // ส่งใบสมัคร
 export const createApplication = async (req: Request, res: Response) => {
@@ -278,13 +288,41 @@ export const checkStatus = async (req: Request, res: Response) => {
       LEFT JOIN enrollments e ON e.app_id = a.app_id
       LEFT JOIN documents doc ON doc.app_id = a.app_id
       WHERE a.id_card_number = $1
+        GROUP BY
+        a.app_id, a.prefix, a.full_name, a.status, a.created_at,
+        a.phone, a.id_card_number,
+        c.cur_name, d.div_name,
+        p.total_amount, p.required_amount, p.due_date,
+        p.paid_at, p.verified_at,
+        e.enrolled_at, e.verified_at
     `, [idCard])
 
     if (result.rows.length === 0) {
       return sendError(res, "ไม่พบข้อมูลการสมัคร", 404);
     }
 
-    sendSuccess(res, result.rows[0])
+    const row = result.rows[0]
+    console.log('self_front_url from DB:', row.self_front_url)
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3001'
+
+const toUrl = (filePath: string | null) => {
+  if (!filePath) return null
+   const filename = filePath.replace(/\\/g, '/').split('/').pop()
+  return `${BASE_URL}/uploads/${filename}`
+}
+
+sendSuccess(res, {
+  ...row,
+  self_front_url:   toUrl(row.self_front_url),
+  self_back_url:    toUrl(row.self_back_url),
+  father_front_url: toUrl(row.father_front_url),
+  father_back_url:  toUrl(row.father_back_url),
+  mother_front_url: toUrl(row.mother_front_url),
+  mother_back_url:  toUrl(row.mother_back_url),
+  payment_slip_url: toUrl(row.payment_slip_url),
+})
+
+
   } catch (err) {
     sendError(res, "เกิดข้อผิดพลาด", 500, err);
   }

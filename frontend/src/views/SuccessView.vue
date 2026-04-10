@@ -162,11 +162,14 @@
               </div>
             </div>
           </div>
+
           <h3 class="text-base font-semibold text-gray-700 mb-1">สลิปการโอนเงิน</h3>
           <label class="block">
-            <div class="upload-box" :class="paymentSlip.front ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'"
-              style="min-height: 300px;">
-              <input type="file" accept="image/*" class="hidden" @change="handleUpload(paymentSlip, 'front', $event)" />
+            <div class="upload-box" :class="[
+              paymentSlip.front ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200',
+              isVerifyingSlip ? 'pointer-events-none opacity-60' : ''
+            ]" style="min-height: 300px;">
+              <input type="file" accept="image/*" class="hidden" @change="handleSlipUpload($event)" />
               <div v-if="!paymentSlip.frontPreview"
                 class="flex flex-col items-center justify-center gap-3 text-gray-400 h-full">
                 <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
@@ -180,11 +183,39 @@
               <img v-else :src="paymentSlip.frontPreview" class="w-full h-full object-contain rounded-xl" />
             </div>
           </label>
-          <div class="flex justify-between gap-4 mt-8">
+
+          <!-- Loading ขณะตรวจสอบ -->
+          <div v-if="isVerifyingSlip"
+            class="mt-4 flex items-center gap-3 bg-emerald-50 border border-emerald-200 p-4 rounded-xl">
+            <div class="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <svg class="animate-spin h-5 w-5 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+                viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+              </svg>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-emerald-700">กำลังตรวจสอบสลิป...</p>
+              <p class="text-xs text-emerald-500 mt-0.5">กรุณารอสักครู่ ระบบกำลังยืนยันข้อมูล</p>
+            </div>
+          </div>
+
+          <div v-if="slipVerifyResult?.valid && !isVerifyingSlip"
+            class="mt-4 flex items-center gap-3 bg-emerald-50 border border-emerald-200 p-4 rounded-xl">
+            <div class="w-9 h-9 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <p class="text-sm font-semibold text-emerald-700">สลิปผ่านการตรวจสอบแล้ว</p>
+            <div class="ml-auto w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+          </div>
+
+          <div class="flex justify-between gap-4 mt-6">
             <button @click="goBackStep"
               class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium">ย้อนกลับ</button>
-            <button @click="handleNextClick"
-              class="px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors font-medium">ถัดไป</button>
+            <button @click="handleNextClick" :disabled="isVerifyingSlip"
+              class="px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium">ถัดไป</button>
           </div>
         </div>
 
@@ -286,19 +317,14 @@
         <!-- Step 4: Success -->
         <div v-if="currentStep === 3" class="mb-8">
           <div class="text-center py-8">
-
-            <!-- Animated checkmark -->
             <div class="relative w-28 h-28 mx-auto mb-6">
               <div class="absolute inset-0 bg-emerald-100 rounded-full animate-ping opacity-30"></div>
               <div class="relative w-28 h-28 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg">
                 <CheckBadgeIcon class="w-14 h-14 text-white" />
               </div>
             </div>
-
             <h2 class="text-2xl font-bold text-gray-800 mb-2">การมอบตัวสำเร็จแล้ว! 🎉</h2>
             <p class="text-gray-500 mb-8">ระบบได้บันทึกข้อมูลการมอบตัวของคุณเรียบร้อยแล้ว</p>
-
-            <!-- Student Info Card -->
             <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-6 max-w-md mx-auto text-left mb-6">
               <h3 class="text-sm font-semibold text-emerald-700 mb-3 uppercase tracking-wide">ข้อมูลผู้มอบตัว</h3>
               <div class="space-y-2">
@@ -316,12 +342,11 @@
                 </div>
                 <div class="flex justify-between">
                   <span class="text-sm text-gray-500">ยอดที่ชำระ</span>
-                  <span class="text-sm font-medium text-emerald-600">{{ userData.totalAmount.toLocaleString() }} บาท</span>
+                  <span class="text-sm font-medium text-emerald-600">{{ userData.totalAmount.toLocaleString() }}
+                    บาท</span>
                 </div>
               </div>
             </div>
-
-            <!-- PDF Download Notice -->
             <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 max-w-md mx-auto mb-8 text-left">
               <p class="text-sm font-semibold text-blue-700 mb-2">📄 เอกสารที่ดาวน์โหลดอัตโนมัติ</p>
               <ul class="text-sm text-blue-600 space-y-1">
@@ -330,8 +355,6 @@
               </ul>
               <p class="text-xs text-blue-400 mt-2">หากไม่ได้รับไฟล์ กรุณากดปุ่มดาวน์โหลดซ้ำด้านล่าง</p>
             </div>
-
-            <!-- Action Buttons -->
             <div class="flex flex-col sm:flex-row justify-center gap-3">
               <button @click="downloadPDFs"
                 class="px-6 py-3 border border-emerald-500 text-emerald-600 rounded-lg hover:bg-emerald-50 transition-colors font-medium flex items-center justify-center gap-2">
@@ -343,14 +366,12 @@
                 กลับหน้าหลัก
               </button>
             </div>
-
           </div>
         </div>
 
       </template>
     </div>
 
-    <!-- ✅ Teleport อยู่ภายใน root div แล้ว -->
     <Teleport to="body">
       <transition name="toast">
         <div v-if="toast.show"
@@ -358,7 +379,8 @@
           :class="toast.type === 'success'
             ? 'bg-gradient-to-r from-green-500 to-emerald-600'
             : 'bg-gradient-to-r from-red-500 to-pink-600'">
-          <svg v-if="toast.type === 'success'" class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg v-if="toast.type === 'success'" class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
           <svg v-else class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -398,6 +420,16 @@ interface UserData {
   curName: string
   divName: string
   totalAmount: number
+   status: string 
+}
+
+interface SlipVerifyResult {
+  valid: boolean
+  amount?: number
+  sender?: string
+  receiver?: string
+  date?: string
+  message?: string
 }
 
 const router = useRouter()
@@ -408,7 +440,11 @@ const currentStep = ref(0)
 const isLoading = ref(false)
 const isLoadingData = ref(true)
 
-const userData = ref<UserData>({ fullName: '', prefix: '', curName: '', divName: '', totalAmount: 0 })
+// ✅ state สำหรับตรวจสอบสลิป
+const slipVerifyResult = ref<SlipVerifyResult | null>(null)
+const isVerifyingSlip = ref(false)
+
+const userData = ref<UserData>({ fullName: '', prefix: '', curName: '', divName: '', totalAmount: 0, status: ''  })
 
 const createHouseDoc = (): HouseDoc => ({ front: null, frontPreview: '', back: null, backPreview: '' })
 const selfHouseRegistration = reactive<HouseDoc>(createHouseDoc())
@@ -423,7 +459,6 @@ const steps = [
   { label: 'เสร็จสิ้น', sub: 'สำเร็จ', icon: CheckBadgeIcon },
 ]
 
-// ✅ onMounted เดียว รวมทั้งดึงข้อมูล + รูปเดิม
 onMounted(async () => {
   if (!idCard) { router.push('/check-status'); return }
   try {
@@ -435,17 +470,21 @@ onMounted(async () => {
       prefix: data.prefix,
       curName: data.cur_name,
       divName: data.div_name,
-      totalAmount: Number(data.total_amount) || 0
+      totalAmount: Number(data.total_amount) || 0,
+       status: data.status 
     }
 
-    // ดึงรูปที่เคยอัพไว้มาแสดง (ถ้ามี)
     if (data.self_front_url) selfHouseRegistration.frontPreview = data.self_front_url
     if (data.self_back_url) selfHouseRegistration.backPreview = data.self_back_url
     if (data.father_front_url) fatherHouseRegistration.frontPreview = data.father_front_url
     if (data.father_back_url) fatherHouseRegistration.backPreview = data.father_back_url
     if (data.mother_front_url) motherHouseRegistration.frontPreview = data.mother_front_url
     if (data.mother_back_url) motherHouseRegistration.backPreview = data.mother_back_url
-    if (data.payment_slip_url) paymentSlip.frontPreview = data.payment_slip_url
+    if (data.payment_slip_url) {
+      paymentSlip.frontPreview = data.payment_slip_url
+      // ถ้ามีสลิปเดิมอยู่แล้ว ถือว่าผ่านการตรวจแล้ว
+      slipVerifyResult.value = { valid: true }
+    }
 
   } catch {
     showToast('error', 'โหลดข้อมูลไม่สำเร็จ', 'ไม่สามารถดึงข้อมูลได้ กรุณาลองใหม่')
@@ -455,15 +494,19 @@ onMounted(async () => {
   }
 })
 
-// ✅ เช็ค Preview แทน File (รองรับรูปเดิมที่โหลดมาจาก API)
+// ✅ เช็ค Preview + สลิปต้องผ่านการตรวจสอบด้วย
 const isAllDocumentsUploaded = computed(() => {
   if (currentStep.value === 0) {
     return selfHouseRegistration.frontPreview && selfHouseRegistration.backPreview
   }
-  if (currentStep.value === 1) return paymentSlip.frontPreview
+  if (currentStep.value === 1) {
+     const hasExistingSlip = paymentSlip.frontPreview && !paymentSlip.front
+  return hasExistingSlip || (paymentSlip.frontPreview && slipVerifyResult.value?.valid === true)
+  }
   return true
 })
 
+// handleUpload สำหรับเอกสารทั่วไป (ทะเบียนบ้าน)
 const handleUpload = (target: HouseDoc, side: 'front' | 'back', event: Event) => {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (!file) return
@@ -477,18 +520,71 @@ const handleUpload = (target: HouseDoc, side: 'front' | 'back', event: Event) =>
   reader.readAsDataURL(file)
 }
 
+// ✅ handleSlipUpload สำหรับสลิป — ตรวจสอบกับ Slipok ทันที
+const handleSlipUpload = async (event: Event) => {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file) return
+
+  // แสดง preview ก่อน
+  paymentSlip.front = file
+  const reader = new FileReader()
+  reader.onload = (e) => { paymentSlip.frontPreview = e.target?.result as string }
+  reader.readAsDataURL(file)
+
+  // เริ่มตรวจสอบทันที
+  isVerifyingSlip.value = true
+  slipVerifyResult.value = null
+
+  try {
+    const form = new FormData()
+    form.append('slip', file)
+    form.append('idCard', idCard)
+
+    const res = await api.post('/enrollments/verify-slip', form, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+
+  
+
+    const result: SlipVerifyResult = res.data.data
+    slipVerifyResult.value = result
+
+    if (result.valid) {
+      showToast('success', 'สลิปถูกต้อง ✅', `ยอดโอน ${result.amount?.toLocaleString()} บาท`)
+    } else {
+      // ไม่ผ่าน → ล้างรูปทิ้ง
+      paymentSlip.front = null
+      paymentSlip.frontPreview = ''
+      slipVerifyResult.value = null
+      showToast('error', 'สลิปไม่ถูกต้อง ❌', result.message || 'กรุณาอัปโหลดสลิปใหม่อีกครั้ง')
+    }
+
+  } catch  {
+    paymentSlip.front = null
+    paymentSlip.frontPreview = ''
+    slipVerifyResult.value = null
+    showToast('error', 'ตรวจสอบไม่สำเร็จ', 'กรุณาลองใหม่อีกครั้ง')
+  } finally {
+    isVerifyingSlip.value = false
+      ; (event.target as HTMLInputElement).value = '' // reset input ให้อัปโหลดซ้ำได้
+  }
+}
+
 const goBack = () => router.push('/check-status')
 const goBackStep = () => { if (currentStep.value > 0) currentStep.value-- }
 
 const handleNextClick = () => {
   if (!isAllDocumentsUploaded.value) {
-    showToast('error', 'อัปโหลดไม่ครบ', 'กรุณาอัปโหลดรูปภาพให้ครบทุกรายการก่อนดำเนินการต่อ')
+    if (currentStep.value === 1 && paymentSlip.frontPreview && !slipVerifyResult.value?.valid) {
+      showToast('error', 'สลิปยังไม่ผ่านการตรวจสอบ', 'กรุณารอผลการตรวจสอบหรืออัปโหลดสลิปใหม่')
+    } else {
+      showToast('error', 'อัปโหลดไม่ครบ', 'กรุณาอัปโหลดรูปภาพให้ครบทุกรายการก่อนดำเนินการต่อ')
+    }
   } else {
     if (currentStep.value < steps.length - 1) currentStep.value++
   }
 }
 
-// ✅ handleConfirmation เดียว ส่งเฉพาะไฟล์ที่เปลี่ยนใหม่
 const handleConfirmation = async () => {
   isLoading.value = true
   try {
@@ -507,7 +603,10 @@ const handleConfirmation = async () => {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
 
-    await Promise.all([generateCertificatePDF(), generateUniformOrderPDF()])
+     if (userData.value.status !== 'enrolled') {
+      await Promise.all([generateCertificatePDF(), generateUniformOrderPDF()])
+    }
+
     currentStep.value = 3
 
   } catch (error: any) {
@@ -566,9 +665,17 @@ const showToast = (type: 'success' | 'error', title: string, message: string) =>
   toast.value = { show: true, type, title, message }
   toastTimer = setTimeout(() => { toast.value.show = false }, 4000)
 }
-</script> 
+</script>
 
 <style scoped>
-.toast-enter-active, .toast-leave-active { transition: all 0.4s ease; }
-.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateX(100%); }
+.toast-enter-active,
+.toast-leave-active {
+  transition: all 0.4s ease;
+}
+
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateX(100%);
+}
 </style>
