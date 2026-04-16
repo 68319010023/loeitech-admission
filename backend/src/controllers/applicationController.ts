@@ -223,7 +223,7 @@ export const createApplication = async (req: Request, res: Response) => {
           INSERT INTO documents (app_id, doc_type, file_path, file_name, file_size)
           VALUES ($1, $2, $3, $4, $5)
         `,
-          [app_id, entry.type, file.path, file.originalname, file.size],
+          [app_id, entry.type, file.path, file.filename, file.size],
         );
       }
     }

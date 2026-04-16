@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="max-w-4xl mx-auto">
 
     <!-- Stepper -->
@@ -135,6 +135,20 @@
               </p>
             </Transition>
           </div>
+
+          <div v-if="form.prevLevel === 'pvc'" class="col-span-2">
+            <label class="text-sm text-gray-600 mb-1 block">สาขาวิชาที่จบปวช *</label>
+            <select v-model="form.prevBranch" class="input-field">
+              <option value="">เลือกสาขาวิชา</option>
+              <option v-for="branch in pvcBranches" :key="branch.div_id" :value="branch.div_id">
+                {{ branch.div_name }}
+              </option>
+            </select>
+            <p v-if="showError && form.prevLevel === 'pvc' && !form.prevBranch" class="text-red-500 text-xs mt-1">
+              ⚠️ กรุณาเลือกสาขาวิชาที่จบปวช
+            </p>
+          </div>
+
           <div>
             <label class="text-sm text-gray-600 mb-1 block">เกรดเฉลี่ย (GPA) *</label>
             <input v-model="form.gpa" type="text" inputmode="decimal" placeholder="เช่น 4.00" class="input-field"
@@ -143,6 +157,7 @@
               <p v-if="gpaWarning" class="text-red-500 text-xs mt-1">กรุณากรอกเลขไม่เกิน 4.00</p>
             </Transition>
           </div>
+          
           <div v-if="form.prevLevel" class="col-span-2 p-4 rounded-xl border"
             :class="form.prevLevel === 'm3' ? 'bg-blue-50 border-blue-200' : 'bg-emerald-50 border-emerald-200'">
             <p class="text-sm font-medium mb-1" :class="form.prevLevel === 'm3' ? 'text-blue-700' : 'text-emerald-700'">
@@ -485,6 +500,7 @@ const viewingImage = ref('')
 const curriculums = ref<any[]>([])
 const admissionPlans = ref<any[]>([])
 const expenses = ref<any[]>([])
+const pvcBranches = ref<any[]>([])
 
 const steps = [
   { label: 'ข้อมูลส่วนตัว', sub: 'กรอกข้อมูลส่วนตัว', icon: UserIcon },
@@ -504,7 +520,7 @@ const form = reactive({
   prefix: '', fullName: '', idCard: '', address: '', phone: '', email: '',
   idFront: null as File | null, idBack: null as File | null,
   idFrontPreview: '', idBackPreview: '', idType: '',
-  prevSchool: '', prevLevel: '', prevYear: '', gpa: '',
+  prevSchool: '', prevLevel: '', prevYear: '', gpa: '', prevBranch: '',
   docType: '',
   eduFront: null as File | null, eduFrontPreview: '',
   eduBack: null as File | null, eduBackPreview: '',

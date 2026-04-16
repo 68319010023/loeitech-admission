@@ -34,7 +34,7 @@ import {
 import {
   login
 } from '../controllers/authController'
-import { getApplicants } from '../controllers/adminControllers'
+import { getApplicants, getApplicantDocuments } from '../controllers/adminControllers'
 
 const router = Router()
 
@@ -74,5 +74,6 @@ router.put('/users/:id', updateUser)
 router.delete('/users/:id', deleteUser)
 
 router.get('/applicants', getApplicants)
+router.get('/applicants/:app_id/documents', getApplicantDocuments)
 
 export default router

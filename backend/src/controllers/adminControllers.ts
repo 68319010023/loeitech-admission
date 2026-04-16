@@ -62,3 +62,64 @@ export const getApplicants = async (_req: Request, res: Response) => {
     res.status(500).json({ success: false, message: 'Failed to fetch applicants' })
   }
 }
+
+// GET /api/admin/applicants/:app_id/documents
+// ดึงเอกสารทั้งหมดของผู้สมัคร
+export const getApplicantDocuments = async (req: Request, res: Response) => {
+  try {
+    const { app_id } = req.params;
+    
+    const query = `
+      SELECT 
+        d.doc_id,
+        d.doc_type,
+        d.file_name,
+        d.file_size,
+        d.uploaded_at,
+        a.prefix,
+        a.full_name,
+        a.id_card_number
+      FROM documents d
+      JOIN applicants a ON d.app_id = a.app_id
+      WHERE d.app_id = $1
+      ORDER BY d.uploaded_at ASC
+    `;
+    
+    const result = await pool.query(query, [app_id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'ไม่พบเอกสารของผู้สมัครคนนี้' 
+      });
+    }
+    
+    const applicantInfo = {
+      app_id: result.rows[0].app_id,
+      prefix: result.rows[0].prefix,
+      full_name: result.rows[0].full_name,
+      id_card_number: result.rows[0].id_card_number
+    };
+    
+    const documents = result.rows.map(row => ({
+      doc_id: row.doc_id,
+      doc_type: row.doc_type,
+      file_name: row.file_name,
+      file_size: row.file_size,
+      uploaded_at: row.uploaded_at,
+      file_url: `${process.env.BASE_URL || 'http://localhost:3001'}/uploads/${encodeURIComponent(row.file_name)}`
+    }));
+    
+    res.json({ 
+      success: true, 
+      data: {
+        applicant: applicantInfo,
+        documents: documents
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error fetching applicant documents:', error)
+    res.status(500).json({ success: false, message: 'Failed to fetch applicant documents' })
+  }
+}

@@ -140,6 +140,8 @@
             <th class="px-4 py-3 text-left">ชื่อ-สกุล</th>
             <th class="px-4 py-3 text-left">หลักสูตร</th>
             <th class="px-4 py-3 text-left">สาขา</th>
+            <th v-if="selectedExportType === 'payments'" class="px-4 py-3 text-left">สถานะการชำระเงิน</th>
+            <th v-if="selectedExportType === 'students'" class="px-4 py-3 text-center">ดูเอกสาร</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-50">
@@ -151,16 +153,40 @@
             <td class="px-4 py-3 text-center">
               <input type="checkbox" :value="row.ลำดับ" v-model="selectedIds" />
             </td>
-            <td class="px-4 py-3 text-gray-800">{{ row.คำนำหน้า }}{{ row.ชื่อ_นามสกุล }}</td>
+            <td class="px-4 py-3 text-gray-800">
+                {{ row.คำนำหน้า }}{{ row.ชื่อ_นามสกุล }}
+            </td>
             <td class="px-4 py-3 text-gray-500">{{ row.หลักสูตร }}</td>
             <td class="px-4 py-3">
               <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700">
                 {{ row.สาขาวิชา }}
               </span>
             </td>
+            <td v-if="selectedExportType === 'payments'" class="px-4 py-3">
+              <span 
+                :class="[
+                  'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+                  row.วันที่ชำระ === 'ยังไม่ชำระ' 
+                    ? 'bg-red-50 text-red-700' 
+                    : 'bg-green-50 text-green-700'
+                ]"
+              >
+                {{ row.วันที่ชำระ === 'ยังไม่ชำระ' ? 'ยังไม่ชำระ' : 'ชำระแล้ว' }}
+              </span>
+            </td>
+            <td v-if="selectedExportType === 'students'" class="px-4 py-3 text-center">
+              <button
+                @click="showDocuments(row.ลำดับ)"
+                class="inline-flex items-center gap-2 px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors"
+                title="คลิกเพื่อดูเอกสารทั้งหมด"
+              >
+                <Eye class="w-4 h-4" />
+                ดูเอกสาร
+              </button>
+            </td>
           </tr>
           <tr v-if="filteredExportData.length === 0">
-            <td colspan="4" class="px-4 py-8 text-center text-gray-400">ไม่พบข้อมูล</td>
+            <td :colspan="getColumnCount()" class="px-4 py-8 text-center text-gray-400">ไม่พบข้อมูล</td>
           </tr>
         </tbody>
       </table>
@@ -188,6 +214,85 @@
       </div>
     </div>
 
+    <!-- Modal สำหรับแสดงเอกสารทั้งหมด -->
+    <div v-if="showDocumentsModal" class="fixed inset-0 bg-gray-500/50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full mx-4 max-h-[80vh] overflow-hidden">
+        <div class="border-b border-gray-200 px-6 py-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-900">เอกสารทั้งหมดของผู้สมัคร</h3>
+            <button 
+              @click="closeDocumentsModal"
+              class="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X class="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+        
+        <div class="px-6 py-4">
+          <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+            <p class="text-sm font-medium text-gray-900">
+              {{ selectedApplicant?.prefix }} {{ selectedApplicant?.full_name }}
+            </p>
+            <p class="text-xs text-gray-500">
+              เลขบัตรประชาชน: {{ selectedApplicant?.id_card_number }}
+            </p>
+          </div>
+          
+          <div v-if="documentsLoading" class="text-center py-8">
+            <div class="inline-block w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin mb-2"></div>
+            <p class="text-sm text-gray-400">กำลังโหลดเอกสาร...</p>
+          </div>
+          
+          <div v-else-if="documentsError" class="text-center py-8">
+            <p class="text-sm text-red-400">{{ documentsError }}</p>
+            <button 
+              @click="loadDocuments(selectedApplicantId)"
+              class="mt-2 text-sm text-blue-600 hover:text-blue-800"
+            >
+              ลองใหม่
+            </button>
+          </div>
+          
+          <div v-else class="space-y-3 max-h-[50vh] overflow-y-auto">
+            <div 
+              v-for="doc in documents" 
+              :key="doc.doc_id"
+              class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+            >
+              <div class="flex-1">
+                <p class="text-sm font-medium text-gray-900">{{ getDocumentTypeName(doc.doc_type) }}</p>
+                <p class="text-xs text-gray-400">
+                  ขนาด: {{ formatFileSize(doc.file_size) }} • 
+                  อัพโหลดเมื่อ: {{ formatDate(doc.uploaded_at) }}
+                </p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button
+                  @click="viewDocument(doc)"
+                  class="flex items-center gap-2 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
+                  title="คลิกเพื่อดูเอกสาร"
+                >
+                  <Eye class="w-4 h-4" />
+                  ดู
+                </button>
+                <button
+                  @click="downloadDocument(doc)"
+                  :disabled="downloadingDocs.includes(doc.doc_id)"
+                  class="flex items-center gap-2 px-3 py-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white rounded-lg text-sm font-medium transition-colors"
+                  title="คลิกเพื่อดาวน์โหลดเอกสาร"
+                >
+                  <div v-if="downloadingDocs.includes(doc.doc_id)" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <Download v-else class="w-4 h-4" />
+                  {{ downloadingDocs.includes(doc.doc_id) ? 'กำลังดาวน์โหลด...' : 'ดาวน์โหลด' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -196,7 +301,7 @@ import { ref, computed, onMounted } from 'vue'
 import { apiService } from '@/utils/api'
 import {
   Download, CreditCard, ShoppingBag,
-  Users, Search, Filter, ChevronDown, X, User,
+  Users, Search, Filter, ChevronDown, X, User, Eye,
 } from 'lucide-vue-next'
 import * as XLSX from 'xlsx'
 
@@ -215,6 +320,15 @@ const exportSearch       = ref('')
 const selectedBranch     = ref('')
 const selectedCurFilter  = ref('')
 const selectedIds        = ref<string[]>([])
+
+// State สำหรับ modal เอกสาร
+const showDocumentsModal = ref(false)
+const selectedApplicantId = ref('')
+const selectedApplicant = ref<any>(null)
+const documents = ref<any[]>([])
+const documentsLoading = ref(false)
+const documentsError = ref('')
+const downloadingDocs = ref<string[]>([])
 
 // ─── Fetch ───────────────────────────────────────────────────
 const fetchApplicants = async () => {
@@ -254,11 +368,15 @@ const currentData = computed(() =>
       }
     }
     if (selectedExportType.value === 'payments') {
+      // ตรวจสอบสถานะจาก applicants.status แทน payments.paid_at เพื่อให้ตรงกับหน้าตรวจสอบสถานะ
+      const isPaid = a.status === 'paid' || a.status === 'enrolled';
       return {
         ...base,
         ยอดชำระ:               a.payment?.total_amount ?? '-',
-        วันที่ชำระ:             a.payment?.paid_at
-                                  ? new Date(a.payment.paid_at).toLocaleDateString('th-TH')
+        วันที่ชำระ:             isPaid
+                                  ? (a.payment?.paid_at 
+                                     ? new Date(a.payment.paid_at).toLocaleDateString('th-TH')
+                                     : new Date(a.updated_at).toLocaleDateString('th-TH'))
                                   : 'ยังไม่ชำระ',
         หลักฐานการชำระ_ใบเสร็จ: a.payment?.slip_name ?? '-',
       }
@@ -313,8 +431,9 @@ const doExport = (data: object[]) => {
   }
   const ws = XLSX.utils.json_to_sheet(data)
   const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, sheetNames[selectedExportType.value])
-  XLSX.writeFile(wb, fileNames[selectedExportType.value])
+  const exportType = selectedExportType.value || 'students'
+  XLSX.utils.book_append_sheet(wb, ws, sheetNames[exportType])
+  XLSX.writeFile(wb, fileNames[exportType])
 }
 
 const exportSelected = () => {
@@ -323,4 +442,152 @@ const exportSelected = () => {
 }
 
 const exportAll = () => doExport(filteredExportData.value)
+
+// ─── Documents Functions ─────────────────────────────────────
+const showDocuments = async (appId: string) => {
+  console.log('showDocuments called with appId:', appId)
+  console.log('applicants.value:', applicants.value)
+  console.log('filteredExportData.value:', filteredExportData.value)
+  
+  // ตรวจสอบว่ามี row ที่มีลำดับตรงกับ appId นี้หรือไม่
+  const matchingRow = filteredExportData.value.find(row => row.ลำดับ === appId)
+  console.log('matchingRow:', matchingRow)
+  
+  // ตรวจสอบจำนวนข้อมูลใน applicants
+  const applicantExists = applicants.value.find(a => a.app_id === appId)
+  console.log('applicantExists:', applicantExists)
+  
+  selectedApplicantId.value = appId
+  selectedApplicant.value = applicantExists || null
+  console.log('selectedApplicant:', selectedApplicant.value)
+  
+  showDocumentsModal.value = true
+  await loadDocuments(appId)
+}
+
+const closeDocumentsModal = () => {
+  showDocumentsModal.value = false
+  selectedApplicantId.value = ''
+  selectedApplicant.value = null
+  documents.value = []
+  documentsError.value = ''
+}
+
+const loadDocuments = async (appId: string) => {
+  documentsLoading.value = true
+  documentsError.value = ''
+  
+  try {
+    const res = await apiService.getApplicantDocuments(appId)
+    if (res.success) {
+      documents.value = res.data.documents
+      selectedApplicant.value = res.data.applicant
+    } else {
+      documentsError.value = res.message || 'ไม่สามารถโหลดเอกสารได้'
+    }
+  } catch (error: any) {
+    documentsError.value = error.message || 'เกิดข้อผิดพลาดในการโหลดเอกสาร'
+  } finally {
+    documentsLoading.value = false
+  }
+}
+
+const getDocumentTypeName = (docType: string) => {
+  const typeNames: Record<string, string> = {
+    'id_front': 'บัตรประชาชนด้านหน้า',
+    'id_back': 'บัตรประชาชนด้านหลัง',
+    'certificate_front': 'ใบรับรองด้านหน้า',
+    'certificate_back': 'ใบรับรองด้านหลัง',
+    'letter_front': 'หนังสือด้านหน้า',
+    'letter_back': 'หนังสือด้านหลัง',
+    'studentcard_front': 'บัตรนักเรียนด้านหน้า',
+    'studentcard_back': 'บัตรนักเรียนด้านหลัง',
+    'self_house_front': 'สำเนาทะเบียนบ้านตัวเองด้านหน้า',
+    'self_house_back': 'สำเนาทะเบียนบ้านตัวเองด้านหลัง',
+    'father_house_front': 'สำเนาทะเบียนบ้านบิดาด้านหน้า',
+    'father_house_back': 'สำเนาทะเบียนบ้านบิดาด้านหลัง',
+    'mother_house_front': 'สำเนาทะเบียนบ้านมารดาด้านหน้า',
+    'mother_house_back': 'สำเนาทะเบียนบ้านมารดาด้านหลัง',
+    'payment_slip': 'หลักฐานการชำระเงิน'
+  }
+  return typeNames[docType] || docType
+}
+
+const formatFileSize = (bytes: number) => {
+  if (!bytes) return '-'
+  const sizes = ['Bytes', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(1024))
+  return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i]
+}
+
+const formatDate = (dateString: string) => {
+  if (!dateString) return '-'
+  const date = new Date(dateString)
+  return date.toLocaleDateString('th-TH', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  })
+}
+
+const viewDocument = (doc: any) => {
+  // เปิดรูปใน tab ใหม่สำหรับดู
+  window.open(doc.file_url, '_blank')
+}
+
+const downloadDocument = async (doc: any) => {
+  // Add to downloading state
+  downloadingDocs.value.push(doc.doc_id)
+  
+  try {
+    // 1.  fetch  file  3  blob
+    const response = await fetch(doc.file_url)
+    if (!response.ok) {
+      throw new Error('Failed to fetch file')
+    }
+    
+    const blob = await response.blob()
+    
+    // 2.  create object URL
+    const url = window.URL.createObjectURL(blob)
+    
+    // 3.  create download link
+    const link = document.createElement('a')
+    link.href = url
+    link.download = doc.file_name || 'document.jpg'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    // 4.  cleanup object URL
+    window.URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('Download failed:', error)
+    // Fallback: open in new tab
+    window.open(doc.file_url, '_blank')
+  } finally {
+    // Remove from downloading state
+    const index = downloadingDocs.value.indexOf(doc.doc_id)
+    if (index > -1) {
+      downloadingDocs.value.splice(index, 1)
+    }
+  }
+}
+
+const getColumnCount = () => {
+  // Base columns: checkbox, name, curriculum, branch = 4
+  let count = 4
+  
+  // Add payment status column for payments type
+  if (selectedExportType.value === 'payments') {
+    count += 1
+  }
+  
+  // Add document column only for students type
+  if (selectedExportType.value === 'students') {
+    count += 1
+  }
+  
+  return count
+}
 </script>

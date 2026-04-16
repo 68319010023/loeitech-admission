@@ -16,6 +16,8 @@
   },
   "dependencies": {
     "@heroicons/vue": "^2.2.0",
+    "@tailwindcss/postcss": "^4.2.2",
+    "autoprefixer": "^10.5.0",
     "axios": "^1.14.0",
     "jspdf": "^4.2.1",
     "lucide-vue-next": "^1.0.0",

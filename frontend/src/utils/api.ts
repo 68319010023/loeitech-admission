@@ -261,6 +261,10 @@ class ApiService {
     return this.request<any[]>('/admin/applicants')
   }
 
+  async getApplicantDocuments(appId: string) {
+    return this.request<any>(`/admin/applicants/${appId}/documents`)
+  }
+
   // เพิ่มใน ApiService class
   async getStats() {
     return this.request<any>('/applications/stats')
