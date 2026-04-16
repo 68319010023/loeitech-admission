@@ -16,6 +16,7 @@ const router = createRouter({
     { path: '/admin/settings', component: () => import('../views/AdminSettingsView.vue') },
     { path: '/admin/expenses', component: () => import('../views/AdminExpensesView.vue') },
     { path: '/admin/onsite-enrollment', component: () => import('../views/OnsiteEnrollmentView.vue') },
+    { path: '/guide', component: () => import('../views/GuideView.vue') },
   ],
 })
 
