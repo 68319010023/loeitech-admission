@@ -33,44 +33,20 @@ export const getExpenses = async (req: Request, res: Response) => {
   try {
     const { cur_id } = req.query;
 
-    if (!cur_id) {
-      const result = await pool.query(
-        `SELECT exp_id, exp_name, exp_detail, exp_img, cur_id, exp_cost, payment_type, exp_sizes
-         FROM expense_detail ORDER BY payment_type DESC, exp_id`  // ← ไม่มี s
-      )
-      return sendSuccess(res, result.rows)
-    }
+    const query = cur_id
+      ? `SELECT exp_id, exp_name, exp_detail, exp_img, cur_id, exp_cost, payment_type, exp_sizes
+         FROM expense_detail WHERE cur_id = $1 ORDER BY payment_type DESC, exp_id`
+      : `SELECT exp_id, exp_name, exp_detail, exp_img, cur_id, exp_cost, payment_type, exp_sizes
+         FROM expense_detail ORDER BY payment_type DESC, exp_id`
 
-    const curResult = await pool.query(
-      `SELECT cur_shortname FROM curriculums WHERE cur_id = $1`, [cur_id]
-    )
-
-    const shortname = curResult.rows[0]?.cur_shortname || ''
-
-    let result
-    if (shortname.includes('ปวส')) {
-      result = await pool.query(
-        `SELECT e.exp_id, e.exp_name, e.exp_detail, e.exp_img, e.cur_id, e.exp_cost, e.payment_type, e.exp_sizes
-         FROM expense_detail e                                     -- ← ไม่มี s
-         JOIN curriculums c ON c.cur_id = e.cur_id
-         WHERE c.cur_shortname LIKE 'ปวส.%'
-         ORDER BY e.payment_type DESC, e.exp_id`
-      )
-    } else {
-      result = await pool.query(
-        `SELECT exp_id, exp_name, exp_detail, exp_img, cur_id, exp_cost, payment_type, exp_sizes
-         FROM expense_detail WHERE cur_id = $1                     -- ← ไม่มี s
-         ORDER BY payment_type DESC, exp_id`,
-        [cur_id]
-      )
-    }
-
+    const result = await pool.query(query, cur_id ? [cur_id] : [])
     sendSuccess(res, result.rows)
   } catch (err: any) {
     console.error('getExpenses error:', err.message)
     sendError(res, "ไม่สามารถดึงข้อมูลค่าใช้จ่ายได้", 500, err)
   }
 }
+
 export const getAdmissionPlan = async (req: Request, res: Response) => {
   try {
     const { prev_level, ap_years } = req.query

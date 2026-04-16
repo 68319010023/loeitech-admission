@@ -22,8 +22,6 @@
   </div>
 
   <div class="p-4 space-y-4">
-
-    <!-- Header -->
     <div>
       <h1 class="text-xl font-bold text-gray-800">ส่งออกข้อมูล</h1>
       <p class="text-sm text-gray-400">วิทยาลัยเทคนิคเลย</p>
@@ -31,7 +29,6 @@
 
     <p class="text-sm text-gray-500">เลือกประเภทข้อมูลและเลือกรายชื่อที่ต้องการส่งออก</p>
 
-    <!-- เลือกประเภท -->
     <div class="flex gap-2 flex-wrap">
       <button
         v-for="item in exportItems"
@@ -49,10 +46,7 @@
       </button>
     </div>
 
-    <!-- แถวค้นหา + กรองหลักสูตร + กรองสาขา -->
     <div class="flex flex-col sm:flex-row gap-2">
-
-      <!-- ค้นหาชื่อ -->
       <div class="relative flex-1">
         <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
         <input
@@ -62,8 +56,6 @@
           class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none"
         />
       </div>
-
-      <!-- กรองหลักสูตร ปวช/ปวส -->
       <div class="relative">
         <select
           v-model="selectedCurFilter"
@@ -75,8 +67,6 @@
         </select>
         <ChevronDown class="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
       </div>
-
-      <!-- กรองสาขาวิชา -->
       <div class="relative">
         <Filter class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
         <select
@@ -88,8 +78,6 @@
         </select>
         <ChevronDown class="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
       </div>
-
-      <!-- ปุ่มล้าง filter -->
       <button
         v-if="exportSearch || selectedBranch || selectedCurFilter"
         @click="exportSearch = ''; selectedBranch = ''; selectedCurFilter = ''"
@@ -99,37 +87,29 @@
       </button>
     </div>
 
-    <!-- Badge แสดงสาขาที่กำลัง filter -->
     <div v-if="selectedBranch || selectedCurFilter" class="flex items-center gap-2 flex-wrap">
       <span class="text-xs text-gray-400">กรองโดย:</span>
       <span v-if="selectedCurFilter" class="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full border border-blue-200">
         {{ selectedCurFilter }}
-        <button @click="selectedCurFilter = ''" class="hover:text-blue-900">
-          <X class="w-3 h-3" />
-        </button>
+        <button @click="selectedCurFilter = ''" class="hover:text-blue-900"><X class="w-3 h-3" /></button>
       </span>
       <span v-if="selectedBranch" class="inline-flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 text-xs font-semibold rounded-full border border-green-200">
         สาขา: {{ selectedBranch }}
-        <button @click="selectedBranch = ''" class="hover:text-green-900">
-          <X class="w-3 h-3" />
-        </button>
+        <button @click="selectedBranch = ''" class="hover:text-green-900"><X class="w-3 h-3" /></button>
       </span>
       <span class="text-xs text-gray-400">พบ {{ filteredExportData.length }} รายการ</span>
     </div>
 
-    <!-- Loading -->
     <div v-if="isLoading" class="text-center py-12 text-gray-400">
       <div class="inline-block w-6 h-6 border-2 border-green-400 border-t-transparent rounded-full animate-spin mb-2"></div>
       <p class="text-sm">กำลังโหลดข้อมูล...</p>
     </div>
 
-    <!-- Error -->
     <div v-else-if="error" class="text-center py-12">
       <p class="text-red-400 text-sm">{{ error }}</p>
       <button @click="fetchApplicants" class="mt-2 text-sm text-green-600 underline">ลองใหม่</button>
     </div>
 
-    <!-- ตาราง -->
     <div v-else class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
       <table class="w-full text-sm">
         <thead class="bg-gray-50 text-gray-500">
@@ -192,7 +172,25 @@
       </table>
     </div>
 
-    <!-- ปุ่ม Export -->
+    <div v-if="ocrProgress.running" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div class="bg-white rounded-2xl shadow-xl p-6 w-80 space-y-4">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 border-2 border-green-400 border-t-transparent rounded-full animate-spin flex-shrink-0"></div>
+          <div>
+            <p class="font-semibold text-gray-800 text-sm">กำลังอ่านบัตรประชาชน...</p>
+            <p class="text-xs text-gray-400 mt-0.5">{{ ocrProgress.current }} / {{ ocrProgress.total }} รายการ</p>
+          </div>
+        </div>
+        <div class="w-full bg-gray-100 rounded-full h-2">
+          <div
+            class="bg-green-500 h-2 rounded-full transition-all"
+            :style="{ width: ocrProgress.total > 0 ? (ocrProgress.current / ocrProgress.total * 100) + '%' : '0%' }"
+          ></div>
+        </div>
+        <p class="text-xs text-gray-400 text-center">{{ ocrProgress.name }}</p>
+      </div>
+    </div>
+
     <div class="flex items-center justify-between">
       <p class="text-sm text-gray-400">
         เลือกแล้ว <span class="font-semibold text-green-600">{{ selectedIds.length }}</span> รายการ
@@ -200,21 +198,21 @@
       <div class="flex gap-2">
         <button
           @click="exportSelected"
-          :disabled="selectedIds.length === 0"
+          :disabled="selectedIds.length === 0 || ocrProgress.running"
           class="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold transition"
         >
           <Download class="w-4 h-4" /> Export ที่เลือก
         </button>
         <button
           @click="exportAll"
-          class="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-xl text-sm font-semibold transition"
+          :disabled="ocrProgress.running"
+          class="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold transition"
         >
           <Download class="w-4 h-4" /> Export ทั้งหมด
         </button>
       </div>
     </div>
 
-    <!-- Modal สำหรับแสดงเอกสารทั้งหมด -->
     <div v-if="showDocumentsModal" class="fixed inset-0 bg-gray-500/50 flex items-center justify-center z-50">
       <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full mx-4 max-h-[80vh] overflow-hidden">
         <div class="border-b border-gray-200 px-6 py-4">
@@ -304,6 +302,7 @@ import {
   Users, Search, Filter, ChevronDown, X, User, Eye,
 } from 'lucide-vue-next'
 import * as XLSX from 'xlsx'
+import Tesseract from 'tesseract.js'
 
 const exportItems = [
   { label: 'ประวัตินักเรียน', icon: Users, type: 'students' },
@@ -330,6 +329,14 @@ const documentsLoading = ref(false)
 const documentsError = ref('')
 const downloadingDocs = ref<string[]>([])
 
+// OCR progress
+const ocrProgress = ref({
+  running: false,
+  current: 0,
+  total: 0,
+  name: '',
+})
+
 // ─── Fetch ───────────────────────────────────────────────────
 const fetchApplicants = async () => {
   isLoading.value = true
@@ -351,40 +358,42 @@ onMounted(() => fetchApplicants())
 const currentData = computed(() =>
   applicants.value.map(a => {
     const base = {
-      ลำดับ:        a.app_id,
-      คำนำหน้า:     a.prefix,
+      ลำดับ:         a.app_id,
+      คำนำหน้า:      a.prefix,
       ชื่อ_นามสกุล: a.full_name,
-      หลักสูตร:     a.curriculum.cur_shortname,
-      สาขาวิชา:     a.division.div_name,
+      หลักสูตร:      a.curriculum.cur_shortname,
+      สาขาวิชา:      a.division.div_name,
     }
     if (selectedExportType.value === 'students') {
       return {
         ...base,
         เลขบัตรประชาชน: a.id_card_number,
         เบอร์โทร:       a.phone,
-        อีเมล:          a.email,
-        สถานะ:          a.status,
-        วันที่สมัคร:    new Date(a.created_at).toLocaleDateString('th-TH'),
+        อีเมล:           a.email,
+        สถานะ:           a.status,
+        วันที่สมัคร:     new Date(a.created_at).toLocaleDateString('th-TH'),
+        _idFrontUrl:    a.id_front_url ?? '',
       }
     }
     if (selectedExportType.value === 'payments') {
-      // ตรวจสอบสถานะจาก applicants.status แทน payments.paid_at เพื่อให้ตรงกับหน้าตรวจสอบสถานะ
       const isPaid = a.status === 'paid' || a.status === 'enrolled';
       return {
         ...base,
-        ยอดชำระ:               a.payment?.total_amount ?? '-',
-        วันที่ชำระ:             isPaid
+        ยอดชำระ:                a.payment?.total_amount ?? '-',
+        วันที่ชำระ:              isPaid
                                   ? (a.payment?.paid_at 
                                      ? new Date(a.payment.paid_at).toLocaleDateString('th-TH')
                                      : new Date(a.updated_at).toLocaleDateString('th-TH'))
                                   : 'ยังไม่ชำระ',
         หลักฐานการชำระ_ใบเสร็จ: a.payment?.slip_name ?? '-',
+        _idFrontUrl:             a.id_front_url ?? '',
       }
     }
     return {
       ...base,
-      ยอดชำระ:               a.payment?.total_amount ?? '-',
+      ยอดชำระ:                a.payment?.total_amount ?? '-',
       หลักฐานการชำระ_ใบเสร็จ: a.payment?.slip_name ?? '-',
+      _idFrontUrl:             a.id_front_url ?? '',
     }
   })
 )
@@ -417,50 +426,126 @@ const toggleAll = () => {
   }
 }
 
+// ─── OCR ─────────────────────────────────────────────────────
+
+async function runOCRFromUrl(imageUrl: string): Promise<Record<string, string>> {
+  if (!imageUrl) return {}
+  try {
+    const { data: { text } } = await Tesseract.recognize(imageUrl, 'tha+eng', {
+      logger: () => {}
+    })
+    return parseThaiIDText(text)
+  } catch {
+    return {}
+  }
+}
+
+function parseThaiIDText(text: string): Record<string, string> {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+  const result: Record<string, string> = {}
+  const idMatch = text.replace(/[\s\-]/g, '').match(/\d{13}/)
+  if (idMatch) result['OCR_เลขบัตร'] = idMatch[0]
+  const prefixes = ['นาย', 'นาง', 'นางสาว', 'เด็กชาย', 'เด็กหญิง', 'Mr.', 'Mrs.', 'Miss']
+  for (const line of lines) {
+    for (const prefix of prefixes) {
+      if (line.startsWith(prefix)) {
+        result['OCR_คำนำหน้า'] = prefix
+        result['OCR_ชื่อ_นามสกุล'] = line.slice(prefix.length).trim()
+        break
+      }
+    }
+    if (result['OCR_คำนำหน้า']) break
+  }
+  return result
+}
+
 // ─── Export ──────────────────────────────────────────────────
-const doExport = (data: object[]) => {
-  const sheetNames: Record<string, string> = {
-    students: 'ข้อมูลนักเรียน',
-    payments: 'การชำระเงิน',
-    orders:   'การสั่งซื้อ',
+
+const sheetNames: Record<string, string> = {
+  students: 'ประวัตินักเรียน',
+  payments: 'การชำระค่าการศึกษา',
+  orders:   'การสั่งซื้อเครื่องแบบ',
+}
+const fileNames: Record<string, string> = {
+  students: 'ประวัตินักเรียน.xlsx',
+  payments: 'การชำระค่าการศึกษา.xlsx',
+  orders:   'การสั่งซื้อเครื่องแบบ.xlsx',
+}
+
+async function buildExportData(rows: any[]): Promise<object[]> {
+  ocrProgress.value = { running: true, current: 0, total: rows.length, name: '' }
+  const result: object[] = []
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i]
+    ocrProgress.value.current = i + 1
+    ocrProgress.value.name = `${row.คำนำหน้า}${row.ชื่อ_นามสกุล}`
+    const ocrData = await runOCRFromUrl(row._idFrontUrl || '')
+    const cleanRow = Object.fromEntries(
+      Object.entries(row).filter(([key]) => !key.startsWith('_'))
+    )
+    result.push({ ...cleanRow, ...ocrData })
   }
-  const fileNames: Record<string, string> = {
-    students: 'students_export.xlsx',
-    payments: 'payments_export.xlsx',
-    orders:   'orders_export.xlsx',
-  }
-  const ws = XLSX.utils.json_to_sheet(data)
+  ocrProgress.value.running = false
+  return result
+}
+
+function createFormattedWorksheet(data: any[], exportType: string) {
+  if (exportType === 'students') return createStudentWorksheet(data)
+  if (exportType === 'payments') return createPaymentWorksheet(data)
+  if (exportType === 'orders') return createOrderWorksheet(data)
+  return XLSX.utils.json_to_sheet(data)
+}
+
+function createStudentWorksheet(data: any[]) {
+  const headers = [['ประวัตินักเรียน'], ['ลำดับ', 'คำนำหน้า', 'ชื่อ-นามสกุล', 'เลขบัตรประชาชน', 'เบอร์โทร', 'อีเมล', 'หลักสูตร', 'สาขาวิชา', 'สถานะ', 'วันที่สมัคร']]
+  const formattedData = data.map(row => [row.ลำดับ || '-', row.คำนำหน้า || '-', row.ชื่อ_นามสกุล || '-', row.เลขบัตรประชาชน || row.OCR_เลขบัตร || '-', row.เบอร์โทร || '-', row.อีเมล || '-', row.หลักสูตร || '-', row.สาขาวิชา || '-', row.สถานะ || '-', row.วันที่สมัคร || '-'])
+  const ws = XLSX.utils.aoa_to_sheet([...headers, ...formattedData])
+  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }]
+  ws['!cols'] = [{ wch: 8 }, { wch: 12 }, { wch: 25 }, { wch: 20 }, { wch: 15 }, { wch: 25 }, { wch: 10 }, { wch: 20 }, { wch: 12 }, { wch: 15 }]
+  return ws
+}
+
+function createPaymentWorksheet(data: any[]) {
+  const headers = [['ข้อมูลผู้สมัคร', '', '', '', 'รายละเอียดการชำระ', '', '', ''], ['ลำดับ', 'ชื่อ-นามสกุล', 'หลักสูตร', 'สาขาวิชา', 'ยอดชำระ (บาท)', 'วันที่ชำระ', 'ช่องทาง', 'เลขที่ใบเสร็จ']]
+  const formattedData = data.map(row => [row.ลำดับ || '-', (row.คำนำหน้า || '') + (row.ชื่อ_นามสกุล || ''), row.หลักสูตร || '-', row.สาขาวิชา || '-', row.ยอดชำระ === '-' ? '-' : (row.ยอดชำระ || 0), row.วันที่ชำระ || 'ยังไม่ชำระ', '-', row.หลักฐานการชำระ_ใบเสร็จ || '-'])
+  const ws = XLSX.utils.aoa_to_sheet([...headers, ...formattedData])
+  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }, { s: { r: 0, c: 4 }, e: { r: 0, c: 7 } }]
+  ws['!cols'] = [{ wch: 8 }, { wch: 25 }, { wch: 10 }, { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 20 }]
+  return ws
+}
+
+function createOrderWorksheet(data: any[]) {
+  const headers = [['การสั่งซื้อเครื่องแบบ'], ['ลำดับ', 'ชื่อ-นามสกุล', 'หลักสูตร', 'สาขาวิชา', 'เสื้อ (ตัว)', 'กางเกง/กระโปรง', 'ไซส์เสื้อ', 'ยอดรวม (บาท)', 'สถานะชำระ', 'สถานะจัดส่ง']]
+  const formattedData = data.map(row => [row.ลำดับ || '-', (row.คำนำหน้า || '') + (row.ชื่อ_นามสกุล || ''), row.หลักสูตร || '-', row.สาขาวิชา || '-', '-', '-', '-', row.ยอดชำระ === '-' ? '-' : (row.ยอดชำระ || 0), row.วันที่ชำระ === 'ยังไม่ชำระ' ? 'ยังไม่ชำระ' : 'ชำระแล้ว', '-'])
+  const ws = XLSX.utils.aoa_to_sheet([...headers, ...formattedData])
+  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }]
+  ws['!cols'] = [{ wch: 8 }, { wch: 25 }, { wch: 10 }, { wch: 20 }, { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 12 }]
+  return ws
+}
+
+async function doExport(rows: any[]) {
+  const data = await buildExportData(rows)
+  const ws = createFormattedWorksheet(data, selectedExportType.value)
   const wb = XLSX.utils.book_new()
   const exportType = selectedExportType.value || 'students'
   XLSX.utils.book_append_sheet(wb, ws, sheetNames[exportType])
   XLSX.writeFile(wb, fileNames[exportType])
 }
 
-const exportSelected = () => {
-  const data = currentData.value.filter(r => selectedIds.value.includes(r.ลำดับ))
-  doExport(data)
+const exportSelected = async () => {
+  const rows = currentData.value.filter(r => selectedIds.value.includes(r.ลำดับ))
+  await doExport(rows)
 }
 
-const exportAll = () => doExport(filteredExportData.value)
+const exportAll = async () => {
+  await doExport(filteredExportData.value)
+}
 
 // ─── Documents Functions ─────────────────────────────────────
 const showDocuments = async (appId: string) => {
-  console.log('showDocuments called with appId:', appId)
-  console.log('applicants.value:', applicants.value)
-  console.log('filteredExportData.value:', filteredExportData.value)
-  
-  // ตรวจสอบว่ามี row ที่มีลำดับตรงกับ appId นี้หรือไม่
-  const matchingRow = filteredExportData.value.find(row => row.ลำดับ === appId)
-  console.log('matchingRow:', matchingRow)
-  
-  // ตรวจสอบจำนวนข้อมูลใน applicants
-  const applicantExists = applicants.value.find(a => a.app_id === appId)
-  console.log('applicantExists:', applicantExists)
-  
   selectedApplicantId.value = appId
+  const applicantExists = applicants.value.find(a => a.app_id === appId)
   selectedApplicant.value = applicantExists || null
-  console.log('selectedApplicant:', selectedApplicant.value)
-  
   showDocumentsModal.value = true
   await loadDocuments(appId)
 }
@@ -476,7 +561,6 @@ const closeDocumentsModal = () => {
 const loadDocuments = async (appId: string) => {
   documentsLoading.value = true
   documentsError.value = ''
-  
   try {
     const res = await apiService.getApplicantDocuments(appId)
     if (res.success) {
@@ -498,16 +582,6 @@ const getDocumentTypeName = (docType: string) => {
     'id_back': 'บัตรประชาชนด้านหลัง',
     'certificate_front': 'ใบรับรองด้านหน้า',
     'certificate_back': 'ใบรับรองด้านหลัง',
-    'letter_front': 'หนังสือด้านหน้า',
-    'letter_back': 'หนังสือด้านหลัง',
-    'studentcard_front': 'บัตรนักเรียนด้านหน้า',
-    'studentcard_back': 'บัตรนักเรียนด้านหลัง',
-    'self_house_front': 'สำเนาทะเบียนบ้านตัวเองด้านหน้า',
-    'self_house_back': 'สำเนาทะเบียนบ้านตัวเองด้านหลัง',
-    'father_house_front': 'สำเนาทะเบียนบ้านบิดาด้านหน้า',
-    'father_house_back': 'สำเนาทะเบียนบ้านบิดาด้านหลัง',
-    'mother_house_front': 'สำเนาทะเบียนบ้านมารดาด้านหน้า',
-    'mother_house_back': 'สำเนาทะเบียนบ้านมารดาด้านหลัง',
     'payment_slip': 'หลักฐานการชำระเงิน'
   }
   return typeNames[docType] || docType
@@ -522,72 +596,36 @@ const formatFileSize = (bytes: number) => {
 
 const formatDate = (dateString: string) => {
   if (!dateString) return '-'
-  const date = new Date(dateString)
-  return date.toLocaleDateString('th-TH', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  })
+  return new Date(dateString).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-const viewDocument = (doc: any) => {
-  // เปิดรูปใน tab ใหม่สำหรับดู
-  window.open(doc.file_url, '_blank')
-}
+const viewDocument = (doc: any) => window.open(doc.file_url, '_blank')
 
 const downloadDocument = async (doc: any) => {
-  // Add to downloading state
   downloadingDocs.value.push(doc.doc_id)
-  
   try {
-    // 1.  fetch  file  3  blob
     const response = await fetch(doc.file_url)
-    if (!response.ok) {
-      throw new Error('Failed to fetch file')
-    }
-    
     const blob = await response.blob()
-    
-    // 2.  create object URL
     const url = window.URL.createObjectURL(blob)
-    
-    // 3.  create download link
     const link = document.createElement('a')
     link.href = url
     link.download = doc.file_name || 'document.jpg'
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-    
-    // 4.  cleanup object URL
     window.URL.revokeObjectURL(url)
   } catch (error) {
-    console.error('Download failed:', error)
-    // Fallback: open in new tab
     window.open(doc.file_url, '_blank')
   } finally {
-    // Remove from downloading state
     const index = downloadingDocs.value.indexOf(doc.doc_id)
-    if (index > -1) {
-      downloadingDocs.value.splice(index, 1)
-    }
+    if (index > -1) downloadingDocs.value.splice(index, 1)
   }
 }
 
 const getColumnCount = () => {
-  // Base columns: checkbox, name, curriculum, branch = 4
   let count = 4
-  
-  // Add payment status column for payments type
-  if (selectedExportType.value === 'payments') {
-    count += 1
-  }
-  
-  // Add document column only for students type
-  if (selectedExportType.value === 'students') {
-    count += 1
-  }
-  
+  if (selectedExportType.value === 'payments') count += 1
+  if (selectedExportType.value === 'students') count += 1
   return count
 }
 </script>
