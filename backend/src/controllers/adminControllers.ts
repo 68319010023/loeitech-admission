@@ -89,12 +89,14 @@ export const getApplicants = async (_req: Request, res: Response) => {
 export const getApplicantDocuments = async (req: Request, res: Response) => {
   try {
     const { app_id } = req.params;
+    const appId = Array.isArray(app_id) ? app_id[0] : app_id;
     
     const query = `
       SELECT 
         d.doc_id,
         d.doc_type,
         d.file_name,
+        d.file_path,
         d.file_size,
         d.uploaded_at,
         a.prefix,
@@ -106,7 +108,7 @@ export const getApplicantDocuments = async (req: Request, res: Response) => {
       ORDER BY d.uploaded_at ASC
     `;
     
-    const result = await pool.query(query, [app_id]);
+    const result = await pool.query(query, [appId]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ 
@@ -116,7 +118,7 @@ export const getApplicantDocuments = async (req: Request, res: Response) => {
     }
     
     const applicantInfo = {
-      app_id: result.rows[0].app_id,
+      app_id: appId,
       prefix: result.rows[0].prefix,
       full_name: result.rows[0].full_name,
       id_card_number: result.rows[0].id_card_number
@@ -128,7 +130,7 @@ export const getApplicantDocuments = async (req: Request, res: Response) => {
       file_name: row.file_name,
       file_size: row.file_size,
       uploaded_at: row.uploaded_at,
-      file_url: `${process.env.BASE_URL || 'http://localhost:3001'}/uploads/${encodeURIComponent(row.file_name)}`
+      file_url: toUrl(row.file_path)
     }));
     
     res.json({ 

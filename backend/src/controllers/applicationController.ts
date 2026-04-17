@@ -116,6 +116,7 @@ export const createApplication = async (req: Request, res: Response) => {
       prev_level,
       prev_year,
       gpa,
+      prev_branch, // Add prev_branch for PVC branch
       cur_id,
       div_id,
       ap_id,
@@ -158,8 +159,8 @@ export const createApplication = async (req: Request, res: Response) => {
       `
       INSERT INTO applicants
         (id_card_number, id_type, prefix, full_name, address, phone, email,
-         prev_school, prev_level, prev_year, gpa, cur_id, div_id, ap_id)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+         prev_school, prev_level, prev_year, gpa, prev_branch, cur_id, div_id, ap_id)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
       RETURNING app_id
     `,
       [
@@ -174,6 +175,7 @@ export const createApplication = async (req: Request, res: Response) => {
         prev_level,
         prev_year,
         gpa,
+        prev_branch || null, // Add prev_branch, can be null for non-PVC applicants
         cur_id,
         div_id,
         ap_id,

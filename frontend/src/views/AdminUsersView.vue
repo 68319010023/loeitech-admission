@@ -582,7 +582,15 @@ const getDocumentTypeName = (docType: string) => {
     'id_back': 'บัตรประชาชนด้านหลัง',
     'certificate_front': 'ใบรับรองด้านหน้า',
     'certificate_back': 'ใบรับรองด้านหลัง',
-    'payment_slip': 'หลักฐานการชำระเงิน'
+    'letter_front': 'หนังสือด้านหน้า',
+    'studentcard_front': 'บัตรนักเรียนด้านหน้า',
+    'payment_slip': 'หลักฐานการชำระเงิน',
+    'self_house_front': 'ที่อยู่อาศัยด้านหน้า',
+    'self_house_back': 'ที่อยู่อาศัยด้านหลัง',
+    'father_house_front': 'ที่อยู่บิดาด้านหน้า',
+    'father_house_back': 'ที่อยู่บิดาด้านหลัง',
+    'mother_house_front': 'ที่อยู่มารดาด้านหน้า',
+    'mother_house_back': 'ที่อยู่มารดาด้านหลัง'
   }
   return typeNames[docType] || docType
 }

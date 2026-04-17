@@ -587,6 +587,15 @@ async function onPrevLevelChange() {
   form.apId = 0; form.curId = 0
   admissionPlans.value = []; expenses.value = []
   if (!form.prevLevel) return
+  
+  // Load PVC branches if prevLevel is 'pvc'
+  if (form.prevLevel === 'pvc') {
+    await loadPvcBranches()
+  } else {
+    pvcBranches.value = []
+    form.prevBranch = ''
+  }
+  
   isLoading.value = true
   try {
     const res = await applicationService.getAdmissionPlan(form.prevLevel, '2569')
@@ -595,6 +604,15 @@ async function onPrevLevelChange() {
     console.error('โหลดสาขาไม่สำเร็จ', err)
   } finally {
     isLoading.value = false
+  }
+}
+
+async function loadPvcBranches() {
+  try {
+    const res = await applicationService.getDivisions(18) // 18 = cur_id for PVC curriculum
+    pvcBranches.value = res.data.data
+  } catch (err) {
+    console.error('โหลดสาขาปวช. ไม่สำเร็จ', err)
   }
 }
 
@@ -697,7 +715,8 @@ function validateStep() {
     const yearValue = parseInt(form.prevYear)
     const currentYear = new Date().getFullYear() + 543
     const yearValid = form.prevYear && yearValue <= currentYear && !isNaN(yearValue)
-    return !!(form.prevSchool && form.prevLevel && yearValid && gpaValid && eduValid)
+    const branchValid = form.prevLevel !== 'pvc' || form.prevBranch // Require branch selection for PVC
+    return !!(form.prevSchool && form.prevLevel && yearValid && gpaValid && eduValid && branchValid)
   }
   if (currentStep.value === 2) return !!form.apId
   if (currentStep.value === 3) {
@@ -740,6 +759,7 @@ async function onConfirmed() {
     fd.append('prev_level', form.prevLevel)
     fd.append('prev_year', form.prevYear)
     fd.append('gpa', form.gpa)
+    if (form.prevBranch) fd.append('prev_branch', form.prevBranch)
     fd.append('doc_type', form.docType)
     if (form.eduFront) fd.append('edu_front', form.eduFront)
     if (form.eduBack) fd.append('edu_back', form.eduBack)
