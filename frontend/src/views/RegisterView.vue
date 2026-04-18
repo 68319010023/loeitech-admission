@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="max-w-4xl mx-auto">
 
     <!-- Stepper -->
@@ -135,6 +135,20 @@
               </p>
             </Transition>
           </div>
+
+          <div v-if="form.prevLevel === 'pvc'" class="col-span-2">
+            <label class="text-sm text-gray-600 mb-1 block">สาขาวิชาที่จบปวช *</label>
+            <select v-model="form.prevBranch" class="input-field">
+              <option value="">เลือกสาขาวิชา</option>
+              <option v-for="branch in pvcBranches" :key="branch.div_id" :value="branch.div_id">
+                {{ branch.div_name }}
+              </option>
+            </select>
+            <p v-if="showError && form.prevLevel === 'pvc' && !form.prevBranch" class="text-red-500 text-xs mt-1">
+              ⚠️ กรุณาเลือกสาขาวิชาที่จบปวช
+            </p>
+          </div>
+
           <div>
             <label class="text-sm text-gray-600 mb-1 block">เกรดเฉลี่ย (GPA) *</label>
             <input v-model="form.gpa" type="text" inputmode="decimal" placeholder="เช่น 4.00" class="input-field"
@@ -143,6 +157,7 @@
               <p v-if="gpaWarning" class="text-red-500 text-xs mt-1">กรุณากรอกเลขไม่เกิน 4.00</p>
             </Transition>
           </div>
+          
           <div v-if="form.prevLevel" class="col-span-2 p-4 rounded-xl border"
             :class="form.prevLevel === 'm3' ? 'bg-blue-50 border-blue-200' : 'bg-emerald-50 border-emerald-200'">
             <p class="text-sm font-medium mb-1" :class="form.prevLevel === 'm3' ? 'text-blue-700' : 'text-emerald-700'">
@@ -253,10 +268,10 @@
             <div class="flex items-center gap-3">
               <!-- Thumbnail รูปภาพ -->
               <div v-if="exp.exp_img"
-                @click="viewingImage = exp.exp_img"
+                @click="viewingImage = resolveImgUrl(exp.exp_img)"
                 class="w-12 h-12 rounded-xl overflow-hidden border border-gray-200 cursor-pointer flex-shrink-0 hover:ring-2 hover:ring-emerald-400 hover:scale-105 transition-all shadow-sm"
                 title="คลิกเพื่อดูรูปภาพ">
-                <img :src="exp.exp_img" class="w-full h-full object-cover" />
+                <img :src="resolveImgUrl(exp.exp_img)" class="w-full h-full object-cover" />
               </div>
               <div v-else
                 class="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center flex-shrink-0 border border-gray-200">
@@ -274,7 +289,7 @@
                 </p>
                 <!-- ป้ายบอกว่ามีรูป ถ้ามี exp_img -->
                 <p v-if="exp.exp_img" class="text-xs text-emerald-500 mt-0.5 flex items-center gap-1 cursor-pointer hover:text-emerald-600"
-                  @click="viewingImage = exp.exp_img">
+                  @click="viewingImage = resolveImgUrl(exp.exp_img)">
                   <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -464,6 +479,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { applicationService } from '../services/applicationService'
 import { exportPaymentPDF } from '../utils/exportPaymentPDF'
 import ConfirmToast from '../components/ConfirmToast.vue'
@@ -481,10 +497,19 @@ const gpaWarning = ref(false)
 const yearWarning = ref(false)
 const viewingImage = ref('')
 
+const router = useRouter()
+const API_BASE = (import.meta.env.VITE_API_URL as string) || 'http://localhost:13001/api'
+function resolveImgUrl(path: string | null | undefined): string {
+  if (!path) return ''
+  if (path.startsWith('http')) return path
+  return `${API_BASE}${path}`
+}
+
 // ข้อมูลจาก API
 const curriculums = ref<any[]>([])
 const admissionPlans = ref<any[]>([])
 const expenses = ref<any[]>([])
+const pvcBranches = ref<any[]>([])
 
 const steps = [
   { label: 'ข้อมูลส่วนตัว', sub: 'กรอกข้อมูลส่วนตัว', icon: UserIcon },
@@ -504,7 +529,7 @@ const form = reactive({
   prefix: '', fullName: '', idCard: '', address: '', phone: '', email: '',
   idFront: null as File | null, idBack: null as File | null,
   idFrontPreview: '', idBackPreview: '', idType: '',
-  prevSchool: '', prevLevel: '', prevYear: '', gpa: '',
+  prevSchool: '', prevLevel: '', prevYear: '', gpa: '', prevBranch: '',
   docType: '',
   eduFront: null as File | null, eduFrontPreview: '',
   eduBack: null as File | null, eduBackPreview: '',
@@ -571,6 +596,15 @@ async function onPrevLevelChange() {
   form.apId = 0; form.curId = 0
   admissionPlans.value = []; expenses.value = []
   if (!form.prevLevel) return
+  
+  // Load PVC branches if prevLevel is 'pvc'
+  if (form.prevLevel === 'pvc') {
+    await loadPvcBranches()
+  } else {
+    pvcBranches.value = []
+    form.prevBranch = ''
+  }
+  
   isLoading.value = true
   try {
     const res = await applicationService.getAdmissionPlan(form.prevLevel, '2569')
@@ -579,6 +613,15 @@ async function onPrevLevelChange() {
     console.error('โหลดสาขาไม่สำเร็จ', err)
   } finally {
     isLoading.value = false
+  }
+}
+
+async function loadPvcBranches() {
+  try {
+    const res = await applicationService.getDivisions(18) // 18 = cur_id for PVC curriculum
+    pvcBranches.value = res.data.data
+  } catch (err) {
+    console.error('โหลดสาขาปวช. ไม่สำเร็จ', err)
   }
 }
 
@@ -681,7 +724,8 @@ function validateStep() {
     const yearValue = parseInt(form.prevYear)
     const currentYear = new Date().getFullYear() + 543
     const yearValid = form.prevYear && yearValue <= currentYear && !isNaN(yearValue)
-    return !!(form.prevSchool && form.prevLevel && yearValid && gpaValid && eduValid)
+    const branchValid = form.prevLevel !== 'pvc' || form.prevBranch // Require branch selection for PVC
+    return !!(form.prevSchool && form.prevLevel && yearValid && gpaValid && eduValid && branchValid)
   }
   if (currentStep.value === 2) return !!form.apId
   if (currentStep.value === 3) {
@@ -724,6 +768,7 @@ async function onConfirmed() {
     fd.append('prev_level', form.prevLevel)
     fd.append('prev_year', form.prevYear)
     fd.append('gpa', form.gpa)
+    if (form.prevBranch) fd.append('prev_branch', form.prevBranch)
     fd.append('doc_type', form.docType)
     if (form.eduFront) fd.append('edu_front', form.eduFront)
     if (form.eduBack) fd.append('edu_back', form.eduBack)
@@ -760,6 +805,7 @@ async function onConfirmed() {
       branchName: selectedPlan.value?.div_name || '-',
       totalPrice: total_amount,
     })
+    router.push('/check-status')
   } catch (err: any) {
     alert(err.response?.data?.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง')
   } finally {

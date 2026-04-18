@@ -9,6 +9,7 @@ interface ApiResponse<T> {
 class ApiService {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     const url = `${API_BASE_URL}${endpoint}`
+    
 
     const config: RequestInit = {
       headers: {
@@ -261,10 +262,16 @@ class ApiService {
     return this.request<any[]>('/admin/applicants')
   }
 
+  async getApplicantDocuments(appId: string) {
+    return this.request<any>(`/admin/applicants/${appId}/documents`)
+  }
+
   // เพิ่มใน ApiService class
   async getStats() {
     return this.request<any>('/applications/stats')
   }
 }
+
+
 
 export const apiService = new ApiService()
