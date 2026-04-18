@@ -33,44 +33,20 @@ export const getExpenses = async (req: Request, res: Response) => {
   try {
     const { cur_id } = req.query;
 
-    if (!cur_id) {
-      const result = await pool.query(
-        `SELECT exp_id, exp_name, exp_detail, exp_img, cur_id, exp_cost, payment_type, exp_sizes
-         FROM expense_detail ORDER BY payment_type DESC, exp_id`  // ← ไม่มี s
-      )
-      return sendSuccess(res, result.rows)
-    }
+    const query = cur_id
+      ? `SELECT exp_id, exp_name, exp_detail, exp_img, cur_id, exp_cost, payment_type, exp_sizes
+         FROM expense_detail WHERE cur_id = $1 ORDER BY payment_type DESC, exp_id`
+      : `SELECT exp_id, exp_name, exp_detail, exp_img, cur_id, exp_cost, payment_type, exp_sizes
+         FROM expense_detail ORDER BY payment_type DESC, exp_id`
 
-    const curResult = await pool.query(
-      `SELECT cur_shortname FROM curriculums WHERE cur_id = $1`, [cur_id]
-    )
-
-    const shortname = curResult.rows[0]?.cur_shortname || ''
-
-    let result
-    if (shortname.includes('ปวส')) {
-      result = await pool.query(
-        `SELECT e.exp_id, e.exp_name, e.exp_detail, e.exp_img, e.cur_id, e.exp_cost, e.payment_type, e.exp_sizes
-         FROM expense_detail e                                     -- ← ไม่มี s
-         JOIN curriculums c ON c.cur_id = e.cur_id
-         WHERE c.cur_shortname LIKE 'ปวส.%'
-         ORDER BY e.payment_type DESC, e.exp_id`
-      )
-    } else {
-      result = await pool.query(
-        `SELECT exp_id, exp_name, exp_detail, exp_img, cur_id, exp_cost, payment_type, exp_sizes
-         FROM expense_detail WHERE cur_id = $1                     -- ← ไม่มี s
-         ORDER BY payment_type DESC, exp_id`,
-        [cur_id]
-      )
-    }
-
+    const result = await pool.query(query, cur_id ? [cur_id] : [])
     sendSuccess(res, result.rows)
   } catch (err: any) {
     console.error('getExpenses error:', err.message)
     sendError(res, "ไม่สามารถดึงข้อมูลค่าใช้จ่ายได้", 500, err)
   }
 }
+
 export const getAdmissionPlan = async (req: Request, res: Response) => {
   try {
     const { prev_level, ap_years } = req.query
@@ -140,6 +116,7 @@ export const createApplication = async (req: Request, res: Response) => {
       prev_level,
       prev_year,
       gpa,
+      prev_branch, // Add prev_branch for PVC branch
       cur_id,
       div_id,
       ap_id,
@@ -182,8 +159,8 @@ export const createApplication = async (req: Request, res: Response) => {
       `
       INSERT INTO applicants
         (id_card_number, id_type, prefix, full_name, address, phone, email,
-         prev_school, prev_level, prev_year, gpa, cur_id, div_id, ap_id)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+         prev_school, prev_level, prev_year, gpa, prev_branch, cur_id, div_id, ap_id)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
       RETURNING app_id
     `,
       [
@@ -198,6 +175,7 @@ export const createApplication = async (req: Request, res: Response) => {
         prev_level,
         prev_year,
         gpa,
+        prev_branch || null, // Add prev_branch, can be null for non-PVC applicants
         cur_id,
         div_id,
         ap_id,
@@ -223,7 +201,7 @@ export const createApplication = async (req: Request, res: Response) => {
           INSERT INTO documents (app_id, doc_type, file_path, file_name, file_size)
           VALUES ($1, $2, $3, $4, $5)
         `,
-          [app_id, entry.type, file.path, file.originalname, file.size],
+          [app_id, entry.type, file.path, file.filename, file.size],
         );
       }
     }
@@ -299,7 +277,7 @@ export const checkStatus = async (req: Request, res: Response) => {
         a.phone, a.id_card_number,
         c.cur_name, d.div_name,
         p.total_amount, p.required_amount, p.due_date,
-        p.paid_at, p.verified_at,
+        p.paid_at, p.verified_at, p.slip_sender, p.slip_receiver,
         e.enrolled_at, e.verified_at AS enroll_verified_at,
         -- ดึง URL รูปที่เคยอัพไว้
         MAX(CASE WHEN doc.doc_type = 'self_house_front'   THEN doc.file_path END) AS self_front_url,
@@ -321,7 +299,7 @@ export const checkStatus = async (req: Request, res: Response) => {
         a.phone, a.id_card_number,
         c.cur_name, d.div_name,
         p.total_amount, p.required_amount, p.due_date,
-        p.paid_at, p.verified_at,
+        p.paid_at, p.verified_at, p.slip_sender, p.slip_receiver,
         e.enrolled_at, e.verified_at
     `, [idCard])
 
@@ -348,6 +326,8 @@ sendSuccess(res, {
   mother_front_url: toUrl(row.mother_front_url),
   mother_back_url:  toUrl(row.mother_back_url),
   payment_slip_url: toUrl(row.payment_slip_url),
+  slip_sender: row.slip_sender ?? '-',
+  slip_receiver: row.slip_receiver ?? '-',
 })
 
 

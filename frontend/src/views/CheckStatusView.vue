@@ -12,22 +12,14 @@
       <!-- Input — รองรับทุกประเภทหมายเลข -->
       <div class="mb-4">
         <label class="text-sm text-gray-600 mb-1 block">หมายเลขประจำตัว *</label>
-        <input
-          v-model="idCard"
-          type="text"
-          placeholder="เลขบัตรประชาชน / เลขต่างด้าว / Passport / G-Code"
-          maxlength="20"
-          class="input-field text-center tracking-widest text-base"
-          @input="idCard = idCard.toUpperCase()"
-          @keyup.enter="checkStatus"
-        />
+        <input v-model="idCard" type="text" placeholder="เลขบัตรประชาชน / เลขต่างด้าว / Passport / G-Code"
+          maxlength="20" class="input-field text-center tracking-widest text-base"
+          @input="idCard = idCard.toUpperCase()" @keyup.enter="checkStatus" />
         <p class="text-xs text-gray-400 mt-1">รองรับ: เลขบัตรประชาชน 13 หลัก, บัตรต่างด้าว, Passport, G-Code</p>
       </div>
 
-      <button @click="checkStatus"
-        :disabled="idCard.length < 5 || isLoading"
-        class="w-full py-3 rounded-xl text-sm font-medium text-white transition-all"
-        :class="idCard.length >= 5 && !isLoading
+      <button @click="checkStatus" :disabled="idCard.length < 5 || isLoading"
+        class="w-full py-3 rounded-xl text-sm font-medium text-white transition-all" :class="idCard.length >= 5 && !isLoading
           ? 'bg-emerald-500 hover:bg-emerald-600'
           : 'bg-gray-200 cursor-not-allowed text-gray-400'">
         {{ isLoading ? 'กำลังตรวจสอบ...' : 'ตรวจสอบสถานะ' }}
@@ -39,8 +31,7 @@
           <div class="border rounded-2xl overflow-hidden">
 
             <!-- Header status -->
-            <div class="px-6 py-4 flex items-center gap-3"
-              :class="statusStyle(result.status).bg">
+            <div class="px-6 py-4 flex items-center gap-3" :class="statusStyle(result.status).bg">
               <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                 :class="statusStyle(result.status).iconBg">
                 <component :is="statusStyle(result.status).icon" class="w-5 h-5"
@@ -51,8 +42,7 @@
                   {{ statusStyle(result.status).label }}
                 </p>
                 <!-- แสดงวันหมดเขตชำระเงินใน header ถ้า pending -->
-                <p v-if="result.status === 'pending_payment' && result.dueDate"
-                  class="text-xs text-orange-600 mt-0.5">
+                <p v-if="result.status === 'pending_payment' && result.dueDate" class="text-xs text-orange-600 mt-0.5">
                   หมดเขตชำระ: <strong>{{ result.dueDate }}</strong>
                 </p>
                 <p v-else class="text-xs opacity-70" :class="statusStyle(result.status).textColor">
@@ -60,8 +50,7 @@
                 </p>
               </div>
               <!-- ปุ่มพิมพ์ใบแจ้งชำระเงิน (เฉพาะ pending) แทน badge -->
-              <button v-if="result.status === 'pending_payment'"
-                @click="downloadPaymentSlip"
+              <button v-if="result.status === 'pending_payment'" @click="downloadPaymentSlip"
                 class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-orange-500 text-white hover:bg-orange-600 transition-all flex-shrink-0">
                 <PrinterIcon class="w-3.5 h-3.5" />
                 พิมพ์ใบแจ้งชำระเงิน
@@ -76,10 +65,22 @@
             <!-- ข้อมูล -->
             <div class="px-6 py-4 space-y-3">
               <div class="grid grid-cols-2 gap-3 text-sm">
-                <div><p class="text-xs text-gray-400">ชื่อ - สกุล</p><p class="font-medium">{{ result.name }}</p></div>
-                <div><p class="text-xs text-gray-400">หลักสูตร</p><p class="font-medium text-emerald-600">{{ result.course }}</p></div>
-                <div><p class="text-xs text-gray-400">สาขาวิชา</p><p class="font-medium">{{ result.branch }}</p></div>
-                <div><p class="text-xs text-gray-400">วันที่สมัคร</p><p class="font-medium">{{ result.appliedAt }}</p></div>
+                <div>
+                  <p class="text-xs text-gray-400">ชื่อ - สกุล</p>
+                  <p class="font-medium">{{ result.name }}</p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-400">หลักสูตร</p>
+                  <p class="font-medium text-emerald-600">{{ result.course }}</p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-400">สาขาวิชา</p>
+                  <p class="font-medium">{{ result.branch }}</p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-400">วันที่สมัคร</p>
+                  <p class="font-medium">{{ result.appliedAt }}</p>
+                </div>
               </div>
 
               <!-- ค่าใช้จ่าย -->
@@ -126,11 +127,20 @@
                     </div>
 
                     <!-- ปุ่มดาวน์โหลดใบแจ้งชำระเงิน ใต้ step ชำระเงิน -->
-                    <div v-if="i === 1 && !step.done" class="mt-2 ml-9">
-                      <button @click="downloadPaymentSlip"
+                    <div v-if="i === 1" class="mt-2 ml-9 flex flex-wrap gap-2">
+                      <!-- ปุ่มเดิม — แสดงเฉพาะตอนยังไม่จ่าย -->
+                      <button v-if="!step.done" @click="downloadPaymentSlip"
                         class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium bg-orange-500 text-white hover:bg-orange-600 transition-all">
                         <ArrowDownTrayIcon class="w-3.5 h-3.5" />
                         ดาวน์โหลดใบแจ้งชำระเงิน
+                      </button>
+
+                      <!-- ปุ่มใหม่ — แสดงเมื่อ paid หรือ enrolled -->
+                      <button v-if="result.status === 'paid' || result.status === 'enrolled'"
+                        @click="downloadPaymentReceipt"
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium bg-emerald-500 text-white hover:bg-emerald-600 transition-all">
+                        <ArrowDownTrayIcon class="w-3.5 h-3.5" />
+                        ใบแสดงการชำระเงิน
                       </button>
                     </div>
 
@@ -389,9 +399,116 @@ function formatDate(dateString: string) {
     'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
   return `${day} ${monthNames[month - 1]} ${year} ${time}`
 }
+
+async function downloadPaymentReceipt() {
+  if (!result.value) return
+
+  const fontBase64 = await loadFont()
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+
+  doc.addFileToVFS('THSarabunNew.ttf', fontBase64)
+  doc.addFont('THSarabunNew.ttf', 'THSarabun', 'normal')
+  doc.addFont('THSarabunNew.ttf', 'THSarabun', 'bold')
+  doc.setFont('THSarabun')
+
+  const pageW = 210
+  let y = 25
+
+  // หัวเรื่อง
+  doc.setFontSize(22)
+  doc.setFont('THSarabun', 'bold')
+  doc.text('ใบแสดงการชำระเงิน', pageW / 2, y, { align: 'center' })
+  y += 8
+
+  doc.setFontSize(13)
+  doc.setFont('THSarabun', 'normal')
+  doc.text('วิทยาลัยเทคนิคเลย — ระบบรับสมัครนักเรียนนักศึกษาออนไลน์', pageW / 2, y, { align: 'center' })
+  y += 10
+
+  doc.setDrawColor(16, 185, 130)
+  doc.setLineWidth(0.8)
+  doc.line(15, y, pageW - 15, y)
+  y += 12
+
+  // ข้อมูลผู้สมัคร
+  const raw = result.value.raw
+  const fields = [
+    { label: 'ชื่อ-สกุล', value: result.value.name },
+    { label: 'หมายเลขประจำตัว', value: idCard.value },
+    { label: 'หลักสูตร', value: result.value.course },
+    { label: 'สาขาวิชา', value: result.value.branch },
+  ]
+
+  doc.setFontSize(13)
+  for (const f of fields) {
+    doc.setFont('THSarabun', 'bold')
+    doc.text(`${f.label}:`, 20, y)
+    doc.setFont('THSarabun', 'normal')
+    doc.text(f.value ?? '-', 70, y)
+    y += 8
+  }
+
+  y += 4
+  doc.setDrawColor(220, 220, 220)
+  doc.setLineWidth(0.3)
+  doc.line(15, y, pageW - 15, y)
+  y += 10
+
+  // ข้อมูลการชำระเงิน
+  doc.setFontSize(14)
+  doc.setFont('THSarabun', 'bold')
+  doc.text('ข้อมูลการชำระเงิน', 20, y)
+  y += 9
+
+  const payFields = [
+    { label: 'ยอดที่ชำระ', value: `${Number(result.value.totalAmount).toLocaleString()} บาท` },
+    { label: 'วันที่ชำระเงิน', value: result.value.paidAt ?? '-' },
+    { label: 'ชื่อผู้โอน', value: raw.slip_sender ?? '-' },
+    { label: 'ธนาคารผู้รับ', value: raw.slip_receiver ?? '-' },
+  ]
+
+  doc.setFontSize(13)
+  for (const f of payFields) {
+    doc.setFont('THSarabun', 'bold')
+    doc.text(`${f.label}:`, 20, y)
+    doc.setFont('THSarabun', 'normal')
+    doc.text(f.value ?? '-', 70, y)
+    y += 8
+  }
+
+  y += 8
+
+  // กล่องสถานะ
+  doc.setFillColor(240, 253, 244)
+  doc.setDrawColor(16, 185, 130)
+  doc.setLineWidth(0.5)
+  doc.roundedRect(15, y, pageW - 30, 14, 3, 3, 'FD')
+  doc.setFontSize(13)
+  doc.setFont('THSarabun', 'bold')
+  doc.setTextColor(5, 150, 105)
+  doc.text('สถานะ: ชำระเงินเรียบร้อยแล้ว ✓', pageW / 2, y + 9, { align: 'center' })
+  doc.setTextColor(0, 0, 0)
+  y += 25
+
+  // footer
+  doc.setFontSize(10)
+  doc.setFont('THSarabun', 'normal')
+  doc.setTextColor(150, 150, 150)
+  doc.text(`พิมพ์เมื่อ: ${new Date().toLocaleString('th-TH')}`, pageW / 2, y, { align: 'center' })
+
+  doc.save(`ใบแสดงการชำระเงิน-${idCard.value}.pdf`)
+}
+
 </script>
 
 <style scoped>
-.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
 </style>

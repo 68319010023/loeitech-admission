@@ -9,7 +9,8 @@ import {
   getExpenseDetails,
   createExpenseDetail,
   updateExpenseDetail,
-  deleteExpenseDetail
+  deleteExpenseDetail,
+  getExpenseImage
 } from '../controllers/expenseDetailController'
 import {
   getCurriculums,
@@ -34,7 +35,7 @@ import {
 import {
   login
 } from '../controllers/authController'
-import { getApplicants } from '../controllers/adminControllers'
+import { getApplicants, getApplicantDocuments } from '../controllers/adminControllers'
 
 const router = Router()
 
@@ -63,6 +64,7 @@ router.get('/expense-detail', getExpenseDetails)
 router.post('/expense-detail', createExpenseDetail)
 router.put('/expense-detail/:id', updateExpenseDetail)
 router.delete('/expense-detail/:id', deleteExpenseDetail)
+router.get('/expense-detail/:id/image', getExpenseImage)
 
 // Auth routes
 router.post('/login', login)
@@ -74,5 +76,6 @@ router.put('/users/:id', updateUser)
 router.delete('/users/:id', deleteUser)
 
 router.get('/applicants', getApplicants)
+router.get('/applicants/:app_id/documents', getApplicantDocuments)
 
 export default router

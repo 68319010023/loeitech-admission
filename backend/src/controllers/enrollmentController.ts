@@ -5,17 +5,36 @@ import axios from 'axios'
 import fs from 'fs'
 import FormData from 'form-data'
 
-
-
-////////ฟังก์ชัน สลิป
+// ========================================================
+// POST /enrollments/verify-slip
+// ตรวจสอบสลิปกับ Slipok แล้วอัปเดต status → paid
+// ========================================================
 export const verifySlip = async (req: Request, res: Response) => {
   try {
     const file = req.file
     if (!file) return sendError(res, 'ไม่พบไฟล์สลิป', 400)
 
-    // ✅ ดึง idCard จาก body
     const { idCard } = req.body
     if (!idCard) return sendError(res, 'ไม่พบเลขบัตรประชาชน', 400)
+
+    const applicantResult = await pool.query(`
+      SELECT a.app_id, a.status, p.total_amount
+      FROM applicants a
+      JOIN payments p ON p.app_id = a.app_id
+      WHERE a.id_card_number = $1
+    `, [idCard])
+
+    if (applicantResult.rows.length === 0) {
+      if (fs.existsSync(file.path)) fs.unlinkSync(file.path)
+      return sendError(res, 'ไม่พบข้อมูลผู้สมัคร', 404)
+    }
+
+    const { app_id, status, total_amount } = applicantResult.rows[0]
+
+    if (status === 'enrolled') {
+      if (fs.existsSync(file.path)) fs.unlinkSync(file.path)
+      return sendSuccess(res, { valid: true, message: 'มอบตัวเรียบร้อยแล้ว' })
+    }
 
     const formData = new FormData()
     formData.append('files', fs.createReadStream(file.path), file.originalname)
@@ -26,66 +45,89 @@ export const verifySlip = async (req: Request, res: Response) => {
       {
         headers: {
           ...formData.getHeaders(),
-          'x-authorization': process.env.SLIPOK_API_KEY
-        }
+          'x-authorization': process.env.SLIPOK_API_KEY,
+        },
       }
     )
 
-    fs.unlinkSync(file.path)
-    const data = slipokRes.data
+    const data = slipokRes.data  // ✅ ไม่ลบไฟล์ก่อน
 
-    if (data.success) {
-      const slipAmount = Number(data.data.amount)
-
-      // ✅ ดึงยอดที่ต้องชำระ
-      const paymentResult = await pool.query(`
-        SELECT p.total_amount
-        FROM payments p
-        JOIN applicants a ON a.app_id = p.app_id
-        WHERE a.id_card_number = $1
-      `, [idCard])
-
-      const requiredAmount = Number(paymentResult.rows[0]?.total_amount)
-
-      // ✅ เช็คยอดเงิน
-      if (slipAmount < requiredAmount) {
-        return sendSuccess(res, {
-          valid: false,
-          message: `ยอดโอนไม่ครบ โอนมา ${slipAmount.toLocaleString()} บาท แต่ต้องชำระ ${requiredAmount.toLocaleString()} บาท`
-        })
-      }
-
+    if (!data.success) {
+      if (fs.existsSync(file.path)) fs.unlinkSync(file.path) // ❌ ไม่ผ่าน ค่อยลบ
       return sendSuccess(res, {
-        valid: true,
-        amount: slipAmount,
-        date: data.data.transDate,
-        sender: data.data.sender?.displayName ?? '-',
-        receiver: data.data.receiver?.displayName ?? '-',
+        valid: false,
+        message: data.message ?? 'สลิปไม่ถูกต้อง',
       })
     }
 
-    return sendSuccess(res, { valid: false, message: data.message ?? 'สลิปไม่ถูกต้อง' })
+    const slipAmount = Number(data.data.amount)
+    const requiredAmount = Number(total_amount)
+
+    if (slipAmount < requiredAmount) {
+      if (fs.existsSync(file.path)) fs.unlinkSync(file.path) // ❌ ไม่ผ่าน ค่อยลบ
+      return sendSuccess(res, {
+        valid: false,
+        message: `ยอดโอนไม่ครบ โอนมา ${slipAmount.toLocaleString()} บาท แต่ต้องชำระ ${requiredAmount.toLocaleString()} บาท`,
+      })
+    }
+
+    // ✅ สลิปผ่าน → save slip_path ด้วย
+    await pool.query(`
+      UPDATE applicants
+      SET status = 'paid', paid_at = NOW()
+      WHERE app_id = $1
+    `, [app_id])
+
+    await pool.query(`
+      UPDATE payments
+      SET 
+        slip_path     = $1,
+        slip_name     = $2,
+        paid_at       = NOW(),
+        slip_sender   = $3,
+        slip_receiver = $4
+      WHERE app_id = $5
+    `, [
+      file.path,
+      file.originalname,
+      data.data.sender?.displayName ?? '-',
+      data.data.receiver?.displayName ?? '-',
+      app_id
+    ])
+
+    return sendSuccess(res, {
+      valid: true,
+      amount: slipAmount,
+      date: data.data.transDate,
+      sender: data.data.sender?.displayName ?? '-',
+      receiver: data.data.receiver?.displayName ?? '-',
+    })
 
   } catch (err: any) {
     if (req.file?.path && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path)
 
     const slipokError = err.response?.data
     if (slipokError?.code) {
-      return sendSuccess(res, { valid: false, message: slipokError.message ?? 'สลิปไม่ถูกต้อง' })
+      return sendSuccess(res, {
+        valid: false,
+        message: slipokError.message ?? 'สลิปไม่ถูกต้อง',
+      })
     }
 
     sendError(res, 'ตรวจสอบสลิปไม่สำเร็จ', 500, err)
   }
 }
 
-/////////////////////////////////////////////////////////////////////////////
-
+// ========================================================
+// POST /enrollments/confirm
+// ยืนยันการมอบตัว → อัปเดต status เป็น enrolled
+// ========================================================
 export const confirmEnrollment = async (req: Request, res: Response) => {
   const client = await pool.connect()
   try {
     const { idCard } = req.body
 
-    if (!idCard || idCard.length !== 13) {
+    if (!idCard || idCard.length < 5) {
       return sendError(res, 'เลขบัตรประชาชนไม่ถูกต้อง', 400)
     }
 
@@ -99,13 +141,18 @@ export const confirmEnrollment = async (req: Request, res: Response) => {
       return sendError(res, 'ไม่พบข้อมูลการสมัครในระบบ', 404)
     }
 
-    const { app_id } = applicant.rows[0]
+    const { app_id, status } = applicant.rows[0]
+
+    // ✅ ต้องเป็น paid หรือ enrolled เท่านั้น (enrolled = มอบตัวซ้ำได้ แค่ upsert)
+    if (status === 'pending_payment') {
+      return sendError(res, 'กรุณาชำระเงินก่อนดำเนินการมอบตัว', 400)
+    }
 
     await client.query('BEGIN')
-    await client.query(
-      `UPDATE applicants SET status = 'enrolled' WHERE app_id = $1`,
-      [app_id]
-    )
+
+    await client.query(`
+      UPDATE applicants SET status = 'enrolled' WHERE app_id = $1
+    `, [app_id])
 
     const files = req.files as Record<string, Express.Multer.File[]>
 
@@ -122,7 +169,6 @@ export const confirmEnrollment = async (req: Request, res: Response) => {
     for (const entry of docEntries) {
       const file = files?.[entry.key]?.[0]
       if (file) {
-        // ลบของเดิมก่อน แล้วค่อย insert ใหม่
         await client.query(
           `DELETE FROM documents WHERE app_id = $1 AND doc_type = $2`,
           [app_id, entry.type]
@@ -155,26 +201,33 @@ export const confirmEnrollment = async (req: Request, res: Response) => {
 
   } catch (err) {
     await client.query('ROLLBACK')
-    console.error('❌ FULL ERROR:', JSON.stringify(err, Object.getOwnPropertyNames(err)))
+    console.error('❌ confirmEnrollment error:', JSON.stringify(err, Object.getOwnPropertyNames(err)))
     sendError(res, 'เกิดข้อผิดพลาดในการมอบตัว', 500, err)
   } finally {
     client.release()
   }
 }
 
+// ========================================================
+// GET /enrollments/status/:idCard
+// ========================================================
 export const getEnrollmentStatus = async (req: Request, res: Response) => {
   try {
     const { idCard } = req.params
-    const result = await pool.query(`
-      SELECT a.app_id, a.prefix, a.full_name, a.status,
-             c.cur_name, d.div_name,
-             e.enrolled_at, e.verified_at AS enroll_verified_at
-      FROM applicants a
-      JOIN curriculums c ON c.cur_id = a.cur_id
-      JOIN divisions d ON d.div_id = a.div_id
-      LEFT JOIN enrollments e ON e.app_id = a.app_id
-      WHERE a.id_card_number = $1
-    `, [idCard])
+   const result = await pool.query(`
+  SELECT 
+    ae.ae_id,
+    ed.exp_name   AS item_name,
+    ae.size,
+    ae.quantity,
+    ae.unit_price,
+    ae.total_price
+  FROM applicant_expenses ae
+  JOIN expense_detail ed ON ed.exp_id = ae.exp_id
+  JOIN applicants a ON a.app_id = ae.app_id
+  WHERE a.id_card_number = $1
+  ORDER BY ae.ae_id
+`, [idCard])
 
     if (result.rows.length === 0) {
       return sendError(res, 'ไม่พบข้อมูลการสมัคร', 404)
@@ -185,6 +238,9 @@ export const getEnrollmentStatus = async (req: Request, res: Response) => {
   }
 }
 
+// ========================================================
+// GET /enrollments/onsite  (admin)
+// ========================================================
 export const getOnsiteEnrollments = async (_req: Request, res: Response) => {
   try {
     const result = await pool.query(`
@@ -210,6 +266,9 @@ export const getOnsiteEnrollments = async (_req: Request, res: Response) => {
   }
 }
 
+// ========================================================
+// POST /enrollments/onsite  (admin)
+// ========================================================
 export const upsertOnsiteEnrollment = async (req: Request, res: Response) => {
   try {
     const { ap_id, count, note, recorded_by } = req.body
@@ -232,13 +291,16 @@ export const upsertOnsiteEnrollment = async (req: Request, res: Response) => {
   }
 }
 
+// ========================================================
+// GET /enrollments/summary  (admin)
+// ========================================================
 export const getEnrollmentSummary = async (_req: Request, res: Response) => {
   try {
     const result = await pool.query(`
       SELECT
         ap.ap_id, ap.ap_years, ap.plan_num,
-        c.cur_name, c.cur_shortname,c.cur_id,
-        d.div_name,d.div_id,
+        c.cur_name, c.cur_shortname, c.cur_id,
+        d.div_name, d.div_id,
         COUNT(DISTINCT a.app_id) FILTER (WHERE a.status = 'enrolled') AS online_enrolled,
         COALESCE(o.count, 0) AS onsite_enrolled,
         COUNT(DISTINCT a.app_id) FILTER (WHERE a.status = 'enrolled') + COALESCE(o.count, 0) AS total_enrolled,
@@ -250,12 +312,44 @@ export const getEnrollmentSummary = async (_req: Request, res: Response) => {
       JOIN divisions d ON d.div_id = ap.div_id
       LEFT JOIN applicants a ON a.ap_id = ap.ap_id
       LEFT JOIN onsite_enrollments o ON o.ap_id = ap.ap_id
-      GROUP BY ap.ap_id, ap.ap_years, ap.plan_num,c.cur_id,
-               c.cur_name, c.cur_shortname, d.div_name, o.count,d.div_id
+      GROUP BY ap.ap_id, ap.ap_years, ap.plan_num, c.cur_id,
+               c.cur_name, c.cur_shortname, d.div_name, o.count, d.div_id
       ORDER BY ap.ap_years DESC, c.cur_id, d.div_name
     `)
     sendSuccess(res, result.rows)
   } catch (err) {
     sendError(res, 'ไม่สามารถดึงข้อมูลสรุปได้', 500, err)
+  }
+}
+
+// ========================================================
+// GET /orders/:idCard
+// ดึงข้อมูลการสั่งซื้อเครื่องแบบ
+// ========================================================
+export const getOrdersByIdCard = async (req: Request, res: Response) => {
+  try {
+    const { idCard } = req.params
+    console.log('🔍 getOrdersByIdCard idCard:', idCard) // ✅ เพิ่ม
+
+    const result = await pool.query(`
+      SELECT 
+        ae.ae_id,
+        ed.exp_name   AS item_name,
+        ae.size,
+        ae.quantity,
+        ae.unit_price,
+        ae.total_price
+      FROM applicant_expenses ae
+      JOIN expense_detail ed ON ed.exp_id = ae.exp_id
+      JOIN applicants a ON a.app_id = ae.app_id
+      WHERE a.id_card_number = $1
+      ORDER BY ae.ae_id
+    `, [idCard])
+
+    console.log('✅ result rows:', result.rows) // ✅ เพิ่ม
+    sendSuccess(res, result.rows)
+  } catch (err: any) {
+    console.error('❌ getOrdersByIdCard error:', err.message) // ✅ เพิ่ม
+    sendError(res, 'ไม่สามารถดึงข้อมูล orders ได้', 500, err)
   }
 }

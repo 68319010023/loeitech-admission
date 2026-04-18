@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="max-w-4xl mx-auto">
 
     <!-- Stepper -->
@@ -135,6 +135,20 @@
               </p>
             </Transition>
           </div>
+
+          <div v-if="form.prevLevel === 'pvc'" class="col-span-2">
+            <label class="text-sm text-gray-600 mb-1 block">สาขาวิชาที่จบปวช *</label>
+            <select v-model="form.prevBranch" class="input-field">
+              <option value="">เลือกสาขาวิชา</option>
+              <option v-for="branch in pvcBranches" :key="branch.div_id" :value="branch.div_id">
+                {{ branch.div_name }}
+              </option>
+            </select>
+            <p v-if="showError && form.prevLevel === 'pvc' && !form.prevBranch" class="text-red-500 text-xs mt-1">
+              ⚠️ กรุณาเลือกสาขาวิชาที่จบปวช
+            </p>
+          </div>
+
           <div>
             <label class="text-sm text-gray-600 mb-1 block">เกรดเฉลี่ย (GPA) *</label>
             <input v-model="form.gpa" type="text" inputmode="decimal" placeholder="เช่น 4.00" class="input-field"
@@ -143,6 +157,7 @@
               <p v-if="gpaWarning" class="text-red-500 text-xs mt-1">กรุณากรอกเลขไม่เกิน 4.00</p>
             </Transition>
           </div>
+          
           <div v-if="form.prevLevel" class="col-span-2 p-4 rounded-xl border"
             :class="form.prevLevel === 'm3' ? 'bg-blue-50 border-blue-200' : 'bg-emerald-50 border-emerald-200'">
             <p class="text-sm font-medium mb-1" :class="form.prevLevel === 'm3' ? 'text-blue-700' : 'text-emerald-700'">
@@ -485,6 +500,7 @@ const viewingImage = ref('')
 const curriculums = ref<any[]>([])
 const admissionPlans = ref<any[]>([])
 const expenses = ref<any[]>([])
+const pvcBranches = ref<any[]>([])
 
 const steps = [
   { label: 'ข้อมูลส่วนตัว', sub: 'กรอกข้อมูลส่วนตัว', icon: UserIcon },
@@ -504,7 +520,7 @@ const form = reactive({
   prefix: '', fullName: '', idCard: '', address: '', phone: '', email: '',
   idFront: null as File | null, idBack: null as File | null,
   idFrontPreview: '', idBackPreview: '', idType: '',
-  prevSchool: '', prevLevel: '', prevYear: '', gpa: '',
+  prevSchool: '', prevLevel: '', prevYear: '', gpa: '', prevBranch: '',
   docType: '',
   eduFront: null as File | null, eduFrontPreview: '',
   eduBack: null as File | null, eduBackPreview: '',
@@ -571,6 +587,15 @@ async function onPrevLevelChange() {
   form.apId = 0; form.curId = 0
   admissionPlans.value = []; expenses.value = []
   if (!form.prevLevel) return
+  
+  // Load PVC branches if prevLevel is 'pvc'
+  if (form.prevLevel === 'pvc') {
+    await loadPvcBranches()
+  } else {
+    pvcBranches.value = []
+    form.prevBranch = ''
+  }
+  
   isLoading.value = true
   try {
     const res = await applicationService.getAdmissionPlan(form.prevLevel, '2569')
@@ -579,6 +604,15 @@ async function onPrevLevelChange() {
     console.error('โหลดสาขาไม่สำเร็จ', err)
   } finally {
     isLoading.value = false
+  }
+}
+
+async function loadPvcBranches() {
+  try {
+    const res = await applicationService.getDivisions(18) // 18 = cur_id for PVC curriculum
+    pvcBranches.value = res.data.data
+  } catch (err) {
+    console.error('โหลดสาขาปวช. ไม่สำเร็จ', err)
   }
 }
 
@@ -681,7 +715,8 @@ function validateStep() {
     const yearValue = parseInt(form.prevYear)
     const currentYear = new Date().getFullYear() + 543
     const yearValid = form.prevYear && yearValue <= currentYear && !isNaN(yearValue)
-    return !!(form.prevSchool && form.prevLevel && yearValid && gpaValid && eduValid)
+    const branchValid = form.prevLevel !== 'pvc' || form.prevBranch // Require branch selection for PVC
+    return !!(form.prevSchool && form.prevLevel && yearValid && gpaValid && eduValid && branchValid)
   }
   if (currentStep.value === 2) return !!form.apId
   if (currentStep.value === 3) {
@@ -724,6 +759,7 @@ async function onConfirmed() {
     fd.append('prev_level', form.prevLevel)
     fd.append('prev_year', form.prevYear)
     fd.append('gpa', form.gpa)
+    if (form.prevBranch) fd.append('prev_branch', form.prevBranch)
     fd.append('doc_type', form.docType)
     if (form.eduFront) fd.append('edu_front', form.eduFront)
     if (form.eduBack) fd.append('edu_back', form.eduBack)

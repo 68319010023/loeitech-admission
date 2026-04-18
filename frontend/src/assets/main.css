@@ -1,4 +1,9 @@
 @import "tailwindcss";
+
+@theme {
+  /* Default Tailwind v4 theme variables are included automatically */
+}
+
 * {
   font-family: 'Mitr', sans-serif;
 }

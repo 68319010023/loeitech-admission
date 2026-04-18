@@ -115,7 +115,9 @@ const stats = computed(() => {
   )
   
   // For now, treat all PAVAS as M.6 type since we only have one PAVAS curriculum
-  const pavasDirectExpenses = [] // No direct track curriculum in database yet
+  const pavasDirectExpenses = expenses.value.filter(expense => 
+  expense.curriculum?.cur_id === 20
+) // No direct track curriculum in database yet
   
   const pavocCost = pavocExpenses.reduce((sum, expense) => sum + (expense.exp_cost || 0), 0)
   const pavasDirectCost = pavasDirectExpenses.reduce((sum, expense) => sum + (expense.exp_cost || 0), 0)
