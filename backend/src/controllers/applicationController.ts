@@ -309,12 +309,10 @@ export const checkStatus = async (req: Request, res: Response) => {
 
     const row = result.rows[0]
     console.log('self_front_url from DB:', row.self_front_url)
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3001'
-
 const toUrl = (filePath: string | null) => {
   if (!filePath) return null
-   const filename = filePath.replace(/\\/g, '/').split('/').pop()
-  return `${BASE_URL}/uploads/${filename}`
+  const filename = filePath.replace(/\\/g, '/').split('/').pop()
+  return `/uploads/${filename}`
 }
 
 sendSuccess(res, {

@@ -27,7 +27,7 @@ export const getExpenseDetails = async (_req: Request, res: Response) => {
   exp_name: row.exp_name,
   exp_detail: row.exp_detail,
   exp_img: row.has_img === true || row.has_img === 't' || row.has_img === 'true'
-    ? `http://localhost:3001/api/admin/expense-detail/${row.exp_id}/image`
+    ? `/api/admin/expense-detail/${row.exp_id}/image`
     : null,
   exp_cost: parseFloat(row.exp_cost),
   payment_type: row.payment_type || 'mandatory',
