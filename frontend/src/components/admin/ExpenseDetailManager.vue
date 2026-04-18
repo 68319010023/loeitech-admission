@@ -88,8 +88,8 @@
                 {{ expense.payment_type === 'mandatory' ? 'บังคับชำระ' : 'ไม่บังคับชำระ' }}
               </span>
             </td>
-            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-              <div v-if="expense.exp_img" class="text-center">
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
+              <template v-if="expense.exp_img">
                 <button @click="viewImage(expense.exp_img!)"
                   class="inline-flex items-center px-3 py-1 bg-emerald-500 text-white text-xs rounded hover:bg-emerald-600 transition-colors">
                   <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -100,8 +100,11 @@
                   </svg>
                   ดูรูปภาพ
                 </button>
-              </div>
-              <span v-else class="text-gray-400 text-xs">ไม่มีรูป</span>
+              </template>
+              <span v-else
+                class="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-400">
+                ไม่ได้อัปโหลด
+              </span>
             </td>
             <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-center">
               <div class="flex justify-center items-center gap-1">
@@ -211,11 +214,11 @@
                       <label class="block text-gray-700 text-sm font-bold mb-2">รูปภาพ</label>
                       <div
                         class="relative border-2 border-dashed rounded-xl overflow-hidden transition-colors cursor-pointer"
-                        :class="(imagePreview || formData.exp_img) ? 'border-emerald-300 hover:border-emerald-400' : 'border-gray-300 hover:border-emerald-400'"
+                        :class="(imagePreview || originalImgUrl) ? 'border-emerald-300 hover:border-emerald-400' : 'border-gray-300 hover:border-emerald-400'"
                         @click="triggerFileInput">
                         <!-- มีรูปแล้ว -->
-                        <div v-if="imagePreview || formData.exp_img" class="relative group">
-                          <img :src="imagePreview || formData.exp_img" alt="รูปภาพ"
+                        <div v-if="imagePreview || originalImgUrl" class="relative group">
+                          <img :src="imagePreview || originalImgUrl" alt="รูปภาพ"
                             class="w-full h-48 object-contain bg-gray-50" />
                           <div
                             class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center">
@@ -431,7 +434,7 @@ const viewingImage = ref<string>('')
 const fileInputRef = ref<HTMLInputElement | null>(null)
 
 const sizeNumbers = ref<Record<string, string>>({ M: '', L: '', XL: '' })
-
+const originalImgUrl = ref<string>('')
 const showAddModal = ref(false)
 const showEditModal = ref(false)
 const showDeleteModal = ref(false)
@@ -469,6 +472,7 @@ const triggerFileInput = () => fileInputRef.value?.click()
 
 const clearImage = () => {
   imagePreview.value = ''
+  originalImgUrl.value = ''
   formData.value.exp_img = ''
   if (fileInputRef.value) fileInputRef.value.value = ''
 }
@@ -495,14 +499,14 @@ const addSizeWithNumber = (size: string) => {
   const num = sizeNumbers.value[size]?.trim()
   if (!num) return
   const val = `${size} ${num}`
-  
+
   const existingIndex = formData.value.exp_sizes.findIndex(s => s.startsWith(`${size} `))
   if (existingIndex !== -1) {
-    formData.value.exp_sizes[existingIndex] = val  
+    formData.value.exp_sizes[existingIndex] = val
   } else {
-    formData.value.exp_sizes.push(val)  
+    formData.value.exp_sizes.push(val)
   }
-  
+
   sizeNumbers.value[size] = ''
 }
 
@@ -568,12 +572,13 @@ const editExpense = (expense: ExpenseDetail) => {
     exp_id: expense.exp_id,
     exp_name: expense.exp_name,
     exp_detail: expense.exp_detail,
-    exp_img: expense.exp_img || '',
+    exp_img: '',
     cur_id: expense.cur_id,
     exp_cost: expense.exp_cost,
     payment_type: expense.payment_type || '',
     exp_sizes: expense.exp_sizes ? [...expense.exp_sizes] : []
   }
+  originalImgUrl.value = expense.exp_img || ''
   imagePreview.value = ''
   sizeNumbers.value = { M: '', L: '', XL: '' }
   showSizeSection.value = expense.exp_sizes ? expense.exp_sizes.length > 0 : false
@@ -585,6 +590,7 @@ const closeModal = () => {
   showEditModal.value = false
   showSizeSection.value = false
   imagePreview.value = ''
+  originalImgUrl.value = ''
   sizeNumbers.value = { M: '', L: '', XL: '' }
   if (fileInputRef.value) fileInputRef.value.value = ''
   formData.value = {

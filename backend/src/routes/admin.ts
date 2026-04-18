@@ -9,7 +9,8 @@ import {
   getExpenseDetails,
   createExpenseDetail,
   updateExpenseDetail,
-  deleteExpenseDetail
+  deleteExpenseDetail,
+  getExpenseImage
 } from '../controllers/expenseDetailController'
 import {
   getCurriculums,
@@ -63,6 +64,7 @@ router.get('/expense-detail', getExpenseDetails)
 router.post('/expense-detail', createExpenseDetail)
 router.put('/expense-detail/:id', updateExpenseDetail)
 router.delete('/expense-detail/:id', deleteExpenseDetail)
+router.get('/expense-detail/:id/image', getExpenseImage)
 
 // Auth routes
 router.post('/login', login)

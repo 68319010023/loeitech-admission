@@ -29,9 +29,11 @@ export const getApplicants = async (_req: Request, res: Response) => {
         p.total_amount,
         p.paid_at,
         p.slip_name,
+        p.slip_path,
         -- เพิ่ม 2 บรรทัดนี้
         MAX(CASE WHEN doc.doc_type = 'id_front' THEN doc.file_path END) AS id_front_path,
-        MAX(CASE WHEN doc.doc_type = 'id_back'  THEN doc.file_path END) AS id_back_path
+        MAX(CASE WHEN doc.doc_type = 'id_back'  THEN doc.file_path END) AS id_back_path,
+        MAX(CASE WHEN doc.doc_type = 'edu_front' THEN doc.file_path END) AS edu_front_path
       FROM applicants a
       JOIN curriculums c ON a.cur_id = c.cur_id
       JOIN divisions d ON a.div_id = d.div_id
@@ -44,10 +46,11 @@ export const getApplicants = async (_req: Request, res: Response) => {
         a.phone, a.email, a.status, a.created_at,
         c.cur_id, c.cur_name, c.cur_shortname,
         d.div_id, d.div_name,
-        p.total_amount, p.paid_at, p.slip_name
+        p.total_amount, p.paid_at, p.slip_name, p.slip_path 
       ORDER BY a.created_at DESC
     `
     const result = await pool.query(query)
+    console.log('sample payment row:', result.rows[0])
 
     const applicants = result.rows.map(row => ({
       app_id:         row.app_id,
@@ -61,6 +64,7 @@ export const getApplicants = async (_req: Request, res: Response) => {
       // เพิ่ม 2 field นี้
       id_front_url:   toUrl(row.id_front_path),
       id_back_url:    toUrl(row.id_back_path),
+      edu_front_url: toUrl(row.edu_front_path), 
       curriculum: {
         cur_id:        row.cur_id,
         cur_name:      row.cur_name,
@@ -74,6 +78,7 @@ export const getApplicants = async (_req: Request, res: Response) => {
         total_amount: row.total_amount,
         paid_at:      row.paid_at,
         slip_name:    row.slip_name,
+       slip_url:     toUrl(row.slip_path),
       },
     }))
 

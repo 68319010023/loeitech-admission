@@ -6,6 +6,7 @@ import {
   upsertOnsiteEnrollment,
   getEnrollmentSummary,
    verifySlip,
+   getOrdersByIdCard,
 } from '../controllers/enrollmentController'
 import { upload } from '../middleware/upload'
 
@@ -33,5 +34,5 @@ router.get('/status/:idCard', getEnrollmentStatus)
 router.get('/onsite', getOnsiteEnrollments)
 router.post('/onsite', upsertOnsiteEnrollment)
 router.get('/summary', getEnrollmentSummary)
-
+router.get('/orders/:idCard', getOrdersByIdCard)
 export default router

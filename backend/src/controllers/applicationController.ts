@@ -277,7 +277,7 @@ export const checkStatus = async (req: Request, res: Response) => {
         a.phone, a.id_card_number,
         c.cur_name, d.div_name,
         p.total_amount, p.required_amount, p.due_date,
-        p.paid_at, p.verified_at,
+        p.paid_at, p.verified_at, p.slip_sender, p.slip_receiver,
         e.enrolled_at, e.verified_at AS enroll_verified_at,
         -- ดึง URL รูปที่เคยอัพไว้
         MAX(CASE WHEN doc.doc_type = 'self_house_front'   THEN doc.file_path END) AS self_front_url,
@@ -299,7 +299,7 @@ export const checkStatus = async (req: Request, res: Response) => {
         a.phone, a.id_card_number,
         c.cur_name, d.div_name,
         p.total_amount, p.required_amount, p.due_date,
-        p.paid_at, p.verified_at,
+        p.paid_at, p.verified_at, p.slip_sender, p.slip_receiver,
         e.enrolled_at, e.verified_at
     `, [idCard])
 
@@ -326,6 +326,8 @@ sendSuccess(res, {
   mother_front_url: toUrl(row.mother_front_url),
   mother_back_url:  toUrl(row.mother_back_url),
   payment_slip_url: toUrl(row.payment_slip_url),
+  slip_sender: row.slip_sender ?? '-',
+  slip_receiver: row.slip_receiver ?? '-',
 })
 
 

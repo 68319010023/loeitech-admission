@@ -34,6 +34,8 @@
 
       <template v-else>
 
+
+
         <!-- Step 1: Document Upload -->
         <div v-if="currentStep === 0" class="mb-8">
           <h2 class="text-lg font-semibold text-gray-700 flex items-center gap-2 mb-1">
@@ -42,7 +44,7 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <label class="block">
               <div class="upload-box"
-                :class="selfHouseRegistration.front ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'">
+                :class="selfHouseRegistration.frontPreview ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'">
                 <input type="file" accept="image/*" class="hidden"
                   @change="handleUpload(selfHouseRegistration, 'front', $event)" />
                 <div v-if="!selfHouseRegistration.frontPreview" class="flex flex-col items-center gap-2 text-gray-400">
@@ -53,7 +55,7 @@
             </label>
             <label class="block">
               <div class="upload-box"
-                :class="selfHouseRegistration.back ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'">
+                :class="selfHouseRegistration.backPreview ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'">
                 <input type="file" accept="image/*" class="hidden"
                   @change="handleUpload(selfHouseRegistration, 'back', $event)" />
                 <div v-if="!selfHouseRegistration.backPreview" class="flex flex-col items-center gap-2 text-gray-400">
@@ -71,7 +73,7 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <label class="block">
               <div class="upload-box"
-                :class="fatherHouseRegistration.front ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'">
+                :class="fatherHouseRegistration.frontPreview ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'">
                 <input type="file" accept="image/*" class="hidden"
                   @change="handleUpload(fatherHouseRegistration, 'front', $event)" />
                 <div v-if="!fatherHouseRegistration.frontPreview"
@@ -84,7 +86,7 @@
             </label>
             <label class="block">
               <div class="upload-box"
-                :class="fatherHouseRegistration.back ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'">
+                :class="fatherHouseRegistration.backPreview ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'">
                 <input type="file" accept="image/*" class="hidden"
                   @change="handleUpload(fatherHouseRegistration, 'back', $event)" />
                 <div v-if="!fatherHouseRegistration.backPreview" class="flex flex-col items-center gap-2 text-gray-400">
@@ -103,7 +105,7 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <label class="block">
               <div class="upload-box"
-                :class="motherHouseRegistration.front ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'">
+                :class="motherHouseRegistration.frontPreview ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'">
                 <input type="file" accept="image/*" class="hidden"
                   @change="handleUpload(motherHouseRegistration, 'front', $event)" />
                 <div v-if="!motherHouseRegistration.frontPreview"
@@ -116,7 +118,7 @@
             </label>
             <label class="block">
               <div class="upload-box"
-                :class="motherHouseRegistration.back ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'">
+                :class="motherHouseRegistration.backPreview ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'">
                 <input type="file" accept="image/*" class="hidden"
                   @change="handleUpload(motherHouseRegistration, 'back', $event)" />
                 <div v-if="!motherHouseRegistration.backPreview" class="flex flex-col items-center gap-2 text-gray-400">
@@ -166,7 +168,7 @@
           <h3 class="text-base font-semibold text-gray-700 mb-1">สลิปการโอนเงิน</h3>
           <label class="block">
             <div class="upload-box" :class="[
-              paymentSlip.front ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200',
+              paymentSlip.frontPreview ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200',
               isVerifyingSlip ? 'pointer-events-none opacity-60' : ''
             ]" style="min-height: 300px;">
               <input type="file" accept="image/*" class="hidden" @change="handleSlipUpload($event)" />
@@ -184,7 +186,7 @@
             </div>
           </label>
 
-          <!-- Loading ขณะตรวจสอบ -->
+          <!-- กำลังตรวจสอบ -->
           <div v-if="isVerifyingSlip"
             class="mt-4 flex items-center gap-3 bg-emerald-50 border border-emerald-200 p-4 rounded-xl">
             <div class="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -200,6 +202,7 @@
             </div>
           </div>
 
+          <!-- ✅ สลิปผ่านแล้ว -->
           <div v-if="slipVerifyResult?.valid && !isVerifyingSlip"
             class="mt-4 flex items-center gap-3 bg-emerald-50 border border-emerald-200 p-4 rounded-xl">
             <div class="w-9 h-9 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
@@ -207,7 +210,10 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <p class="text-sm font-semibold text-emerald-700">สลิปผ่านการตรวจสอบแล้ว</p>
+            <div>
+              <p class="text-sm font-semibold text-emerald-700">สลิปผ่านการตรวจสอบแล้ว</p>
+              <p class="text-xs text-emerald-500 mt-0.5">ระบบได้บันทึกการชำระเงินเรียบร้อย</p>
+            </div>
             <div class="ml-auto w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
           </div>
 
@@ -359,7 +365,7 @@
               <button @click="downloadPDFs"
                 class="px-6 py-3 border border-emerald-500 text-emerald-600 rounded-lg hover:bg-emerald-50 transition-colors font-medium flex items-center justify-center gap-2">
                 <ArrowDownTrayIcon class="w-4 h-4" />
-                ดาวน์โหลด PDF ซ้ำ
+                ดาวน์โหลดเอกสาร PDF
               </button>
               <button @click="router.push('/check-status')"
                 class="px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors font-medium">
@@ -372,13 +378,12 @@
       </template>
     </div>
 
+    <!-- Toast -->
     <Teleport to="body">
       <transition name="toast">
         <div v-if="toast.show"
           class="fixed top-4 right-4 z-[99999] flex items-center space-x-3 px-6 py-4 rounded-xl shadow-2xl text-white"
-          :class="toast.type === 'success'
-            ? 'bg-gradient-to-r from-green-500 to-emerald-600'
-            : 'bg-gradient-to-r from-red-500 to-pink-600'">
+          :class="toast.type === 'success' ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gradient-to-r from-red-500 to-pink-600'">
           <svg v-if="toast.type === 'success'" class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor"
             viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
@@ -420,7 +425,7 @@ interface UserData {
   curName: string
   divName: string
   totalAmount: number
-   status: string 
+  status: string
 }
 
 interface SlipVerifyResult {
@@ -440,11 +445,11 @@ const currentStep = ref(0)
 const isLoading = ref(false)
 const isLoadingData = ref(true)
 
-// ✅ state สำหรับตรวจสอบสลิป
 const slipVerifyResult = ref<SlipVerifyResult | null>(null)
 const isVerifyingSlip = ref(false)
 
-const userData = ref<UserData>({ fullName: '', prefix: '', curName: '', divName: '', totalAmount: 0, status: ''  })
+const userData = ref<UserData>({ fullName: '', prefix: '', curName: '', divName: '', totalAmount: 0, status: '' })
+const orderItems = ref<any[]>([])
 
 const createHouseDoc = (): HouseDoc => ({ front: null, frontPreview: '', back: null, backPreview: '' })
 const selfHouseRegistration = reactive<HouseDoc>(createHouseDoc())
@@ -471,21 +476,35 @@ onMounted(async () => {
       curName: data.cur_name,
       divName: data.div_name,
       totalAmount: Number(data.total_amount) || 0,
-       status: data.status 
+      status: data.status,
+    }
+    try {
+      const orderRes = await api.get(`/enrollments/orders/${idCard}`)
+      if (orderRes.data?.data) {
+        orderItems.value = orderRes.data.data
+        console.log('orderItems:', JSON.stringify(orderItems.value, null, 2))
+      }
+    } catch (e: any) {
+      console.warn('ไม่พบข้อมูล orders:', e?.response?.status)
+      orderItems.value = [] // ตารางจะว่าง แต่ไม่ crash
     }
 
+    // โหลดรูปเดิมที่เคยอัปโหลดไว้
     if (data.self_front_url) selfHouseRegistration.frontPreview = data.self_front_url
     if (data.self_back_url) selfHouseRegistration.backPreview = data.self_back_url
     if (data.father_front_url) fatherHouseRegistration.frontPreview = data.father_front_url
     if (data.father_back_url) fatherHouseRegistration.backPreview = data.father_back_url
     if (data.mother_front_url) motherHouseRegistration.frontPreview = data.mother_front_url
     if (data.mother_back_url) motherHouseRegistration.backPreview = data.mother_back_url
+
     if (data.payment_slip_url) {
       paymentSlip.frontPreview = data.payment_slip_url
-      // ถ้ามีสลิปเดิมอยู่แล้ว ถือว่าผ่านการตรวจแล้ว
       slipVerifyResult.value = { valid: true }
     }
 
+    if (data.status === 'paid') {
+      currentStep.value = 2
+    }
   } catch {
     showToast('error', 'โหลดข้อมูลไม่สำเร็จ', 'ไม่สามารถดึงข้อมูลได้ กรุณาลองใหม่')
     setTimeout(() => router.push('/check-status'), 2000)
@@ -494,19 +513,20 @@ onMounted(async () => {
   }
 })
 
-// ✅ เช็ค Preview + สลิปต้องผ่านการตรวจสอบด้วย
+// ตรวจสอบว่าเอกสารครบก่อนไป step ถัดไป
 const isAllDocumentsUploaded = computed(() => {
   if (currentStep.value === 0) {
-    return selfHouseRegistration.frontPreview && selfHouseRegistration.backPreview
+    return !!(selfHouseRegistration.frontPreview && selfHouseRegistration.backPreview)
   }
   if (currentStep.value === 1) {
-     const hasExistingSlip = paymentSlip.frontPreview && !paymentSlip.front
-  return hasExistingSlip || (paymentSlip.frontPreview && slipVerifyResult.value?.valid === true)
+    // มีสลิปเดิม (ไม่ได้อัปใหม่) หรือ อัปใหม่แล้วผ่าน
+    const hasExistingSlip = !!(paymentSlip.frontPreview && !paymentSlip.front)
+    const hasNewVerifiedSlip = !!(paymentSlip.frontPreview && slipVerifyResult.value?.valid === true)
+    return hasExistingSlip || hasNewVerifiedSlip
   }
   return true
 })
 
-// handleUpload สำหรับเอกสารทั่วไป (ทะเบียนบ้าน)
 const handleUpload = (target: HouseDoc, side: 'front' | 'back', event: Event) => {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (!file) return
@@ -520,18 +540,16 @@ const handleUpload = (target: HouseDoc, side: 'front' | 'back', event: Event) =>
   reader.readAsDataURL(file)
 }
 
-// ✅ handleSlipUpload สำหรับสลิป — ตรวจสอบกับ Slipok ทันที
+// ✅ อัปสลิป → ตรวจ Slipok → ถ้าผ่าน status จะเป็น paid (backend จัดการ)
 const handleSlipUpload = async (event: Event) => {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (!file) return
 
-  // แสดง preview ก่อน
   paymentSlip.front = file
   const reader = new FileReader()
   reader.onload = (e) => { paymentSlip.frontPreview = e.target?.result as string }
   reader.readAsDataURL(file)
 
-  // เริ่มตรวจสอบทันที
   isVerifyingSlip.value = true
   slipVerifyResult.value = null
 
@@ -541,32 +559,31 @@ const handleSlipUpload = async (event: Event) => {
     form.append('idCard', idCard)
 
     const res = await api.post('/enrollments/verify-slip', form, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+      headers: { 'Content-Type': 'multipart/form-data' },
     })
-
-  
 
     const result: SlipVerifyResult = res.data.data
     slipVerifyResult.value = result
 
     if (result.valid) {
+      // ✅ อัปเดต status ใน local state เป็น paid ทันที
+      userData.value.status = 'paid'
       showToast('success', 'สลิปถูกต้อง ✅', `ยอดโอน ${result.amount?.toLocaleString()} บาท`)
     } else {
-      // ไม่ผ่าน → ล้างรูปทิ้ง
       paymentSlip.front = null
       paymentSlip.frontPreview = ''
       slipVerifyResult.value = null
       showToast('error', 'สลิปไม่ถูกต้อง ❌', result.message || 'กรุณาอัปโหลดสลิปใหม่อีกครั้ง')
     }
 
-  } catch  {
+  } catch {
     paymentSlip.front = null
     paymentSlip.frontPreview = ''
     slipVerifyResult.value = null
     showToast('error', 'ตรวจสอบไม่สำเร็จ', 'กรุณาลองใหม่อีกครั้ง')
   } finally {
     isVerifyingSlip.value = false
-      ; (event.target as HTMLInputElement).value = '' // reset input ให้อัปโหลดซ้ำได้
+      ; (event.target as HTMLInputElement).value = ''
   }
 }
 
@@ -580,9 +597,9 @@ const handleNextClick = () => {
     } else {
       showToast('error', 'อัปโหลดไม่ครบ', 'กรุณาอัปโหลดรูปภาพให้ครบทุกรายการก่อนดำเนินการต่อ')
     }
-  } else {
-    if (currentStep.value < steps.length - 1) currentStep.value++
+    return
   }
+  if (currentStep.value < steps.length - 1) currentStep.value++
 }
 
 const handleConfirmation = async () => {
@@ -600,12 +617,12 @@ const handleConfirmation = async () => {
     if (paymentSlip.front) formData.append('payment_slip', paymentSlip.front)
 
     await api.post('/enrollments/confirm', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+      headers: { 'Content-Type': 'multipart/form-data' },
     })
 
-     if (userData.value.status !== 'enrolled') {
-      await Promise.all([generateCertificatePDF(), generateUniformOrderPDF()])
-    }
+    // ✅ อัปเดต local status และ generate PDF เสมอ
+    userData.value.status = 'enrolled'
+
 
     currentStep.value = 3
 
@@ -617,44 +634,259 @@ const handleConfirmation = async () => {
 }
 
 const downloadPDFs = async () => {
-  await Promise.all([generateCertificatePDF(), generateUniformOrderPDF()])
+  await generateCombinedPDF()
 }
 
-async function loadFont(): Promise<string> {
-  const res = await fetch('/fonts/THSarabunNew.ttf')
-  const buffer = await res.arrayBuffer()
-  const bytes = new Uint8Array(buffer)
-  let binary = ''
-  bytes.forEach(b => binary += String.fromCharCode(b))
-  return btoa(binary)
-}
 
-async function generateCertificatePDF() {
-  const fontBase64 = await loadFont()
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-  doc.addFileToVFS('THSarabunNew.ttf', fontBase64)
-  doc.addFont('THSarabunNew.ttf', 'THSarabun', 'normal')
-  doc.setFont('THSarabun')
-  doc.setFontSize(22)
-  doc.text('ใบรับรองการมอบตัว', 105, 30, { align: 'center' })
-  doc.setFontSize(16)
-  doc.text(`${userData.value.prefix}${userData.value.fullName} สาขาวิชา ${userData.value.divName}`, 20, 45)
-  doc.text('วิทยาลัยเทคนิคเลย ได้ชำระเงินเรียบร้อยแล้ว', 20, 55)
-  doc.save(`ใบรับรอง-${userData.value.fullName}.pdf`)
-}
+// --- เพิ่มโค้ดส่วนนี้เข้าไปครับ ---
+const loadFont = async () => {
+  try {
+    // ดึงไฟล์จาก public/fonts/THSarabunNew.ttf
+    const response = await fetch('/fonts/THSarabunNew.ttf');
+    if (!response.ok) throw new Error('ไม่พบไฟล์ฟอนต์ในโฟลเดอร์ public');
 
-async function generateUniformOrderPDF() {
-  const fontBase64 = await loadFont()
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-  doc.addFileToVFS('THSarabunNew.ttf', fontBase64)
-  doc.addFont('THSarabunNew.ttf', 'THSarabun', 'normal')
-  doc.setFont('THSarabun')
-  doc.setFontSize(22)
-  doc.text('ใบสั่งซื้อเครื่องแบบนักเรียน', 105, 30, { align: 'center' })
-  doc.setFontSize(16)
-  doc.text(`ชื่อ-สกุล: ${userData.value.prefix}${userData.value.fullName}`, 20, 45)
-  doc.text(`หลักสูตร: ${userData.value.curName}  สาขา: ${userData.value.divName}`, 20, 55)
-  doc.save(`ใบสั่งซื้อเครื่องแบบ-${userData.value.fullName}.pdf`)
+    const blob = await response.blob();
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        // แปลงเป็น Base64 string เพื่อส่งให้ jsPDF
+        const base64String = (reader.result as string).split(',')[1];
+        resolve(base64String);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.error('Font loading error:', error);
+    throw error;
+  }
+};
+
+
+async function generateCombinedPDF() {
+  try {
+    const fontBase64 = await loadFont()
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    doc.addFileToVFS('THSarabunNew.ttf', fontBase64)
+    doc.addFont('THSarabunNew.ttf', 'THSarabun', 'normal')
+    doc.addFont('THSarabunNew.ttf', 'THSarabun', 'bold')
+
+    const pageW = 210
+    const margin = 20
+    const contentW = pageW - margin * 2
+    const now = new Date().toLocaleString('th-TH', { dateStyle: 'full', timeStyle: 'short' })
+    const fullName = `${userData.value.prefix}${userData.value.fullName}`
+
+    const setFont = (style: 'normal' | 'bold', size: number, color = '#111827') => {
+      doc.setFont('THSarabun', style)
+      doc.setFontSize(size)
+      const hex = color.replace('#', '')
+      const r = parseInt(hex.substring(0, 2), 16)
+      const g = parseInt(hex.substring(2, 4), 16)
+      const b = parseInt(hex.substring(4, 6), 16)
+      doc.setTextColor(r, g, b)
+    }
+
+    // ── HEADER ────────────────────────────────────────────────────
+    doc.setFillColor(5, 150, 105)
+    doc.rect(0, 0, pageW, 32, 'F')
+
+    setFont('bold', 18, '#ffffff')
+    doc.text('วิทยาลัยเทคนิคเลย', pageW / 2, 13, { align: 'center' })
+    setFont('normal', 12, '#d1fae5')
+    doc.text('ระบบรับสมัครนักเรียนนักศึกษาออนไลน์', pageW / 2, 22, { align: 'center' })
+
+    doc.setFillColor(240, 253, 244)
+    doc.rect(0, 32, pageW, 14, 'F')
+    doc.setDrawColor(5, 150, 105)
+    doc.setLineWidth(0.5)
+    doc.line(0, 32, pageW, 32)
+    doc.line(0, 46, pageW, 46)
+    setFont('bold', 16, '#065f46')
+    doc.text('เอกสารการมอบตัวนักเรียนนักศึกษา', pageW / 2, 42, { align: 'center' })
+
+    // ── ส่วนที่ 1: ใบรับรองการมอบตัว ────────────────────────────
+    let y = 54
+    const col1 = margin + 5
+    const col2 = margin + contentW / 2 + 5
+    const labelColor = '#6b7280'
+    const valueColor = '#111827'
+
+    doc.setFillColor(5, 150, 105)
+    doc.roundedRect(margin, y, contentW, 9, 2, 2, 'F')
+    setFont('bold', 13, '#ffffff')
+    doc.text('ส่วนที่ 1  ใบรับรองการมอบตัว', margin + 4, y + 6.5)
+    y += 14
+
+    // กล่องข้อมูลนักเรียน
+    doc.setFillColor(248, 250, 252)
+    doc.setDrawColor(209, 213, 219)
+    doc.setLineWidth(0.3)
+    doc.roundedRect(margin, y, contentW, 42, 3, 3, 'FD')
+
+    setFont('normal', 10, labelColor); doc.text('ชื่อ-นามสกุล', col1, y + 8)
+    setFont('bold', 13, valueColor); doc.text(fullName, col1, y + 16)
+
+    setFont('normal', 10, labelColor); doc.text('วันที่มอบตัว', col2, y + 8)
+    setFont('bold', 13, valueColor)
+    doc.text(new Date().toLocaleDateString('th-TH', { dateStyle: 'long' }), col2, y + 16)
+
+    doc.setDrawColor(229, 231, 235)
+    doc.setLineWidth(0.2)
+    doc.line(margin + 4, y + 21, margin + contentW - 4, y + 21)
+
+    setFont('normal', 10, labelColor); doc.text('หลักสูตร', col1, y + 28)
+    setFont('bold', 13, valueColor); doc.text(userData.value.curName, col1, y + 36)
+
+    setFont('normal', 10, labelColor); doc.text('สาขาวิชา', col2, y + 28)
+    setFont('bold', 13, valueColor); doc.text(userData.value.divName, col2, y + 36)
+    y += 47
+
+    // กล่องยอดชำระ
+    doc.setFillColor(236, 253, 245)
+    doc.setDrawColor(16, 185, 129)
+    doc.setLineWidth(0.4)
+    doc.roundedRect(margin, y, contentW, 14, 3, 3, 'FD')
+    setFont('normal', 11, '#065f46')
+    doc.text('ยอดชำระเงิน', col1, y + 9.5)
+    setFont('bold', 14, '#065f46')
+    doc.text(`${userData.value.totalAmount.toLocaleString()} บาท`, margin + contentW - 5, y + 9.5, { align: 'right' })
+    y += 19
+
+    // สถานะ
+    doc.setFillColor(5, 150, 105)
+    doc.circle(col1 + 2.5, y + 4, 2.5, 'F')
+    setFont('bold', 12, '#065f46')
+    doc.text('สถานะ: มอบตัวเสร็จสมบูรณ์', col1 + 8, y + 6)
+    y += 14
+
+    // เส้นประแบ่ง
+    doc.setDrawColor(209, 213, 219)
+    doc.setLineWidth(0.3)
+    doc.setLineDashPattern([2, 2], 0)
+    doc.line(margin, y, margin + contentW, y)
+    doc.setLineDashPattern([], 0)
+    y += 8
+
+    // ── ส่วนที่ 2: ใบสั่งซื้อเครื่องแบบ ─────────────────────────
+    doc.setFillColor(37, 99, 235)
+    doc.roundedRect(margin, y, contentW, 9, 2, 2, 'F')
+    setFont('bold', 13, '#ffffff')
+    doc.text('ส่วนที่ 2  ใบสั่งซื้อเครื่องแบบนักเรียน', margin + 4, y + 6.5)
+    y += 14
+
+    // แถบข้อมูลนักเรียน
+    doc.setFillColor(239, 246, 255)
+    doc.setDrawColor(147, 197, 253)
+    doc.setLineWidth(0.3)
+    doc.roundedRect(margin, y, contentW, 12, 2, 2, 'FD')
+    setFont('normal', 10, '#1e40af')
+    doc.text(
+      `ชื่อ: ${fullName}   |   หลักสูตร: ${userData.value.curName}   |   สาขา: ${userData.value.divName}`,
+      margin + 4, y + 8
+    )
+    y += 17
+
+    // ── ตารางเครื่องแบบ ───────────────────────────────────────────
+    const headers = ['ลำดับ', 'รายการเครื่องแบบ', 'ขนาด', 'จำนวน', 'ราคา/หน่วย', 'รวม']
+    const colWidths = [12, 58, 20, 18, 22, 22]
+    const tableRowH = 9
+
+    const uniformItems = orderItems.value.map((item: any) => ({
+      name: item.item_name ?? '',
+      size: item.size ?? '-',
+      qty: String(item.quantity ?? ''),
+      price: String(item.unit_price ?? ''),
+      total: String(item.total_price ?? ''),
+    }))
+
+    const totalRows = uniformItems.length || 8
+
+    // หัวตาราง
+    doc.setFillColor(37, 99, 235)
+    doc.rect(margin, y, contentW, tableRowH, 'F')
+    setFont('bold', 11, '#ffffff')
+    let cx = margin
+    headers.forEach((h, i) => {
+      doc.text(h, cx + colWidths[i] / 2, y + 6.5, { align: 'center' })
+      cx += colWidths[i]
+    })
+    y += tableRowH
+
+    // แถวข้อมูลว่าง
+    for (let r = 0; r < totalRows; r++) {
+      // ✅ แก้ไข: ternary ที่ถูกต้อง
+      const isEven = r % 2 === 0
+      doc.setFillColor(isEven ? 255 : 245, isEven ? 255 : 249, isEven ? 255 : 255)
+      doc.rect(margin, y, contentW, tableRowH, 'F')
+      doc.setDrawColor(209, 213, 219)
+      doc.setLineWidth(0.2)
+      doc.rect(margin, y, contentW, tableRowH, 'S')
+
+      // เลขลำดับ + เส้นแบ่งคอลัมน์
+      cx = margin
+      const item = uniformItems[r] ?? { name: '', size: '', qty: '', price: '', total: '' }
+      colWidths.forEach((w, i) => {
+        if (i > 0) doc.line(cx, y, cx, y + tableRowH)
+        setFont('normal', 11, '#374151')
+        if (i === 0) doc.text(`${r + 1}`, cx + w / 2, y + 6.2, { align: 'center' })
+        else if (i === 1) doc.text(item.name, cx + 2, y + 6.2)
+        else if (i === 2) doc.text(item.size, cx + w / 2, y + 6.2, { align: 'center' })
+        else if (i === 3) doc.text(item.qty, cx + w / 2, y + 6.2, { align: 'center' })
+        else if (i === 4) doc.text(item.price, cx + w - 2, y + 6.2, { align: 'right' })
+        else if (i === 5) doc.text(item.total, cx + w - 2, y + 6.2, { align: 'right' })
+        cx += w
+      })
+      y += tableRowH
+    }
+
+    // แถวรวมทั้งสิ้น
+    doc.setFillColor(239, 246, 255)
+    doc.rect(margin, y, contentW, tableRowH, 'F')
+    doc.setDrawColor(147, 197, 253)
+    doc.rect(margin, y, contentW, tableRowH, 'S')
+    // เส้นแบ่งช่องรวม
+    const lastColX = margin + colWidths.slice(0, 5).reduce((a, b) => a + b, 0)  // ✅ เพิ่ม
+    const grandTotal = uniformItems.reduce((sum, item) => {
+      return sum + (Number(item.total) || 0)
+    }, 0)
+
+    setFont('bold', 12, '#1e40af')
+    doc.text('รวมทั้งสิ้น', lastColX - 3, y + 6.2, { align: 'right' })
+    doc.text(grandTotal.toLocaleString(), margin + contentW - 2, y + 6.2, { align: 'right' })
+    y += tableRowH + 10
+
+    // ── ลายเซ็น ──────────────────────────────────────────────────
+    const sigW = (contentW - 10) / 2
+    const drawSig = (x: number, label: string) => {
+      doc.setDrawColor(156, 163, 175)
+      doc.setLineWidth(0.3)
+      doc.line(x + 10, y + 16, x + sigW - 10, y + 16)
+      setFont('normal', 11, '#374151')
+      doc.text(label, x + sigW / 2, y + 22, { align: 'center' })
+      doc.text('วันที่ ......../......../..........', x + sigW / 2, y + 29, { align: 'center' })
+    }
+    drawSig(margin, 'ลายมือชื่อผู้ปกครอง')
+    drawSig(margin + sigW + 10, 'ลายมือชื่อนักเรียน')
+    y += 35
+
+    // ── FOOTER ───────────────────────────────────────────────────
+    doc.setFillColor(243, 244, 246)
+    doc.rect(0, 282, pageW, 15, 'F')
+    doc.setDrawColor(209, 213, 219)
+    doc.setLineWidth(0.2)
+    doc.line(0, 282, pageW, 282)
+    setFont('normal', 9, '#9ca3af')
+    doc.text(`พิมพ์เมื่อ: ${now}`, margin, 289)
+    doc.text('วิทยาลัยเทคนิคเลย — เอกสารนี้ออกโดยระบบอัตโนมัติ', pageW / 2, 289, { align: 'center' })
+    doc.text('หน้า 1/1', pageW - margin, 289, { align: 'right' })
+
+    doc.save(`เอกสารมอบตัว-${fullName}.pdf`)
+
+  } catch (err) {
+    console.error(err)
+    showToast('error', 'สร้าง PDF ไม่สำเร็จ', 'กรุณาตรวจสอบไฟล์ font ที่ public/fonts/THSarabunNew.ttf')
+  }
 }
 
 const toast = ref({ show: false, type: 'success' as 'success' | 'error', title: '', message: '' })
