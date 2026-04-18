@@ -1,12 +1,10 @@
 import { Request, Response } from 'express'
 import pool from '../config/db'
 
-// เพิ่ม helper toUrl เหมือนใน applicationController.ts
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3001'
 const toUrl = (filePath: string | null) => {
   if (!filePath) return null
   const filename = filePath.replace(/\\/g, '/').split('/').pop()
-  return `${BASE_URL}/uploads/${filename}`
+  return `/uploads/${filename}`
 }
 
 export const getApplicants = async (_req: Request, res: Response) => {

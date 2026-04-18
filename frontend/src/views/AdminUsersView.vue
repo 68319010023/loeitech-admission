@@ -406,6 +406,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { apiService } from '@/utils/api'
+
+const API_BASE = (import.meta.env.VITE_API_URL as string)?.replace(/\/api$/, '') || 'http://localhost:13001'
+const resolveUrl = (path: string | null | undefined) => {
+  if (!path) return ''
+  if (path.startsWith('http')) return path
+  return `${API_BASE}${path}`
+}
 import {
   Download, CreditCard, ShoppingBag,
   Users, Search, Filter, ChevronDown, X, User,
@@ -502,7 +509,7 @@ const openDocModal = async (row: any) => {
 
 
 const currentDocUrl = computed(() =>
-  docModal.value.documents.find(d => d.doc_type === docModal.value.activeTab)?.file_url || ''
+  resolveUrl(docModal.value.documents.find(d => d.doc_type === docModal.value.activeTab)?.file_url)
 )
 
 // แปลง doc_type เป็นชื่อภาษาไทย
@@ -598,7 +605,7 @@ const currentData = computed(() =>
         อีเมล: a.email,
         สถานะ: a.status,
         วันที่สมัคร: new Date(a.created_at).toLocaleDateString('th-TH'),
-        _idFrontUrl: a.id_front_url || '',
+        _idFrontUrl: resolveUrl(a.id_front_url),
         _idBackUrl: a.id_back_url || '',
         _eduFrontUrl: a.edu_front_url || '',
       }
@@ -613,9 +620,9 @@ const currentData = computed(() =>
           : 'ยังไม่ชำระ',
         หลักฐานการชำระ_ใบเสร็จ: a.payment?.slip_name ?? '-',
         _isPaid: a.status === 'paid' || a.status === 'enrolled',
-        _idFrontUrl: a.id_front_url ?? '',
+        _idFrontUrl: resolveUrl(a.id_front_url),
         _slipUrl: a.payment?.slip_name
-          ? `http://localhost:3000/uploads/slips/${a.payment.slip_name}`
+          ? resolveUrl(`/uploads/slips/${a.payment.slip_name}`)
           : '',
       }
     }
@@ -627,7 +634,7 @@ const currentData = computed(() =>
       _idFrontUrl: a.id_front_url ?? '',
       _isPaid: a.status === 'paid' || a.status === 'enrolled',
       _slipUrl: a.payment?.slip_name
-        ? `http://localhost:3000/uploads/slips/${a.payment.slip_name}`
+        ? resolveUrl(`/uploads/slips/${a.payment.slip_name}`)
         : '',
     }
   })

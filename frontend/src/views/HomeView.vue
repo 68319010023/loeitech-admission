@@ -13,27 +13,27 @@
     <!-- Hero -->
     <div id="hero" class="rounded-2xl overflow-hidden relative"
       style="background: linear-gradient(135deg, rgba(20,184,166,0.9), rgba(101,163,13,0.9))">
-      <div class="px-10 py-12 relative z-10">
-        <div class="flex items-center gap-4 mb-6">
-          <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
-            <AcademicCapIcon class="w-9 h-9 text-white" />
+      <div class="px-6 py-8 md:px-10 md:py-12 relative z-10">
+        <div class="flex items-center gap-3 md:gap-4 mb-6">
+          <div class="w-12 h-12 md:w-16 md:h-16 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0">
+            <AcademicCapIcon class="w-7 h-7 md:w-9 md:h-9 text-white" />
           </div>
           <div>
-            <h1 class="text-2xl font-bold text-white">ระบบรับสมัครนักเรียนนักศึกษา</h1>
-            <p class="text-white/80 text-sm">วิทยาลัยเทคนิคเลย ประจำปีการศึกษา 2569</p>
+            <h1 class="text-lg md:text-2xl font-bold text-white">ระบบรับสมัครนักเรียนนักศึกษา</h1>
+            <p class="text-white/80 text-xs md:text-sm">วิทยาลัยเทคนิคเลย ประจำปีการศึกษา 2569</p>
           </div>
         </div>
         <p class="text-white/90 text-sm leading-relaxed mb-8 max-w-xl">
           สมัครเรียนออนไลน์ได้ง่าย สะดวก รวดเร็ว ไม่ต้องเดินทางมาที่วิทยาลัย
           รองรับทั้งหลักสูตร ปวช. และ ปวส. หลากหลายสาขาวิชา
         </p>
-        <div class="flex items-center gap-3">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
           <RouterLink to="/register"
-            class="inline-flex items-center gap-2 px-6 py-3 bg-white text-emerald-600 rounded-xl font-medium text-sm hover:bg-emerald-50 transition-all shadow-sm">
+            class="inline-flex items-center gap-2 px-5 py-2.5 md:px-6 md:py-3 bg-white text-emerald-600 rounded-xl font-medium text-sm hover:bg-emerald-50 transition-all shadow-sm">
             <PencilSquareIcon class="w-4 h-4" /> สมัครเรียนเลย
           </RouterLink>
           <RouterLink to="/check-status"
-            class="inline-flex items-center gap-2 px-6 py-3 bg-white/20 text-white rounded-xl font-medium text-sm hover:bg-white/30 transition-all">
+            class="inline-flex items-center gap-2 px-5 py-2.5 md:px-6 md:py-3 bg-white/20 text-white rounded-xl font-medium text-sm hover:bg-white/30 transition-all">
             <MagnifyingGlassIcon class="w-4 h-4" /> ตรวจสอบสถานะ
           </RouterLink>
         </div>
@@ -48,7 +48,7 @@
         <ListBulletIcon class="w-5 h-5 text-emerald-500" /> ขั้นตอนการสมัครเรียน
       </h2>
       <div class="bg-white rounded-2xl shadow-sm p-6">
-        <div class="grid grid-cols-2 gap-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
           <div>
             <p class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-4">ขั้นตอน</p>
             <div class="flex flex-col">
@@ -102,18 +102,17 @@
     <!-- สถิติการรับสมัคร -->
     <div id="stats">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-3xl font-semibold text-gray-700 flex items-center gap-2">
-          <ChartBarIcon class=" w-7 h-7 text-emerald-500" /> สถิติการรับสมัครนักเรียน นักศึกษา ปีการศึกษา 2569
+        <h2 class="text-base md:text-2xl font-semibold text-gray-700 flex items-center gap-2">
+          <ChartBarIcon class="w-5 h-5 md:w-7 md:h-7 text-emerald-500 flex-shrink-0" /> สถิติการรับสมัครนักเรียน นักศึกษา ปีการศึกษา 2569
         </h2>
       </div>
-      <div class="flex items-center gap-3">
-        <!-- Loading indicator -->
+      <div class="flex flex-wrap items-center gap-2 mb-1">
         <span v-if="isLoading" class="text-xs text-gray-400 flex items-center gap-1">
           <ArrowPathIcon class="w-3 h-3 animate-spin" /> กำลังโหลด...
         </span>
-        <div class="flex gap-2 mb-4">
+        <div class="flex flex-wrap gap-2 mb-3">
           <button v-for="f in filters" :key="f.id" @click="activeFilter = f.id"
-            class="px-4 py-1.5 rounded-xl text-xs font-medium transition-all border" :class="activeFilter === f.id
+            class="px-3 py-1.5 rounded-xl text-xs font-medium transition-all border" :class="activeFilter === f.id
               ? 'bg-emerald-500 text-white border-emerald-500'
               : 'bg-white text-gray-500 border-gray-200 hover:border-emerald-300'">
             {{ f.label }}

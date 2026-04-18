@@ -268,10 +268,10 @@
             <div class="flex items-center gap-3">
               <!-- Thumbnail รูปภาพ -->
               <div v-if="exp.exp_img"
-                @click="viewingImage = exp.exp_img"
+                @click="viewingImage = resolveImgUrl(exp.exp_img)"
                 class="w-12 h-12 rounded-xl overflow-hidden border border-gray-200 cursor-pointer flex-shrink-0 hover:ring-2 hover:ring-emerald-400 hover:scale-105 transition-all shadow-sm"
                 title="คลิกเพื่อดูรูปภาพ">
-                <img :src="exp.exp_img" class="w-full h-full object-cover" />
+                <img :src="resolveImgUrl(exp.exp_img)" class="w-full h-full object-cover" />
               </div>
               <div v-else
                 class="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center flex-shrink-0 border border-gray-200">
@@ -289,7 +289,7 @@
                 </p>
                 <!-- ป้ายบอกว่ามีรูป ถ้ามี exp_img -->
                 <p v-if="exp.exp_img" class="text-xs text-emerald-500 mt-0.5 flex items-center gap-1 cursor-pointer hover:text-emerald-600"
-                  @click="viewingImage = exp.exp_img">
+                  @click="viewingImage = resolveImgUrl(exp.exp_img)">
                   <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -479,6 +479,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { applicationService } from '../services/applicationService'
 import { exportPaymentPDF } from '../utils/exportPaymentPDF'
 import ConfirmToast from '../components/ConfirmToast.vue'
@@ -495,6 +496,14 @@ const isLoading = ref(false)
 const gpaWarning = ref(false)
 const yearWarning = ref(false)
 const viewingImage = ref('')
+
+const router = useRouter()
+const API_BASE = (import.meta.env.VITE_API_URL as string) || 'http://localhost:13001/api'
+function resolveImgUrl(path: string | null | undefined): string {
+  if (!path) return ''
+  if (path.startsWith('http')) return path
+  return `${API_BASE}${path}`
+}
 
 // ข้อมูลจาก API
 const curriculums = ref<any[]>([])
@@ -796,6 +805,7 @@ async function onConfirmed() {
       branchName: selectedPlan.value?.div_name || '-',
       totalPrice: total_amount,
     })
+    router.push('/check-status')
   } catch (err: any) {
     alert(err.response?.data?.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง')
   } finally {
