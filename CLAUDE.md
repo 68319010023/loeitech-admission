@@ -22,10 +22,14 @@ LoeiTech Admission System — a monorepo web application for managing student ad
 - `/health` — health check
 - `/applications` — public: submit application, check status, get stats, get curriculums/divisions/expenses/admission-plan
 - `/enrollments` — enrollment confirmation and status
-- `/admin` — protected: CRUD for users, curriculums, divisions, admission plans, expenses
+- `/admin` — CRUD for users, curriculums, divisions, admission plans, expenses, applicants; login at `/api/admin/login`
+- `/auth` — router stub (currently empty)
+
+> **Note:** Admin routes currently have **no JWT middleware guard** — the `backend/src/middleware/auth.ts` file exists but is not applied to any router.
 
 **Database schema** (`database/schema.sql`):
 - `applicants` — main application records (UUID PK, 13-digit Thai ID card, status enum: `pending_payment/paid/enrolled`)
+- `documents` — uploaded file metadata linked to `applicants` via `app_id` (fields: `file_name`, `doc_type`, `uploaded_at`)
 - `users` — staff/admin accounts (role: `admin/staff`)
 - `curriculums` — educational programs (ปวช./ปวส.)
 - `divisions` — branches per curriculum
@@ -81,12 +85,27 @@ docker-compose down
 | Frontend | 13000 | 5174 | 5173 |
 | Backend | 13001 | 3002 | 3001 |
 
+## Frontend HTTP Clients
+
+Two HTTP client files coexist — prefer `httpClient.ts` for new code:
+- `frontend/src/services/httpClient.ts` — Axios instance with `VITE_API_URL` base URL
+- `frontend/src/services/api.ts` — older fetch-based wrapper with the same base URL
+
+The auth store (`stores/auth.ts`) only persists an `isAuthenticated` boolean in localStorage. The JWT token returned by `/api/admin/login` must be stored separately (e.g., in `localStorage`) and sent as `Authorization: Bearer <token>` for protected endpoints.
+
+## Frontend Routes
+
+Public routes: `/`, `/register`, `/check-status`, `/enrollment`, `/enrollment/:idCard`, `/guide`
+Admin routes (no client-side guards): `/login`, `/admin/users`, `/admin/manage-users`, `/admin/settings`, `/admin/expenses`, `/admin/onsite-enrollment`
+
 ## File Uploads
 
 Multer middleware (`backend/src/middleware/upload.ts`) handles:
 - Fields: `id_front`, `id_back`, `edu_front`, `edu_back`
 - Formats: JPG, PNG, PDF — max 10MB per file
 - Storage: local disk in `backend/uploads/`
+
+The `/uploads` route in `backend/src/index.ts` has fallback logic that queries the `documents` table to resolve mismatched filenames (Thai characters cause encoding issues).
 
 ## Response Format
 
@@ -107,5 +126,5 @@ See `CONFIG_GUIDE.md` for full environment matrix and required GitHub secrets.
 
 Schema changes are applied manually via SQL files in `database/`. There is no migration framework — run files directly against PostgreSQL in order:
 1. `schema.sql` — full schema setup
-2. `add_payment_type.sql` — add payment_type enum
-3. `fix_personal_id.sql` — personal ID column fix
+2. `add_payment_type.sql` — add `payment_type` enum to `expense_detail`
+3. `add_prev_branch_field.sql` — add `prev_branch` (int, nullable) to `applicants` for PVC graduates
