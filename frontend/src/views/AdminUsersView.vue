@@ -407,7 +407,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { apiService } from '@/utils/api'
 
-const API_BASE = (import.meta.env.VITE_API_URL as string)?.replace(/\/api$/, '') || 'http://localhost:13001'
+const API_BASE = (import.meta.env.VITE_API_URL as string)?.replace(/\/api$/, '') || 'http://localhost:3001'
 const resolveUrl = (path: string | null | undefined) => {
   if (!path) return ''
   if (path.startsWith('http')) return path

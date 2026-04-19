@@ -444,34 +444,30 @@
     </div>
 
     <!-- View Image Modal -->
-    <Teleport to="body">
-      <transition name="modal">
-        <div v-if="viewingImage" class="fixed inset-0 z-[9999] flex items-center justify-center px-4"
-          @click="viewingImage = ''">
-          <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" />
-          <div class="relative z-[10000] max-w-lg w-full" @click.stop>
-            <!-- ปุ่มปิด -->
-            <button @click="viewingImage = ''"
-              class="absolute -top-12 right-0 w-9 h-9 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-all">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <!-- รูปภาพ -->
-            <div class="bg-white rounded-2xl overflow-hidden shadow-2xl">
-              <img :src="viewingImage" class="w-full object-contain max-h-[70vh]" />
-              <div class="px-4 py-3 bg-gray-50 flex items-center justify-between">
-                <p class="text-xs text-gray-400">คลิกนอกรูปเพื่อปิด</p>
-                <button @click="viewingImage = ''"
-                  class="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5 bg-white border border-gray-200 rounded-lg transition-colors">
-                  ปิด
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </transition>
-    </Teleport>
+  <Teleport to="body">
+  <transition name="modal">
+    <div v-if="viewingImage" class="fixed inset-0 z-[9999] flex items-center justify-center px-4">
+      <div class="fixed inset-0 bg-black/70" @click="viewingImage = ''"></div>
+      <div class="relative z-[10000] w-full max-w-md">
+        
+        <!-- ปุ่มปิด -->
+        <button @click="viewingImage = ''"
+          class="absolute -top-4 -right-4 z-10 w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-125 hover:bg-red-500 hover:text-white text-gray-600">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        <!-- รูปภาพ -->
+        <img
+          :src="viewingImage"
+          alt="รูปภาพ"
+          class="w-full max-h-[75vh] object-contain rounded-xl shadow-2xl"
+        />
+      </div>
+    </div>
+  </transition>
+</Teleport>
 
     <ConfirmToast :show="showConfirm" @confirm="onConfirmed" @cancel="showConfirm = false" />
   </div>
@@ -498,13 +494,16 @@ const yearWarning = ref(false)
 const viewingImage = ref('')
 
 const router = useRouter()
-const API_BASE = (import.meta.env.VITE_API_URL as string) || 'http://localhost:13001/api'
+const API_BASE = (import.meta.env.VITE_API_URL as string) || 'http://localhost:3001/api'
+
 function resolveImgUrl(path: string | null | undefined): string {
   if (!path) return ''
   if (path.startsWith('http')) return path
-  return `${API_BASE}${path}`
-}
 
+  const base = API_BASE.replace('/api', '')
+   console.log('resolveImgUrl base:', base, 'path:', path)
+  return `${base}${path}`
+}
 // ข้อมูลจาก API
 const curriculums = ref<any[]>([])
 const admissionPlans = ref<any[]>([])
