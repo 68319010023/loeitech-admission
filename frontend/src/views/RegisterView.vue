@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="max-w-4xl mx-auto">
 
     <!-- Stepper -->
@@ -331,7 +331,7 @@
                   ดูตัวอย่างสินค้า
                 </p>
               </div>
-            </div>
+            </div> 
 
             <!-- บังคับจ่าย: แสดงแค่ราคา -->
             <div v-if="exp.payment_type === 'mandatory'" class="text-sm font-semibold text-gray-700">
