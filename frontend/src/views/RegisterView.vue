@@ -33,14 +33,38 @@
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="text-sm text-gray-600 mb-1 block">ด้านหน้า *</label>
-                <label class="upload-box"
+                <label class="upload-box relative"
                   :class="form.idFront ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'">
                   <input type="file" accept="image/*" class="hidden" @change="handleUpload('idFront', $event)" />
                   <div v-if="!form.idFrontPreview" class="flex flex-col items-center gap-2 text-gray-400">
                     <PhotoIcon class="w-8 h-8" /><span class="text-xs">คลิกเพื่ออัพโหลด</span>
                   </div>
                   <img v-else :src="form.idFrontPreview" class="w-full h-full object-contain rounded-xl" />
+                  <!-- OCR loading overlay -->
+                  <div v-if="ocrStatus === 'loading'"
+                    class="absolute inset-0 bg-white/75 rounded-xl flex flex-col items-center justify-center gap-2">
+                    <svg class="w-6 h-6 animate-spin text-emerald-500" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    </svg>
+                    <span class="text-xs text-emerald-600 font-medium">กำลังอ่านบัตร...</span>
+                  </div>
                 </label>
+                <!-- OCR status badge -->
+                <div v-if="ocrStatus !== 'idle'" class="mt-1.5 flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg"
+                  :class="{
+                    'bg-emerald-50 text-emerald-600': ocrStatus === 'success',
+                    'bg-red-50 text-red-500': ocrStatus === 'error',
+                    'bg-gray-50 text-gray-400': ocrStatus === 'loading',
+                  }">
+                  <svg v-if="ocrStatus === 'success'" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  <svg v-else-if="ocrStatus === 'error'" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                  </svg>
+                  {{ ocrMessage }}
+                </div>
               </div>
               <div>
                 <label class="text-sm text-gray-600 mb-1 block">ด้านหลัง *</label>
@@ -483,6 +507,7 @@ import { useRouter } from 'vue-router'
 import { applicationService } from '../services/applicationService'
 import { exportPaymentPDF } from '../utils/exportPaymentPDF'
 import ConfirmToast from '../components/ConfirmToast.vue'
+import Tesseract from 'tesseract.js'
 import {
   UserIcon, CheckIcon, PhotoIcon, PrinterIcon, AcademicCapIcon,
   BuildingLibraryIcon, ShoppingBagIcon,
@@ -496,6 +521,8 @@ const isLoading = ref(false)
 const gpaWarning = ref(false)
 const yearWarning = ref(false)
 const viewingImage = ref('')
+const ocrStatus = ref<'idle' | 'loading' | 'success' | 'error'>('idle')
+const ocrMessage = ref('')
 
 const router = useRouter()
 const API_BASE = (import.meta.env.VITE_API_URL as string) || 'http://localhost:13001/api'
@@ -702,12 +729,62 @@ function handleUpload(field: 'idFront' | 'idBack' | 'eduFront' | 'eduBack', even
   const reader = new FileReader()
   reader.onload = (e) => {
     const result = e.target?.result as string
-    if (field === 'idFront') form.idFrontPreview = result
+    if (field === 'idFront') { form.idFrontPreview = result; runIdCardOCR(file) }
     else if (field === 'idBack') form.idBackPreview = result
     else if (field === 'eduFront') form.eduFrontPreview = result
     else if (field === 'eduBack') form.eduBackPreview = result
   }
   reader.readAsDataURL(file)
+}
+
+async function runIdCardOCR(file: File) {
+  ocrStatus.value = 'loading'
+  ocrMessage.value = 'กำลังอ่านข้อมูลจากบัตร...'
+  try {
+    const { data: { text } } = await Tesseract.recognize(file, 'tha+eng', { logger: () => {} })
+    fillFromOCR(text)
+    ocrStatus.value = 'success'
+    ocrMessage.value = 'อ่านข้อมูลสำเร็จ กรุณาตรวจสอบความถูกต้อง'
+  } catch {
+    ocrStatus.value = 'error'
+    ocrMessage.value = 'อ่านข้อมูลไม่สำเร็จ กรุณากรอกข้อมูลด้วยตนเอง'
+  }
+}
+
+function fillFromOCR(text: string) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+
+  // ID number — 13 digits possibly separated by spaces/dashes
+  if (!form.idCard) {
+    const idMatch = text.replace(/[\s\-]/g, '').match(/\d{13}/)
+    if (idMatch) {
+      form.idCard = idMatch[0]
+      form.idType = 'thai_id'
+    }
+  }
+
+  // Prefix + Thai name
+  if (!form.prefix) {
+    const prefixOrder = ['นางสาว', 'เด็กหญิง', 'เด็กชาย', 'นาง', 'นาย']
+    for (const line of lines) {
+      for (const prefix of prefixOrder) {
+        if (line.startsWith(prefix)) {
+          form.prefix = prefix
+          const namePart = line.slice(prefix.length).trim().replace(/[^\u0E00-\u0E7F\s]/g, '').trim()
+          if (namePart && !form.fullName) form.fullName = namePart
+          break
+        }
+      }
+      if (form.prefix) break
+    }
+  }
+
+  // Address — lines containing address keywords
+  if (!form.address) {
+    const addrKeywords = ['บ้านเลขที่', 'หมู่ที่', 'หมู่', 'ถนน', 'ตำบล', 'แขวง', 'อำเภอ', 'เขต', 'จังหวัด']
+    const addrLines = lines.filter(l => addrKeywords.some(kw => l.includes(kw)))
+    if (addrLines.length > 0) form.address = addrLines.join(' ')
+  }
 }
 
 function validateStep() {
