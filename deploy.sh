@@ -24,6 +24,9 @@ JWT_SECRET=$JWT_SECRET
 FRONTEND_URL=$FRONTEND_URL
 EOF
 
+# Ensure uploads directory exists on the host
+mkdir -p uploads
+
 # Pull the latest images
 docker compose --env-file .env.$STACK_NAME pull
 
