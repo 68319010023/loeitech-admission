@@ -11,6 +11,7 @@ import authRoutes from './routes/auth'
 import applicationRoutes from './routes/applications'
 import adminRoutes from './routes/admin'
 import enrollmentRoutes from './routes/enrollment'
+import { requireAuth } from './middleware/auth'
 
 dotenv.config()
 
@@ -46,8 +47,7 @@ app.use('/api/applications', applicationRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/enrollments', enrollmentRoutes) 
 
-// ให้ browser เข้าถึงรูปได้
-app.use('/uploads', async (req, res, next) => {
+app.use('/uploads', requireAuth, async (req, res, next) => {
   try {
     const decodedPath = decodeURIComponent(req.path)
     const fullPath = path.join(__dirname, '../uploads', decodedPath)

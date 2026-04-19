@@ -12,8 +12,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install --only=production
 COPY --from=build-stage /app/dist ./dist
-# If you have static assets or uploads handled outside of Docker volumes
-# COPY --from=build-stage /app/uploads ./uploads 
+RUN mkdir -p /app/uploads
 
 EXPOSE 3001
 CMD ["node", "dist/index.js"]

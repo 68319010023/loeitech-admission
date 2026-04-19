@@ -12,7 +12,7 @@ services:
     ports:
       - "${BACKEND_PORT:-13001}:3001"
     volumes:
-      - backend_uploads:/app/uploads
+      - ./uploads:/app/uploads
 
   frontend:
     image: ${REGISTRY_URL}/loeitech-frontend:${IMAGE_TAG:-latest}
@@ -21,6 +21,3 @@ services:
       - "${FRONTEND_PORT:-13000}:80"
     depends_on:
       - backend
-
-volumes:
-  backend_uploads:

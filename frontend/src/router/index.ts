@@ -8,16 +8,28 @@ const router = createRouter({
     { path: '/check-status', component: () => import('../views/CheckStatusView.vue') },
     { path: '/enrollment', component: () => import('../views/StatusView.vue') },
     { path: '/enrollment/:idCard', component: () => import('../views/SuccessView.vue') },
-    { path: '/check-status', component: () => import('../views/CheckStatusView.vue') },
     { path: '/login', component: () => import('../views/LoginView.vue') },
-
-    { path: '/admin/users', component: () => import('../views/AdminUsersView.vue') },
-    { path: '/admin/manage-users', component: () => import('../views/AdminManageUsersView.vue') },
-    { path: '/admin/settings', component: () => import('../views/AdminSettingsView.vue') },
-    { path: '/admin/expenses', component: () => import('../views/AdminExpensesView.vue') },
-    { path: '/admin/onsite-enrollment', component: () => import('../views/OnsiteEnrollmentView.vue') },
     { path: '/guide', component: () => import('../views/GuideView.vue') },
+
+    { path: '/admin/users', component: () => import('../views/AdminUsersView.vue'), meta: { requiresAuth: true } },
+    { path: '/admin/manage-users', component: () => import('../views/AdminManageUsersView.vue'), meta: { requiresAuth: true } },
+    { path: '/admin/settings', component: () => import('../views/AdminSettingsView.vue'), meta: { requiresAuth: true } },
+    { path: '/admin/expenses', component: () => import('../views/AdminExpensesView.vue'), meta: { requiresAuth: true } },
+    { path: '/admin/onsite-enrollment', component: () => import('../views/OnsiteEnrollmentView.vue'), meta: { requiresAuth: true } },
   ],
+})
+
+router.beforeEach((to, _from, next) => {
+  if (!to.meta.requiresAuth) return next()
+
+  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true'
+  const token = localStorage.getItem('auth_token')
+
+  if (!isAuthenticated || !token) {
+    return next({ path: '/login', query: { redirect: to.fullPath } })
+  }
+
+  next()
 })
 
 export default router

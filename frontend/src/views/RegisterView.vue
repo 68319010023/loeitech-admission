@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="max-w-4xl mx-auto">
 
     <!-- Stepper -->
@@ -33,14 +33,38 @@
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="text-sm text-gray-600 mb-1 block">ด้านหน้า *</label>
-                <label class="upload-box"
+                <label class="upload-box relative"
                   :class="form.idFront ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'">
                   <input type="file" accept="image/*" class="hidden" @change="handleUpload('idFront', $event)" />
                   <div v-if="!form.idFrontPreview" class="flex flex-col items-center gap-2 text-gray-400">
                     <PhotoIcon class="w-8 h-8" /><span class="text-xs">คลิกเพื่ออัพโหลด</span>
                   </div>
                   <img v-else :src="form.idFrontPreview" class="w-full h-full object-contain rounded-xl" />
+                  <!-- OCR loading overlay -->
+                  <div v-if="ocrStatus === 'loading'"
+                    class="absolute inset-0 bg-white/75 rounded-xl flex flex-col items-center justify-center gap-2">
+                    <svg class="w-6 h-6 animate-spin text-emerald-500" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    </svg>
+                    <span class="text-xs text-emerald-600 font-medium">กำลังอ่านบัตร...</span>
+                  </div>
                 </label>
+                <!-- OCR status badge -->
+                <div v-if="ocrStatus !== 'idle'" class="mt-1.5 flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg"
+                  :class="{
+                    'bg-emerald-50 text-emerald-600': ocrStatus === 'success',
+                    'bg-red-50 text-red-500': ocrStatus === 'error',
+                    'bg-gray-50 text-gray-400': ocrStatus === 'loading',
+                  }">
+                  <svg v-if="ocrStatus === 'success'" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  <svg v-else-if="ocrStatus === 'error'" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                  </svg>
+                  {{ ocrMessage }}
+                </div>
               </div>
               <div>
                 <label class="text-sm text-gray-600 mb-1 block">ด้านหลัง *</label>
@@ -54,24 +78,25 @@
               </div>
             </div>
           </div>
+          <!-- เลขบัตรประจำตัวประชาชน — แสดงเสมอ (OCR fills this) -->
+          <div class="col-span-2">
+            <label class="text-sm text-gray-600 mb-1 block">เลขประจำตัวประชาชน *</label>
+            <input v-if="form.idType !== 'passport' && form.idType !== 'g_code' && form.idType !== 'other'"
+              v-model="form.idCard" type="text" inputmode="numeric"
+              placeholder="เลขประจำตัวประชาชน 13 หลัก" maxlength="13" class="input-field" @keydown="blockNonDigit" />
+            <input v-else v-model="form.idCard" type="text" :placeholder="idTypePlaceholder" maxlength="20"
+              class="input-field" @input="form.idCard = form.idCard.toUpperCase()" />
+            <p class="text-xs text-gray-400 mt-1">{{ idTypeHint || 'กรอกตัวเลข 13 หลัก ไม่มีขีด' }}</p>
+          </div>
           <div class="col-span-2">
             <label class="text-sm text-gray-600 mb-1 block">ประเภทเอกสารแสดงตน *</label>
             <select v-model="form.idType" class="input-field" @change="form.idCard = ''">
-              <option value="">เลือกประเภทเอกสาร</option>
               <option value="thai_id">บัตรประจำตัวประชาชนไทย</option>
               <option value="alien_id">บัตรประจำตัวคนต่างด้าว</option>
               <option value="passport">หนังสือเดินทาง (Passport)</option>
               <option value="g_code">G-Code (บุคคลไม่มีสัญชาติไทย)</option>
               <option value="other">เอกสารราชการอื่น ๆ</option>
             </select>
-          </div>
-          <div v-if="form.idType" class="col-span-2">
-            <label class="text-sm text-gray-600 mb-1 block">{{ idTypeLabel }} *</label>
-            <input v-if="form.idType === 'thai_id'" v-model="form.idCard" type="text" inputmode="numeric"
-              :placeholder="idTypePlaceholder" maxlength="13" class="input-field" @keydown="blockNonDigit" />
-            <input v-else v-model="form.idCard" type="text" :placeholder="idTypePlaceholder" maxlength="20"
-              class="input-field" @input="form.idCard = form.idCard.toUpperCase()" />
-            <p class="text-xs text-gray-400 mt-1">{{ idTypeHint }}</p>
           </div>
           <div>
             <label class="text-sm text-gray-600 mb-1 block">คำนำหน้าชื่อ *</label>
@@ -314,7 +339,7 @@
                 <option v-for="s in exp.exp_sizes" :key="s" :value="s">{{ s }}</option>
               </select>
               <input v-if="form.expenseOrders[exp.exp_id]?.size?.startsWith('พิเศษ')"
-                v-model="form.expenseOrders[exp.exp_id].customSize"
+                v-model="form.expenseOrders[exp.exp_id]!.customSize"
                 type="text" placeholder="ระบุขนาดเป็นนิ้ว เช่น 48"
                 class="input-field !w-32 !py-1.5 text-xs" />
               <div class="flex items-center gap-2">
@@ -483,6 +508,7 @@ import { useRouter } from 'vue-router'
 import { applicationService } from '../services/applicationService'
 import { exportPaymentPDF } from '../utils/exportPaymentPDF'
 import ConfirmToast from '../components/ConfirmToast.vue'
+
 import {
   UserIcon, CheckIcon, PhotoIcon, PrinterIcon, AcademicCapIcon,
   BuildingLibraryIcon, ShoppingBagIcon,
@@ -496,6 +522,8 @@ const isLoading = ref(false)
 const gpaWarning = ref(false)
 const yearWarning = ref(false)
 const viewingImage = ref('')
+const ocrStatus = ref<'idle' | 'loading' | 'success' | 'error'>('idle')
+const ocrMessage = ref('')
 
 const router = useRouter()
 const API_BASE = (import.meta.env.VITE_API_URL as string) || 'http://localhost:13001/api'
@@ -528,7 +556,7 @@ const docTypes = [
 const form = reactive({
   prefix: '', fullName: '', idCard: '', address: '', phone: '', email: '',
   idFront: null as File | null, idBack: null as File | null,
-  idFrontPreview: '', idBackPreview: '', idType: '',
+  idFrontPreview: '', idBackPreview: '', idType: 'thai_id',
   prevSchool: '', prevLevel: '', prevYear: '', gpa: '', prevBranch: '',
   docType: '',
   eduFront: null as File | null, eduFrontPreview: '',
@@ -702,12 +730,83 @@ function handleUpload(field: 'idFront' | 'idBack' | 'eduFront' | 'eduBack', even
   const reader = new FileReader()
   reader.onload = (e) => {
     const result = e.target?.result as string
-    if (field === 'idFront') form.idFrontPreview = result
+    if (field === 'idFront') { form.idFrontPreview = result; runIdCardOCR(file) }
     else if (field === 'idBack') form.idBackPreview = result
     else if (field === 'eduFront') form.eduFrontPreview = result
     else if (field === 'eduBack') form.eduBackPreview = result
   }
   reader.readAsDataURL(file)
+}
+
+// Province → postal code map (append if not already present)
+const PROVINCE_POSTAL: [string, string][] = [
+  ['กรุงเทพมหานคร', '10100'], ['กรุงเทพ', '10100'],
+  ['เชียงใหม่', '50000'], ['เชียงราย', '57000'],
+  ['ลำปาง', '52000'], ['ลำพูน', '51000'], ['แพร่', '54000'], ['น่าน', '55000'],
+  ['พะเยา', '56000'], ['แม่ฮ่องสอน', '58000'],
+  ['ขอนแก่น', '40000'], ['อุดรธานี', '41000'], ['หนองคาย', '43000'],
+  ['นครพนม', '48000'], ['สกลนคร', '47000'], ['มุกดาหาร', '49000'],
+  ['หนองบัวลำภู', '39000'], ['เลย', '42000'], ['กาฬสินธุ์', '46000'],
+  ['มหาสารคาม', '44000'], ['ร้อยเอ็ด', '45000'], ['ยโสธร', '35000'],
+  ['อุบลราชธานี', '34000'], ['ศรีสะเกษ', '33000'], ['สุรินทร์', '32000'],
+  ['บุรีรัมย์', '31000'], ['นครราชสีมา', '30000'], ['ชัยภูมิ', '36000'],
+  ['อำนาจเจริญ', '37000'],
+  ['นครสวรรค์', '60000'], ['อุทัยธานี', '61000'], ['กำแพงเพชร', '62000'],
+  ['พิษณุโลก', '65000'], ['เพชรบูรณ์', '67000'], ['สุโขทัย', '64000'],
+  ['พิจิตร', '66000'], ['ตาก', '63000'],
+  ['สระบุรี', '18000'], ['ลพบุรี', '15000'], ['สิงห์บุรี', '16000'],
+  ['ชัยนาท', '17000'], ['อ่างทอง', '14000'], ['พระนครศรีอยุธยา', '13000'],
+  ['ปทุมธานี', '12000'], ['นนทบุรี', '11000'], ['สมุทรปราการ', '10270'],
+  ['นครปฐม', '73000'], ['สมุทรสาคร', '74000'], ['สมุทรสงคราม', '75000'],
+  ['ราชบุรี', '70000'], ['กาญจนบุรี', '71000'], ['สุพรรณบุรี', '72000'],
+  ['เพชรบุรี', '76000'], ['ประจวบคีรีขันธ์', '77000'],
+  ['ชลบุรี', '20000'], ['ระยอง', '21000'], ['จันทบุรี', '22000'],
+  ['ตราด', '23000'], ['ฉะเชิงเทรา', '24000'], ['ปราจีนบุรี', '25000'],
+  ['สระแก้ว', '27000'], ['นครนายก', '26000'],
+  ['ชุมพร', '86000'], ['ระนอง', '85000'], ['สุราษฎร์ธานี', '84000'],
+  ['นครศรีธรรมราช', '80000'], ['พัทลุง', '93000'], ['สงขลา', '90000'],
+  ['ตรัง', '92000'], ['กระบี่', '81000'], ['พังงา', '82000'],
+  ['ภูเก็ต', '83000'], ['สตูล', '91000'], ['ปัตตานี', '94000'],
+  ['ยะลา', '95000'], ['นราธิวาส', '96000'],
+]
+
+function withPostalCode(address: string): string {
+  if (/\d{5}/.test(address)) return address // already has postal code
+  for (const [province, postal] of PROVINCE_POSTAL) {
+    if (address.includes(province)) return address.trim() + ' ' + postal
+  }
+  return address
+}
+
+async function runIdCardOCR(file: File) {
+  ocrStatus.value = 'loading'
+  ocrMessage.value = 'กำลังอ่านข้อมูลจากบัตร (AI)...'
+  try {
+    const res = await applicationService.ocrIdCard(file)
+    const { success, data, message } = res.data
+
+    if (!success || !data) {
+      ocrStatus.value = 'error'
+      ocrMessage.value = message || 'อ่านข้อมูลไม่สำเร็จ กรุณากรอกข้อมูลด้วยตนเอง'
+      return
+    }
+
+    if (data.id_number && !form.idCard) {
+      form.idCard = data.id_number
+      form.idType = 'thai_id'
+    }
+    if (data.prefix && !form.prefix) form.prefix = data.prefix
+    if (data.full_name && !form.fullName) form.fullName = data.full_name
+    if (data.address && !form.address) form.address = withPostalCode(data.address)
+
+    ocrStatus.value = 'success'
+    ocrMessage.value = data.confidence === 'high'
+      ? 'อ่านข้อมูลสำเร็จ (ความแม่นยำสูง)'
+      : 'อ่านข้อมูลสำเร็จ กรุณาตรวจสอบความถูกต้อง'
+  } catch (err: any) {
+    ocrStatus.value = 'error'
+    ocrMessage.value = err.response?.data?.message || 'อ่านข้อมูลไม่สำเร็จ กรุณากรอกข้อมูลด้วยตนเอง'
+  }
 }
 
 function validateStep() {
