@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="max-w-4xl mx-auto">
 
     <!-- Stepper -->
@@ -78,24 +78,25 @@
               </div>
             </div>
           </div>
+          <!-- เลขบัตรประจำตัวประชาชน — แสดงเสมอ (OCR fills this) -->
+          <div class="col-span-2">
+            <label class="text-sm text-gray-600 mb-1 block">เลขประจำตัวประชาชน *</label>
+            <input v-if="form.idType !== 'passport' && form.idType !== 'g_code' && form.idType !== 'other'"
+              v-model="form.idCard" type="text" inputmode="numeric"
+              placeholder="เลขประจำตัวประชาชน 13 หลัก" maxlength="13" class="input-field" @keydown="blockNonDigit" />
+            <input v-else v-model="form.idCard" type="text" :placeholder="idTypePlaceholder" maxlength="20"
+              class="input-field" @input="form.idCard = form.idCard.toUpperCase()" />
+            <p class="text-xs text-gray-400 mt-1">{{ idTypeHint || 'กรอกตัวเลข 13 หลัก ไม่มีขีด' }}</p>
+          </div>
           <div class="col-span-2">
             <label class="text-sm text-gray-600 mb-1 block">ประเภทเอกสารแสดงตน *</label>
             <select v-model="form.idType" class="input-field" @change="form.idCard = ''">
-              <option value="">เลือกประเภทเอกสาร</option>
               <option value="thai_id">บัตรประจำตัวประชาชนไทย</option>
               <option value="alien_id">บัตรประจำตัวคนต่างด้าว</option>
               <option value="passport">หนังสือเดินทาง (Passport)</option>
               <option value="g_code">G-Code (บุคคลไม่มีสัญชาติไทย)</option>
               <option value="other">เอกสารราชการอื่น ๆ</option>
             </select>
-          </div>
-          <div v-if="form.idType" class="col-span-2">
-            <label class="text-sm text-gray-600 mb-1 block">{{ idTypeLabel }} *</label>
-            <input v-if="form.idType === 'thai_id'" v-model="form.idCard" type="text" inputmode="numeric"
-              :placeholder="idTypePlaceholder" maxlength="13" class="input-field" @keydown="blockNonDigit" />
-            <input v-else v-model="form.idCard" type="text" :placeholder="idTypePlaceholder" maxlength="20"
-              class="input-field" @input="form.idCard = form.idCard.toUpperCase()" />
-            <p class="text-xs text-gray-400 mt-1">{{ idTypeHint }}</p>
           </div>
           <div>
             <label class="text-sm text-gray-600 mb-1 block">คำนำหน้าชื่อ *</label>
@@ -338,7 +339,7 @@
                 <option v-for="s in exp.exp_sizes" :key="s" :value="s">{{ s }}</option>
               </select>
               <input v-if="form.expenseOrders[exp.exp_id]?.size?.startsWith('พิเศษ')"
-                v-model="form.expenseOrders[exp.exp_id].customSize"
+                v-model="form.expenseOrders[exp.exp_id]!.customSize"
                 type="text" placeholder="ระบุขนาดเป็นนิ้ว เช่น 48"
                 class="input-field !w-32 !py-1.5 text-xs" />
               <div class="flex items-center gap-2">
@@ -507,7 +508,7 @@ import { useRouter } from 'vue-router'
 import { applicationService } from '../services/applicationService'
 import { exportPaymentPDF } from '../utils/exportPaymentPDF'
 import ConfirmToast from '../components/ConfirmToast.vue'
-import Tesseract from 'tesseract.js'
+
 import {
   UserIcon, CheckIcon, PhotoIcon, PrinterIcon, AcademicCapIcon,
   BuildingLibraryIcon, ShoppingBagIcon,
@@ -555,7 +556,7 @@ const docTypes = [
 const form = reactive({
   prefix: '', fullName: '', idCard: '', address: '', phone: '', email: '',
   idFront: null as File | null, idBack: null as File | null,
-  idFrontPreview: '', idBackPreview: '', idType: '',
+  idFrontPreview: '', idBackPreview: '', idType: 'thai_id',
   prevSchool: '', prevLevel: '', prevYear: '', gpa: '', prevBranch: '',
   docType: '',
   eduFront: null as File | null, eduFrontPreview: '',
@@ -737,53 +738,74 @@ function handleUpload(field: 'idFront' | 'idBack' | 'eduFront' | 'eduBack', even
   reader.readAsDataURL(file)
 }
 
-async function runIdCardOCR(file: File) {
-  ocrStatus.value = 'loading'
-  ocrMessage.value = 'กำลังอ่านข้อมูลจากบัตร...'
-  try {
-    const { data: { text } } = await Tesseract.recognize(file, 'tha+eng', { logger: () => {} })
-    fillFromOCR(text)
-    ocrStatus.value = 'success'
-    ocrMessage.value = 'อ่านข้อมูลสำเร็จ กรุณาตรวจสอบความถูกต้อง'
-  } catch {
-    ocrStatus.value = 'error'
-    ocrMessage.value = 'อ่านข้อมูลไม่สำเร็จ กรุณากรอกข้อมูลด้วยตนเอง'
+// Province → postal code map (append if not already present)
+const PROVINCE_POSTAL: [string, string][] = [
+  ['กรุงเทพมหานคร', '10100'], ['กรุงเทพ', '10100'],
+  ['เชียงใหม่', '50000'], ['เชียงราย', '57000'],
+  ['ลำปาง', '52000'], ['ลำพูน', '51000'], ['แพร่', '54000'], ['น่าน', '55000'],
+  ['พะเยา', '56000'], ['แม่ฮ่องสอน', '58000'],
+  ['ขอนแก่น', '40000'], ['อุดรธานี', '41000'], ['หนองคาย', '43000'],
+  ['นครพนม', '48000'], ['สกลนคร', '47000'], ['มุกดาหาร', '49000'],
+  ['หนองบัวลำภู', '39000'], ['เลย', '42000'], ['กาฬสินธุ์', '46000'],
+  ['มหาสารคาม', '44000'], ['ร้อยเอ็ด', '45000'], ['ยโสธร', '35000'],
+  ['อุบลราชธานี', '34000'], ['ศรีสะเกษ', '33000'], ['สุรินทร์', '32000'],
+  ['บุรีรัมย์', '31000'], ['นครราชสีมา', '30000'], ['ชัยภูมิ', '36000'],
+  ['อำนาจเจริญ', '37000'],
+  ['นครสวรรค์', '60000'], ['อุทัยธานี', '61000'], ['กำแพงเพชร', '62000'],
+  ['พิษณุโลก', '65000'], ['เพชรบูรณ์', '67000'], ['สุโขทัย', '64000'],
+  ['พิจิตร', '66000'], ['ตาก', '63000'],
+  ['สระบุรี', '18000'], ['ลพบุรี', '15000'], ['สิงห์บุรี', '16000'],
+  ['ชัยนาท', '17000'], ['อ่างทอง', '14000'], ['พระนครศรีอยุธยา', '13000'],
+  ['ปทุมธานี', '12000'], ['นนทบุรี', '11000'], ['สมุทรปราการ', '10270'],
+  ['นครปฐม', '73000'], ['สมุทรสาคร', '74000'], ['สมุทรสงคราม', '75000'],
+  ['ราชบุรี', '70000'], ['กาญจนบุรี', '71000'], ['สุพรรณบุรี', '72000'],
+  ['เพชรบุรี', '76000'], ['ประจวบคีรีขันธ์', '77000'],
+  ['ชลบุรี', '20000'], ['ระยอง', '21000'], ['จันทบุรี', '22000'],
+  ['ตราด', '23000'], ['ฉะเชิงเทรา', '24000'], ['ปราจีนบุรี', '25000'],
+  ['สระแก้ว', '27000'], ['นครนายก', '26000'],
+  ['ชุมพร', '86000'], ['ระนอง', '85000'], ['สุราษฎร์ธานี', '84000'],
+  ['นครศรีธรรมราช', '80000'], ['พัทลุง', '93000'], ['สงขลา', '90000'],
+  ['ตรัง', '92000'], ['กระบี่', '81000'], ['พังงา', '82000'],
+  ['ภูเก็ต', '83000'], ['สตูล', '91000'], ['ปัตตานี', '94000'],
+  ['ยะลา', '95000'], ['นราธิวาส', '96000'],
+]
+
+function withPostalCode(address: string): string {
+  if (/\d{5}/.test(address)) return address // already has postal code
+  for (const [province, postal] of PROVINCE_POSTAL) {
+    if (address.includes(province)) return address.trim() + ' ' + postal
   }
+  return address
 }
 
-function fillFromOCR(text: string) {
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+async function runIdCardOCR(file: File) {
+  ocrStatus.value = 'loading'
+  ocrMessage.value = 'กำลังอ่านข้อมูลจากบัตร (AI)...'
+  try {
+    const res = await applicationService.ocrIdCard(file)
+    const { success, data, message } = res.data
 
-  // ID number — 13 digits possibly separated by spaces/dashes
-  if (!form.idCard) {
-    const idMatch = text.replace(/[\s\-]/g, '').match(/\d{13}/)
-    if (idMatch) {
-      form.idCard = idMatch[0]
+    if (!success || !data) {
+      ocrStatus.value = 'error'
+      ocrMessage.value = message || 'อ่านข้อมูลไม่สำเร็จ กรุณากรอกข้อมูลด้วยตนเอง'
+      return
+    }
+
+    if (data.id_number && !form.idCard) {
+      form.idCard = data.id_number
       form.idType = 'thai_id'
     }
-  }
+    if (data.prefix && !form.prefix) form.prefix = data.prefix
+    if (data.full_name && !form.fullName) form.fullName = data.full_name
+    if (data.address && !form.address) form.address = withPostalCode(data.address)
 
-  // Prefix + Thai name
-  if (!form.prefix) {
-    const prefixOrder = ['นางสาว', 'เด็กหญิง', 'เด็กชาย', 'นาง', 'นาย']
-    for (const line of lines) {
-      for (const prefix of prefixOrder) {
-        if (line.startsWith(prefix)) {
-          form.prefix = prefix
-          const namePart = line.slice(prefix.length).trim().replace(/[^\u0E00-\u0E7F\s]/g, '').trim()
-          if (namePart && !form.fullName) form.fullName = namePart
-          break
-        }
-      }
-      if (form.prefix) break
-    }
-  }
-
-  // Address — lines containing address keywords
-  if (!form.address) {
-    const addrKeywords = ['บ้านเลขที่', 'หมู่ที่', 'หมู่', 'ถนน', 'ตำบล', 'แขวง', 'อำเภอ', 'เขต', 'จังหวัด']
-    const addrLines = lines.filter(l => addrKeywords.some(kw => l.includes(kw)))
-    if (addrLines.length > 0) form.address = addrLines.join(' ')
+    ocrStatus.value = 'success'
+    ocrMessage.value = data.confidence === 'high'
+      ? 'อ่านข้อมูลสำเร็จ (ความแม่นยำสูง)'
+      : 'อ่านข้อมูลสำเร็จ กรุณาตรวจสอบความถูกต้อง'
+  } catch (err: any) {
+    ocrStatus.value = 'error'
+    ocrMessage.value = err.response?.data?.message || 'อ่านข้อมูลไม่สำเร็จ กรุณากรอกข้อมูลด้วยตนเอง'
   }
 }
 
