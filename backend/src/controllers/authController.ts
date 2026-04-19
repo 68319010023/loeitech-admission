@@ -2,6 +2,7 @@
 import { Request, Response } from 'express'
 import pool from '../config/db'
 import bcrypt from 'bcrypt'
+import jwt from 'jsonwebtoken'
 
 export const login = async (req: Request, res: Response) => {
   try {
@@ -32,13 +33,19 @@ export const login = async (req: Request, res: Response) => {
       })
     }
 
-    // ส่งข้อมูล user กลับไป (ไม่รวม password_hash)
+    const token = jwt.sign(
+      { id: user.id, username: user.username, role: user.role },
+      process.env.JWT_SECRET || 'secret',
+      { expiresIn: '8h' }
+    )
+
     res.json({
       success: true,
       data: {
         id: user.id,
         username: user.username,
-        role: user.role
+        role: user.role,
+        token
       }
     })
 

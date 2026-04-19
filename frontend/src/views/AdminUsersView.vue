@@ -411,7 +411,9 @@ const API_BASE = (import.meta.env.VITE_API_URL as string)?.replace(/\/api$/, '')
 const resolveUrl = (path: string | null | undefined) => {
   if (!path) return ''
   if (path.startsWith('http')) return path
-  return `${API_BASE}${path}`
+  const token = localStorage.getItem('auth_token')
+  const sep = path.includes('?') ? '&' : '?'
+  return `${API_BASE}${path}${token ? `${sep}token=${encodeURIComponent(token)}` : ''}`
 }
 import {
   Download, CreditCard, ShoppingBag,
