@@ -63,4 +63,5 @@ jobs:
             DATABASE_URL=${{ secrets.DATABASE_URL_PROD }} \
             JWT_SECRET=${{ secrets.JWT_SECRET_PROD }} \
             FRONTEND_URL=https://admission.loeitech.ac.th \
+            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
             bash deploy.sh

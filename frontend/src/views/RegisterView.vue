@@ -30,48 +30,80 @@
         <div class="grid grid-cols-2 gap-4">
           <div class="col-span-2">
             <p class="text-sm font-medium text-gray-700 mb-3">อัพโหลดภาพบัตรประชาชน *</p>
+            <!-- Hidden inputs shared across all upload fields -->
+            <input ref="cameraInputRef" type="file" accept="image/*" capture="environment" class="hidden"
+              @change="handleUpload(uploadPicker.field, $event)" />
+            <input ref="galleryInputRef" type="file" accept="image/*" class="hidden"
+              @change="handleUpload(uploadPicker.field, $event)" />
+
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="text-sm text-gray-600 mb-1 block">ด้านหน้า *</label>
-                <label class="upload-box"
-                  :class="form.idFront ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'">
-                  <input type="file" accept="image/*" class="hidden" @change="handleUpload('idFront', $event)" />
+                <div class="upload-box relative cursor-pointer"
+                  :class="form.idFront ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'"
+                  @click="openUploadPicker('idFront')">
                   <div v-if="!form.idFrontPreview" class="flex flex-col items-center gap-2 text-gray-400">
                     <PhotoIcon class="w-8 h-8" /><span class="text-xs">คลิกเพื่ออัพโหลด</span>
                   </div>
                   <img v-else :src="form.idFrontPreview" class="w-full h-full object-contain rounded-xl" />
-                </label>
+                  <!-- OCR loading overlay -->
+                  <div v-if="ocrStatus === 'loading'"
+                    class="absolute inset-0 bg-white/75 rounded-xl flex flex-col items-center justify-center gap-2">
+                    <svg class="w-6 h-6 animate-spin text-emerald-500" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    </svg>
+                    <span class="text-xs text-emerald-600 font-medium">กำลังอ่านบัตร...</span>
+                  </div>
+                </div>
+                <!-- OCR status badge -->
+                <div v-if="ocrStatus !== 'idle'" class="mt-1.5 flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg"
+                  :class="{
+                    'bg-emerald-50 text-emerald-600': ocrStatus === 'success',
+                    'bg-red-50 text-red-500': ocrStatus === 'error',
+                    'bg-gray-50 text-gray-400': ocrStatus === 'loading',
+                  }">
+                  <svg v-if="ocrStatus === 'success'" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  <svg v-else-if="ocrStatus === 'error'" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                  </svg>
+                  {{ ocrMessage }}
+                </div>
               </div>
               <div>
                 <label class="text-sm text-gray-600 mb-1 block">ด้านหลัง *</label>
-                <label class="upload-box" :class="form.idBack ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'">
-                  <input type="file" accept="image/*" class="hidden" @change="handleUpload('idBack', $event)" />
+                <div class="upload-box cursor-pointer"
+                  :class="form.idBack ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'"
+                  @click="openUploadPicker('idBack')">
                   <div v-if="!form.idBackPreview" class="flex flex-col items-center gap-2 text-gray-400">
                     <PhotoIcon class="w-8 h-8" /><span class="text-xs">คลิกเพื่ออัพโหลด</span>
                   </div>
                   <img v-else :src="form.idBackPreview" class="w-full h-full object-contain rounded-xl" />
-                </label>
+                </div>
               </div>
             </div>
+          </div>
+          <!-- เลขบัตรประจำตัวประชาชน — แสดงเสมอ (OCR fills this) -->
+          <div class="col-span-2">
+            <label class="text-sm text-gray-600 mb-1 block">เลขประจำตัวประชาชน *</label>
+            <input v-if="form.idType !== 'passport' && form.idType !== 'g_code' && form.idType !== 'other'"
+              v-model="form.idCard" type="text" inputmode="numeric"
+              placeholder="เลขประจำตัวประชาชน 13 หลัก" maxlength="13" class="input-field" @keydown="blockNonDigit" />
+            <input v-else v-model="form.idCard" type="text" :placeholder="idTypePlaceholder" maxlength="20"
+              class="input-field" @input="form.idCard = form.idCard.toUpperCase()" />
+            <p class="text-xs text-gray-400 mt-1">{{ idTypeHint || 'กรอกตัวเลข 13 หลัก ไม่มีขีด' }}</p>
           </div>
           <div class="col-span-2">
             <label class="text-sm text-gray-600 mb-1 block">ประเภทเอกสารแสดงตน *</label>
             <select v-model="form.idType" class="input-field" @change="form.idCard = ''">
-              <option value="">เลือกประเภทเอกสาร</option>
               <option value="thai_id">บัตรประจำตัวประชาชนไทย</option>
               <option value="alien_id">บัตรประจำตัวคนต่างด้าว</option>
               <option value="passport">หนังสือเดินทาง (Passport)</option>
               <option value="g_code">G-Code (บุคคลไม่มีสัญชาติไทย)</option>
               <option value="other">เอกสารราชการอื่น ๆ</option>
             </select>
-          </div>
-          <div v-if="form.idType" class="col-span-2">
-            <label class="text-sm text-gray-600 mb-1 block">{{ idTypeLabel }} *</label>
-            <input v-if="form.idType === 'thai_id'" v-model="form.idCard" type="text" inputmode="numeric"
-              :placeholder="idTypePlaceholder" maxlength="13" class="input-field" @keydown="blockNonDigit" />
-            <input v-else v-model="form.idCard" type="text" :placeholder="idTypePlaceholder" maxlength="20"
-              class="input-field" @input="form.idCard = form.idCard.toUpperCase()" />
-            <p class="text-xs text-gray-400 mt-1">{{ idTypeHint }}</p>
           </div>
           <div>
             <label class="text-sm text-gray-600 mb-1 block">คำนำหน้าชื่อ *</label>
@@ -186,25 +218,25 @@
                 <label class="text-sm text-gray-600 mb-1 block">
                   {{ form.docType === 'certificate' ? 'ด้านหน้า *' : 'อัพโหลดเอกสาร *' }}
                 </label>
-                <label class="upload-box"
-                  :class="form.eduFront ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'">
-                  <input type="file" accept="image/*" class="hidden" @change="handleUpload('eduFront', $event)" />
+                <div class="upload-box cursor-pointer"
+                  :class="form.eduFront ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'"
+                  @click="openUploadPicker('eduFront')">
                   <div v-if="!form.eduFrontPreview" class="flex flex-col items-center gap-2 text-gray-400">
                     <PhotoIcon class="w-8 h-8" /><span class="text-xs">คลิกเพื่ออัพโหลด</span>
                   </div>
                   <img v-else :src="form.eduFrontPreview" class="w-full h-full object-contain rounded-xl" />
-                </label>
+                </div>
               </div>
               <div v-if="form.docType === 'certificate'">
                 <label class="text-sm text-gray-600 mb-1 block">ด้านหลัง *</label>
-                <label class="upload-box"
-                  :class="form.eduBack ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'">
-                  <input type="file" accept="image/*" class="hidden" @change="handleUpload('eduBack', $event)" />
+                <div class="upload-box cursor-pointer"
+                  :class="form.eduBack ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'"
+                  @click="openUploadPicker('eduBack')">
                   <div v-if="!form.eduBackPreview" class="flex flex-col items-center gap-2 text-gray-400">
                     <PhotoIcon class="w-8 h-8" /><span class="text-xs">คลิกเพื่ออัพโหลด</span>
                   </div>
                   <img v-else :src="form.eduBackPreview" class="w-full h-full object-contain rounded-xl" />
-                </label>
+                </div>
               </div>
             </div>
           </div>
@@ -299,7 +331,7 @@
                   ดูตัวอย่างสินค้า
                 </p>
               </div>
-            </div>
+            </div> 
 
             <!-- บังคับจ่าย: แสดงแค่ราคา -->
             <div v-if="exp.payment_type === 'mandatory'" class="text-sm font-semibold text-gray-700">
@@ -314,7 +346,7 @@
                 <option v-for="s in exp.exp_sizes" :key="s" :value="s">{{ s }}</option>
               </select>
               <input v-if="form.expenseOrders[exp.exp_id]?.size?.startsWith('พิเศษ')"
-                v-model="form.expenseOrders[exp.exp_id].customSize"
+                v-model="form.expenseOrders[exp.exp_id]!.customSize"
                 type="text" placeholder="ระบุขนาดเป็นนิ้ว เช่น 48"
                 class="input-field !w-32 !py-1.5 text-xs" />
               <div class="flex items-center gap-2">
@@ -474,6 +506,43 @@
     </Teleport>
 
     <ConfirmToast :show="showConfirm" @confirm="onConfirmed" @cancel="showConfirm = false" />
+
+    <!-- Upload picker bottom sheet -->
+    <Teleport to="body">
+      <transition name="slide-up">
+        <div v-if="uploadPicker.show"
+          class="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+          @click.self="uploadPicker.show = false">
+          <div class="bg-white rounded-t-2xl w-full max-w-md px-5 pt-4 pb-8 shadow-xl">
+            <div class="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
+            <p class="text-sm font-medium text-gray-500 text-center mb-4">เลือกวิธีอัพโหลดภาพ</p>
+            <div class="grid grid-cols-2 gap-3 mb-3">
+              <button @click="pickCamera"
+                class="flex flex-col items-center gap-2 py-5 rounded-2xl border-2 border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                <span class="text-sm font-medium">ถ่ายภาพ</span>
+              </button>
+              <button @click="pickGallery"
+                class="flex flex-col items-center gap-2 py-5 rounded-2xl border-2 border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 transition">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                <span class="text-sm font-medium">แกลเลอรี่</span>
+              </button>
+            </div>
+            <button @click="uploadPicker.show = false"
+              class="w-full py-3 rounded-xl text-sm text-gray-500 hover:bg-gray-100 transition">
+              ยกเลิก
+            </button>
+          </div>
+        </div>
+      </transition>
+    </Teleport>
   </div>
 </template>
 
@@ -483,6 +552,7 @@ import { useRouter } from 'vue-router'
 import { applicationService } from '../services/applicationService'
 import { exportPaymentPDF } from '../utils/exportPaymentPDF'
 import ConfirmToast from '../components/ConfirmToast.vue'
+
 import {
   UserIcon, CheckIcon, PhotoIcon, PrinterIcon, AcademicCapIcon,
   BuildingLibraryIcon, ShoppingBagIcon,
@@ -496,6 +566,26 @@ const isLoading = ref(false)
 const gpaWarning = ref(false)
 const yearWarning = ref(false)
 const viewingImage = ref('')
+const ocrStatus = ref<'idle' | 'loading' | 'success' | 'error'>('idle')
+const ocrMessage = ref('')
+
+type UploadField = 'idFront' | 'idBack' | 'eduFront' | 'eduBack'
+const uploadPicker = reactive({ show: false, field: '' as UploadField })
+const cameraInputRef = ref<HTMLInputElement | null>(null)
+const galleryInputRef = ref<HTMLInputElement | null>(null)
+
+function openUploadPicker(field: UploadField) {
+  uploadPicker.field = field
+  uploadPicker.show = true
+}
+function pickCamera() {
+  uploadPicker.show = false
+  cameraInputRef.value?.click()
+}
+function pickGallery() {
+  uploadPicker.show = false
+  galleryInputRef.value?.click()
+}
 
 const router = useRouter()
 const API_BASE = (import.meta.env.VITE_API_URL as string) || 'http://localhost:13001/api'
@@ -528,7 +618,7 @@ const docTypes = [
 const form = reactive({
   prefix: '', fullName: '', idCard: '', address: '', phone: '', email: '',
   idFront: null as File | null, idBack: null as File | null,
-  idFrontPreview: '', idBackPreview: '', idType: '',
+  idFrontPreview: '', idBackPreview: '', idType: 'thai_id',
   prevSchool: '', prevLevel: '', prevYear: '', gpa: '', prevBranch: '',
   docType: '',
   eduFront: null as File | null, eduFrontPreview: '',
@@ -695,19 +785,159 @@ function validateYear(e: Event) {
   form.prevYear = value
 }
 
-function handleUpload(field: 'idFront' | 'idBack' | 'eduFront' | 'eduBack', event: Event) {
+function readExifOrientation(file: File): Promise<number> {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const view = new DataView(e.target?.result as ArrayBuffer)
+        if (view.getUint16(0, false) !== 0xFFD8) return resolve(1)
+        let offset = 2
+        while (offset < view.byteLength) {
+          const marker = view.getUint16(offset, false)
+          offset += 2
+          if (marker === 0xFFE1) {
+            if (view.getUint32(offset + 2, false) !== 0x45786966) return resolve(1)
+            const little = view.getUint16(offset + 8, false) === 0x4949
+            const tags = view.getUint16(offset + 10, little)
+            for (let i = 0; i < tags; i++) {
+              const tag = view.getUint16(offset + 12 + i * 12, little)
+              if (tag === 0x0112) return resolve(view.getUint16(offset + 12 + i * 12 + 8, little))
+            }
+            return resolve(1)
+          } else if ((marker & 0xFF00) !== 0xFF00) break
+          else offset += view.getUint16(offset, false)
+        }
+        resolve(1)
+      } catch { resolve(1) }
+    }
+    reader.onerror = () => resolve(1)
+    reader.readAsArrayBuffer(file.slice(0, 64 * 1024))
+  })
+}
+
+async function autoRotateToLandscape(file: File): Promise<File> {
+  try {
+    const orientation = await readExifOrientation(file)
+    // EXIF 6 = 90° CW needed, EXIF 8 = 90° CCW needed, EXIF 3 = 180°, 1 = normal
+    const angleMap: Record<number, number> = { 3: Math.PI, 6: Math.PI / 2, 8: -Math.PI / 2 }
+    const angle = angleMap[orientation]
+    if (angle === undefined) return file
+
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    return new Promise((resolve) => {
+      img.onload = () => {
+        URL.revokeObjectURL(url)
+        const swap = orientation === 6 || orientation === 8
+        const canvas = document.createElement('canvas')
+        canvas.width  = swap ? img.height : img.width
+        canvas.height = swap ? img.width  : img.height
+        const ctx = canvas.getContext('2d')!
+        ctx.translate(canvas.width / 2, canvas.height / 2)
+        ctx.rotate(angle)
+        ctx.drawImage(img, -img.width / 2, -img.height / 2)
+        canvas.toBlob(
+          (blob) => resolve(blob ? new File([blob], file.name, { type: 'image/jpeg' }) : file),
+          'image/jpeg', 0.92,
+        )
+      }
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(file) }
+      img.src = url
+    })
+  } catch {
+    return file
+  }
+}
+
+async function handleUpload(field: UploadField, event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (!file) return
-  form[field] = file
+  ;(event.target as HTMLInputElement).value = '' // allow re-select same file
+
+  const rotated = await autoRotateToLandscape(file)
+  form[field] = rotated
+
   const reader = new FileReader()
   reader.onload = (e) => {
     const result = e.target?.result as string
-    if (field === 'idFront') form.idFrontPreview = result
+    if (field === 'idFront') { form.idFrontPreview = result; runIdCardOCR(rotated) }
     else if (field === 'idBack') form.idBackPreview = result
     else if (field === 'eduFront') form.eduFrontPreview = result
     else if (field === 'eduBack') form.eduBackPreview = result
   }
-  reader.readAsDataURL(file)
+  reader.readAsDataURL(rotated)
+}
+
+// Province → postal code map (append if not already present)
+const PROVINCE_POSTAL: [string, string][] = [
+  ['กรุงเทพมหานคร', '10100'], ['กรุงเทพ', '10100'],
+  ['เชียงใหม่', '50000'], ['เชียงราย', '57000'],
+  ['ลำปาง', '52000'], ['ลำพูน', '51000'], ['แพร่', '54000'], ['น่าน', '55000'],
+  ['พะเยา', '56000'], ['แม่ฮ่องสอน', '58000'],
+  ['ขอนแก่น', '40000'], ['อุดรธานี', '41000'], ['หนองคาย', '43000'],
+  ['นครพนม', '48000'], ['สกลนคร', '47000'], ['มุกดาหาร', '49000'],
+  ['หนองบัวลำภู', '39000'], ['เลย', '42000'], ['กาฬสินธุ์', '46000'],
+  ['มหาสารคาม', '44000'], ['ร้อยเอ็ด', '45000'], ['ยโสธร', '35000'],
+  ['อุบลราชธานี', '34000'], ['ศรีสะเกษ', '33000'], ['สุรินทร์', '32000'],
+  ['บุรีรัมย์', '31000'], ['นครราชสีมา', '30000'], ['ชัยภูมิ', '36000'],
+  ['อำนาจเจริญ', '37000'],
+  ['นครสวรรค์', '60000'], ['อุทัยธานี', '61000'], ['กำแพงเพชร', '62000'],
+  ['พิษณุโลก', '65000'], ['เพชรบูรณ์', '67000'], ['สุโขทัย', '64000'],
+  ['พิจิตร', '66000'], ['ตาก', '63000'],
+  ['สระบุรี', '18000'], ['ลพบุรี', '15000'], ['สิงห์บุรี', '16000'],
+  ['ชัยนาท', '17000'], ['อ่างทอง', '14000'], ['พระนครศรีอยุธยา', '13000'],
+  ['ปทุมธานี', '12000'], ['นนทบุรี', '11000'], ['สมุทรปราการ', '10270'],
+  ['นครปฐม', '73000'], ['สมุทรสาคร', '74000'], ['สมุทรสงคราม', '75000'],
+  ['ราชบุรี', '70000'], ['กาญจนบุรี', '71000'], ['สุพรรณบุรี', '72000'],
+  ['เพชรบุรี', '76000'], ['ประจวบคีรีขันธ์', '77000'],
+  ['ชลบุรี', '20000'], ['ระยอง', '21000'], ['จันทบุรี', '22000'],
+  ['ตราด', '23000'], ['ฉะเชิงเทรา', '24000'], ['ปราจีนบุรี', '25000'],
+  ['สระแก้ว', '27000'], ['นครนายก', '26000'],
+  ['ชุมพร', '86000'], ['ระนอง', '85000'], ['สุราษฎร์ธานี', '84000'],
+  ['นครศรีธรรมราช', '80000'], ['พัทลุง', '93000'], ['สงขลา', '90000'],
+  ['ตรัง', '92000'], ['กระบี่', '81000'], ['พังงา', '82000'],
+  ['ภูเก็ต', '83000'], ['สตูล', '91000'], ['ปัตตานี', '94000'],
+  ['ยะลา', '95000'], ['นราธิวาส', '96000'],
+]
+
+function withPostalCode(address: string): string {
+  if (/\d{5}/.test(address)) return address // already has postal code
+  for (const [province, postal] of PROVINCE_POSTAL) {
+    if (address.includes(province)) return address.trim() + ' ' + postal
+  }
+  return address
+}
+
+async function runIdCardOCR(file: File) {
+  ocrStatus.value = 'loading'
+  ocrMessage.value = 'กำลังอ่านข้อมูลจากบัตร (AI)...'
+  try {
+    const res = await applicationService.ocrIdCard(file)
+    const { success, data, message } = res.data
+
+    if (!success || !data) {
+      ocrStatus.value = 'error'
+      ocrMessage.value = message || 'อ่านข้อมูลไม่สำเร็จ กรุณากรอกข้อมูลด้วยตนเอง'
+      return
+    }
+
+    if (data.id_number && !form.idCard) {
+      form.idCard = data.id_number
+      form.idType = 'thai_id'
+    }
+    if (data.prefix && !form.prefix) form.prefix = data.prefix
+    if (data.full_name && !form.fullName) form.fullName = data.full_name
+    if (data.address && !form.address) form.address = withPostalCode(data.address)
+
+    ocrStatus.value = 'success'
+    ocrMessage.value = data.confidence === 'high'
+      ? 'อ่านข้อมูลสำเร็จ (ความแม่นยำสูง)'
+      : 'อ่านข้อมูลสำเร็จ กรุณาตรวจสอบความถูกต้อง'
+  } catch (err: any) {
+    ocrStatus.value = 'error'
+    ocrMessage.value = err.response?.data?.message || 'อ่านข้อมูลไม่สำเร็จ กรุณากรอกข้อมูลด้วยตนเอง'
+  }
 }
 
 function validateStep() {
@@ -813,3 +1043,15 @@ async function onConfirmed() {
   }
 }
 </script>
+
+<style scoped>
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.25s ease;
+}
+.slide-up-enter-from,
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(100%);
+}
+</style>
