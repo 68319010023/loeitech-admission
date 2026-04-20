@@ -508,7 +508,7 @@
               <div class="overflow-y-auto max-h-[55vh]">
                 <div v-for="(size, index) in [...viewingExpense.exp_sizes].sort((a, b) => {
                   const order = ['S', 'M', 'L', 'XL', 'พิเศษ']
-                  const getKey = (s) => order.findIndex(o => s.startsWith(o))
+                  const getKey = (s: string) => order.findIndex(o => s.startsWith(o))
                   return getKey(a) - getKey(b)
                 })" :key="size" class="grid grid-cols-2 border-b border-white/10 last:border-0"
                   :class="index % 2 === 0 ? 'bg-white/5' : 'bg-white/10'">
