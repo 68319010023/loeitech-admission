@@ -8,7 +8,7 @@
               class="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
               <User class="w-6 h-6 text-white" />
             </div>
-            ข้อมูลผู้ใช้
+            ข้อมูลผู้สมัคร
           </h1>
           <p class="text-gray-600 mt-3 text-lg">เลือกและดาวน์โหลดข้อมูลนักเรียนในรูปแบบไฟล์</p>
         </div>
@@ -114,17 +114,22 @@
       </select>
       <ChevronDown class="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
     </div>
-    <button v-if="exportSearch || selectedBranch || selectedCurFilter"
-      @click="exportSearch = ''; selectedBranch = ''; selectedCurFilter = ''"
-      class="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold bg-gray-100 text-gray-500 hover:bg-gray-200 transition whitespace-nowrap">
-      <X class="w-3.5 h-3.5" /> ล้าง
-    </button>
+    <div v-if="selectedExportType === 'applicants'" class="relative">
+      <select v-model="selectedStatus"
+        class="pl-4 pr-8 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none bg-white appearance-none cursor-pointer min-w-[140px] text-gray-700">
+        <option value="">ทุกสถานะ</option>
+        <option value="pending_payment">สมัครใหม่</option>
+        <option value="pending_approve">รอตรวจสอบ</option>
+        <option value="enrolled">มอบตัวเเล้ว</option>
+      </select>
+      <ChevronDown class="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+    </div>
   </div>
 
 </div>
 
     <!-- Badge filter -->
-    <div v-if="selectedBranch || selectedCurFilter" class="flex items-center gap-2 flex-wrap">
+    <div v-if="selectedBranch || selectedCurFilter || selectedStatus" class="flex items-center gap-2 flex-wrap">
       <span class="text-xs text-gray-400">กรองโดย:</span>
       <span v-if="selectedCurFilter"
         class="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full border border-blue-200">
@@ -137,6 +142,13 @@
         class="inline-flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 text-xs font-semibold rounded-full border border-green-200">
         สาขา: {{ selectedBranch }}
         <button @click="selectedBranch = ''" class="hover:text-green-900">
+          <X class="w-3 h-3" />
+        </button>
+      </span>
+      <span v-if="selectedStatus && selectedExportType === 'applicants'"
+        class="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-50 text-purple-700 text-xs font-semibold rounded-full border border-purple-200">
+        สถานะ: {{ getStatusLabel(selectedStatus) }}
+        <button @click="selectedStatus = ''" class="hover:text-purple-900">
           <X class="w-3 h-3" />
         </button>
       </span>
@@ -166,6 +178,8 @@
             <th class="px-4 py-3 text-left">ชื่อ-สกุล</th>
             <th class="px-4 py-3 text-left">หลักสูตร</th>
             <th class="px-4 py-3 text-left">สาขา</th>
+            <th v-if="selectedExportType === 'applicants'" class="px-4 py-3 text-center">สถานะ</th>
+            <th v-if="selectedExportType === 'applicants'" class="px-4 py-3 text-center">เบอร์ติดต่อ</th>
             <th v-if="selectedExportType === 'payments' || selectedExportType === 'orders'"
               class="px-4 py-3 text-center">สถานะ</th>
             <th v-if="selectedExportType === 'payments' || selectedExportType === 'orders'"
@@ -186,6 +200,23 @@
                 class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700">
                 {{ row.สาขาวิชา }}
               </span>
+            </td>
+            <!-- ✅ สถานะผู้สมัคร -->
+            <td v-if="selectedExportType === 'applicants'" class="px-4 py-3 text-center">
+              <span :class="[
+                'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold',
+                row.สถานะ === 'enrolled'
+                  ? 'bg-green-50 text-green-700 border border-green-200'
+                  : row.สถานะ === 'pending-payment' || row.สถานะ === 'pending-approve'
+                  ? 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+                  : 'bg-red-50 text-red-500 border border-red-200'
+              ]">
+                {{ row.สถานะ === 'enrolled' ? 'มอบตัวเเล้ว' : row.สถานะ === 'pending_payment' ? 'สมัครใหม่' : row.สถานะ === 'pending_approve' ? 'รอตรวจสอบ' : '-' }}
+              </span>
+            </td>
+            <!-- ✅ เบอร์ติดต่อ -->
+            <td v-if="selectedExportType === 'applicants'" class="px-4 py-3 text-center">
+              <span class="text-sm text-gray-700">{{ row.เบอร์โทร || '-' }}</span>
             </td>
             <!-- ✅ สถานะชำระ -->
             <td v-if="selectedExportType === 'payments' || selectedExportType === 'orders'"
@@ -217,7 +248,7 @@
             </td>
           </tr>
           <tr v-if="filteredExportData.length === 0">
-            <td :colspan="selectedExportType === 'students' ? 5 : selectedExportType === 'payments' ? 6 : 4"
+            <td :colspan="getColumnSpan()"
               class="px-4 py-8 text-center text-gray-400">ไม่พบข้อมูล</td>
           </tr>
         </tbody>
@@ -425,9 +456,10 @@ import Tesseract from 'tesseract.js'
 import jsPDF from 'jspdf'
 
 const exportItems = [
-  { label: 'ประวัตินักเรียน', icon: Users, type: 'students' },
-  { label: 'การชำระค่าการศึกษา', icon: CreditCard, type: 'payments' },
-  { label: 'การสั่งซื้อเครื่องแบบ', icon: ShoppingBag, type: 'orders' },
+  { label: 'ข้อมูลผู้สมัคร', icon: User, type: 'applicants' },
+  { label: 'ประวัติ', icon: Users, type: 'students' },
+  { label: 'ค่าบำรุงการศึกษา', icon: CreditCard, type: 'payments' },
+  { label: 'เครื่องแบบเเละอุปกรณ์', icon: ShoppingBag, type: 'orders' },
 ]
 
 
@@ -439,6 +471,7 @@ const selectedExportType = ref('students')
 const exportSearch = ref('')
 const selectedBranch = ref('')
 const selectedCurFilter = ref('')
+const selectedStatus = ref('')
 const selectedIds = ref<string[]>([])
 const currentPage = ref(1)
 const pageSize = ref(20)
@@ -599,6 +632,15 @@ const currentData = computed(() =>
       หลักสูตร: a.curriculum.cur_shortname,
       สาขาวิชา: a.division.div_name,
     }
+    if (selectedExportType.value === 'applicants') {
+      return {
+        ...base,
+        เบอร์โทร: a.phone,
+        สถานะ: a.status,
+        อีเมล: a.email,
+        วันที่สมัคร: new Date(a.created_at).toLocaleDateString('th-TH'),
+      }
+    }
     if (selectedExportType.value === 'students') {
       return {
         ...base,
@@ -653,7 +695,21 @@ const filteredExportData = computed(() =>
     const matchName = !exportSearch.value || fullDisplay.includes(exportSearch.value)
     const matchBranch = !selectedBranch.value || row.สาขาวิชา === selectedBranch.value
     const matchCur = !selectedCurFilter.value || row.หลักสูตร.includes(selectedCurFilter.value)
-    return matchName && matchBranch && matchCur
+    const matchStatus = !selectedStatus.value || row.สถานะ === selectedStatus.value
+    return matchName && matchBranch && matchCur && matchStatus
+  }).sort((a, b) => {
+    // ถ้าเลือกเมนูข้อมูลผู้สมัคร ให้เรียงตามลำดับของสถานะ
+    if (selectedExportType.value === 'applicants' && !selectedStatus.value) {
+      const statusOrder = {
+        'pending_approve': 1,
+        'pending_payment': 2, 
+        'enrolled': 3
+      }
+      const aStatus = statusOrder[a.สถานะ as keyof typeof statusOrder] || 999
+      const bStatus = statusOrder[b.สถานะ as keyof typeof statusOrder] || 999
+      return aStatus - bStatus
+    }
+    return 0
   })
 )
 
@@ -674,6 +730,27 @@ const toggleAll = () => {
     selectedIds.value = []
   } else {
     selectedIds.value = filteredExportData.value.map(r => r.ลำดับ)
+  }
+}
+
+// Get status label in Thai
+const getStatusLabel = (status: string): string => {
+  const labels: Record<string, string> = {
+    'enrolled': '  1',
+    'pending_payment': '  1',
+    'pending_approve': '  1'
+  }
+  return labels[status] || status
+}
+
+// Get column span for empty state
+const getColumnSpan = () => {
+  switch (selectedExportType.value) {
+    case 'applicants': return 6
+    case 'students': return 5
+    case 'payments': return 6
+    case 'orders': return 6
+    default: return 4
   }
 }
 

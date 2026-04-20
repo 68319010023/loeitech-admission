@@ -7,6 +7,7 @@ import {
   createApplication,
   checkStatus,
   getStats,
+  checkDuplicateIdCard,
 } from '../controllers/applicationController'
 import { upload } from '../middleware/upload'
 
@@ -25,6 +26,9 @@ router.post('/', upload.fields([
   { name: 'edu_front', maxCount: 1 },
   { name: 'edu_back', maxCount: 1 },
 ]), createApplication)
+
+// ตรวจสอบบัตรประชาชนซ้ำ
+router.post('/check-duplicate', checkDuplicateIdCard)
 
 // ตรวจสอบสถานะ
 router.get('/check/:idCard', checkStatus)

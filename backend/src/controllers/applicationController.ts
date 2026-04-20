@@ -274,7 +274,8 @@ export const checkStatus = async (req: Request, res: Response) => {
       `
       SELECT
         a.app_id, a.prefix, a.full_name, a.status, a.created_at,
-        a.phone, a.id_card_number,
+        a.phone, a.id_card_number, a.address, a.email,
+        a.prev_school, a.prev_level, a.prev_year, a.gpa,
         c.cur_name, d.div_name,
         p.total_amount, p.required_amount, p.due_date,
         p.paid_at, p.verified_at, p.slip_sender, p.slip_receiver,
@@ -296,7 +297,8 @@ export const checkStatus = async (req: Request, res: Response) => {
       WHERE a.id_card_number = $1
         GROUP BY
         a.app_id, a.prefix, a.full_name, a.status, a.created_at,
-        a.phone, a.id_card_number,
+        a.phone, a.id_card_number, a.address, a.email,
+        a.prev_school, a.prev_level, a.prev_year, a.gpa,
         c.cur_name, d.div_name,
         p.total_amount, p.required_amount, p.due_date,
         p.paid_at, p.verified_at, p.slip_sender, p.slip_receiver,
@@ -335,6 +337,35 @@ sendSuccess(res, {
 };
 
 // สถิติ
+//  unction  0 duplicate ID card
+export const checkDuplicateIdCard = async (req: Request, res: Response) => {
+  try {
+    const { id_card_number } = req.body;
+    
+    if (!id_card_number) {
+      return sendError(res, "  0  ID card number is required", 400);
+    }
+
+    const result = await pool.query(
+      "SELECT app_id, full_name, status FROM applicants WHERE id_card_number = $1",
+      [id_card_number]
+    );
+
+    if (result.rows.length > 0) {
+      return sendSuccess(res, {
+        is_duplicate: true,
+        applicant: result.rows[0]
+      }, "  0  ID card already exists");
+    }
+
+    sendSuccess(res, {
+      is_duplicate: false
+    }, "  0  ID card is available");
+  } catch (err) {
+    sendError(res, "  0  Error checking duplicate ID card", 500, err);
+  }
+};
+
 export const getStats = async (_req: Request, res: Response) => {
   try {
     const overview = await pool.query(`

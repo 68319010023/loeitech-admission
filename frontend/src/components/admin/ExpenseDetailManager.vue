@@ -408,7 +408,7 @@ import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import { apiService } from '@/utils/api'
 
 // ── Constants ──────────────────────────────────────────
-const SIZES_WITH_NUMBER = ['M', 'L', 'XL'] as const
+const SIZES_WITH_NUMBER = ['S', 'M', 'L', 'XL'] as const
 
 // ── Interfaces ─────────────────────────────────────────
 interface Curriculum {
@@ -443,7 +443,7 @@ const imagePreview = ref<string>('')
 const viewingImage = ref<string>('')
 const fileInputRef = ref<HTMLInputElement | null>(null)
 
-const sizeNumbers = ref<Record<string, string>>({ M: '', L: '', XL: '' })
+const sizeNumbers = ref<Record<string, string>>({ S: '', M: '', L: '', XL: '' })
 const originalImgUrl = ref<string>('')
 const showAddModal = ref(false)
 const showEditModal = ref(false)
@@ -603,7 +603,7 @@ const editExpense = (expense: ExpenseDetail) => {
   }
   originalImgUrl.value = expense.exp_img || ''
   imagePreview.value = ''
-  sizeNumbers.value = { M: '', L: '', XL: '' }
+  sizeNumbers.value = { S: '', M: '', L: '', XL: '' }
   showSizeSection.value = expense.exp_sizes ? expense.exp_sizes.length > 0 : false
   showEditModal.value = true
 }
@@ -614,7 +614,7 @@ const closeModal = () => {
   showSizeSection.value = false
   imagePreview.value = ''
   originalImgUrl.value = ''
-  sizeNumbers.value = { M: '', L: '', XL: '' }
+  sizeNumbers.value = { S: '', M: '', L: '', XL: '' }
   if (fileInputRef.value) fileInputRef.value.value = ''
   formData.value = {
     exp_id: 0,

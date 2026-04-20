@@ -68,10 +68,12 @@
           <div v-if="form.idType" class="col-span-2">
             <label class="text-sm text-gray-600 mb-1 block">{{ idTypeLabel }} *</label>
             <input v-if="form.idType === 'thai_id'" v-model="form.idCard" type="text" inputmode="numeric"
-              :placeholder="idTypePlaceholder" maxlength="13" class="input-field" @keydown="blockNonDigit" />
+              :placeholder="idTypePlaceholder" maxlength="13" class="input-field" 
+              @keydown="blockNonDigit" @input="checkDuplicateIdCard(form.idCard)" />
             <input v-else v-model="form.idCard" type="text" :placeholder="idTypePlaceholder" maxlength="20"
-              class="input-field" @input="form.idCard = form.idCard.toUpperCase()" />
+              class="input-field" @input="form.idCard = form.idCard.toUpperCase(); checkDuplicateIdCard(form.idCard)" />
             <p class="text-xs text-gray-400 mt-1">{{ idTypeHint }}</p>
+            <p v-if="idCardError" class="text-red-500 text-sm mt-1">{{ idCardError }}</p>
           </div>
           <div>
             <label class="text-sm text-gray-600 mb-1 block">คำนำหน้าชื่อ *</label>
@@ -103,7 +105,7 @@
             <input v-model="form.email" type="email" placeholder="example@email.com" class="input-field" />
           </div>
         </div>
-        <p v-if="showError" class="text-red-500 text-sm mt-4">⚠️ กรุณากรอกข้อมูลและอัพโหลดรูปให้ครบทุกช่อง</p>
+        <p v-if="showError" class="text-red-500 text-sm mt-4">⚠️ กรุณาตรวจสอบการกรอกข้อมูลและอัพโหลดรูปให้ครบทุกช่อง</p>
       </div>
 
       <!-- Step 2: ประวัติการศึกษา -->
@@ -209,7 +211,7 @@
             </div>
           </div>
         </div>
-        <p v-if="showError" class="text-red-500 text-sm mt-4">⚠️ กรุณากรอกข้อมูลและอัพโหลดหลักฐานให้ครบทุกช่อง</p>
+        <p v-if="showError" class="text-red-500 text-sm mt-4">⚠️ กรุณาตรวจสอบการกรอกข้อมูลและอัพโหลดหลักฐานให้ครบทุกช่อง</p>
       </div>
 
       <!-- Step 3: เลือกสาขา -->
@@ -485,12 +487,13 @@ import {
 } from '@heroicons/vue/24/outline'
 
 const currentStep = ref(0)
-const showError = ref(false)
-const showConfirm = ref(false)
-const isSubmitting = ref(false)
 const isLoading = ref(false)
+const isSubmitting = ref(false)
+const showConfirm = ref(false)
+const showError = ref(false)
 const gpaWarning = ref(false)
 const yearWarning = ref(false)
+const idCardError = ref('')
 const viewingImage = ref('')
 
 const router = useRouter()
@@ -694,6 +697,24 @@ function validateYear(e: Event) {
   form.prevYear = value
 }
 
+async function checkDuplicateIdCard(idCard: string) {
+  if (!idCard || idCard.length < 5) {
+    idCardError.value = ''
+    return
+  }
+  
+  try {
+    const res = await applicationService.checkDuplicateIdCard(idCard)
+    if (res.data.data.is_duplicate) {
+      idCardError.value = `เลขบัตรนี้ถูกสมัครไปเเล้ว`
+    } else {
+      idCardError.value = ''
+    }
+  } catch (err) {
+    console.error('Error checking duplicate ID card:', err)
+  }
+}
+
 function handleUpload(field: 'idFront' | 'idBack' | 'eduFront' | 'eduBack', event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (!file) return
@@ -714,7 +735,7 @@ function validateStep() {
     return !!(form.idType && form.idCard && form.idCard.length >= 5
       && form.prefix && form.fullName && form.address
       && form.phone.replace(/\D/g, '').length === 10
-      && form.email && form.idFront && form.idBack)
+      && form.email && form.idFront && form.idBack && !idCardError.value)
   }
   if (currentStep.value === 1) {
     const eduValid = form.docType && form.eduFront && (form.docType !== 'certificate' || form.eduBack)
@@ -782,6 +803,7 @@ async function onConfirmed() {
       })
       .map(e => ({
         exp_id: e.exp_id,
+        exp_name: e.exp_name, // เพิ่มชื่อรายการ
         quantity: e.payment_type === 'mandatory' ? 1 : (form.expenseOrders[e.exp_id]?.qty || 1),
         size: (() => {
           const order = form.expenseOrders[e.exp_id]
@@ -803,10 +825,14 @@ async function onConfirmed() {
       courseLabel: fixedCourseLabel.value,
       branchName: selectedPlan.value?.div_name || '-',
       totalPrice: total_amount,
+      expenses: expenseList,
     })
     router.push('/check-status')
   } catch (err: any) {
-    alert(err.response?.data?.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง')
+    console.error('Submit form error:', err)
+    console.error('Error response:', err.response?.data)
+    const errorMessage = err.response?.data?.message || err.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง'
+    alert(errorMessage)
   } finally {
     isSubmitting.value = false
   }
