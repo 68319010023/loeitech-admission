@@ -265,8 +265,8 @@
                 <div class="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
                 <p class="text-sm">กำลังโหลด...</p>
               </div>
-              <template v-else-if="currentDocUrl && !docModal.imgError">
-                <img :src="currentDocUrl" class="max-w-full max-h-full rounded-xl object-contain shadow-md"
+              <template v-else-if="blobUrl && !docModal.imgError">
+                <img :src="blobUrl" class="max-w-full max-h-full rounded-xl object-contain shadow-md"
                   style="max-height: 60vh" @error="docModal.imgError = true" />
               </template>
               <div v-else-if="docModal.imgError" class="flex flex-col items-center gap-2 text-gray-400">
@@ -782,16 +782,37 @@ async function buildExportData(rows: any[]): Promise<object[]> {
     const row = rows[i]
     ocrProgress.value.current = i + 1
     ocrProgress.value.name = `${row.คำนำหน้า}${row.ชื่อ_นามสกุล}`
-    const idOcr = await runOCRFromUrl(row._idFrontUrl || '', 'id')
-    const eduOcr = await runOCRFromUrl(row._eduFrontUrl || '', 'edu')
+
+     let allOcr: Record<string, string> = {}
+    try {
+      const res = await apiService.getApplicantDocuments(row.ลำดับ)
+      if (res.success) {
+        const docs = res.data.documents as { doc_type: string; file_url: string }[]
+        for (const doc of docs) {
+          if (!doc.file_url) continue
+          const url = resolveUrl(doc.file_url)
+          const mode = doc.doc_type.startsWith('id') ? 'id' : 'edu'
+          const ocr = await runOCRFromUrl(url, mode)
+          // prefix key ด้วย doc_type เพื่อไม่ให้ทับกัน
+          Object.entries(ocr).forEach(([k, v]) => {
+            allOcr[`${doc.doc_type}_${k}`] = v
+          })
+        }
+      }
+    } catch (e) {
+      console.warn('OCR all docs failed for', row.ชื่อ_นามสกุล, e)
+    }
+
     const cleanRow = Object.fromEntries(
       Object.entries(row).filter(([key]) => !key.startsWith('_'))
     )
-    result.push({ ...cleanRow, ...idOcr, ...eduOcr })
+    result.push({ ...cleanRow, ...allOcr })
   }
+
   ocrProgress.value.running = false
   return result
 }
+  
 
 async function doExport(rows: any[]) {
   const data = await buildExportData(rows)
@@ -860,7 +881,31 @@ async function loadThaiFont(): Promise<string> {
     console.error('❌ Load font error:', error)
     return ''
   }
-}
+}// ─── Authenticated Image Loader (blob URL) ──────────────────────────────────
+
+
+const blobUrl = ref<string>('')
+
+watch(() => docModal.value.activeTab, async (newTab) => {
+  if (blobUrl.value) {
+    URL.revokeObjectURL(blobUrl.value)
+    blobUrl.value = ''
+  }
+
+  const doc = docModal.value.documents.find(d => d.doc_type === newTab)
+  if (!doc?.file_url) return
+
+  docModal.value.imgLoading = true
+  docModal.value.imgError = false
+
+  try {
+    blobUrl.value = await apiService.getBlob(resolveUrl(doc.file_url))
+  } catch {
+    docModal.value.imgError = true
+  } finally {
+    docModal.value.imgLoading = false
+  }
+})
 
 // ─── PDF Generation ───────────────────────────────────────────────
 async function generateStudentPDF(studentData: any) {
