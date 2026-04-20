@@ -785,19 +785,88 @@ function validateYear(e: Event) {
   form.prevYear = value
 }
 
-function handleUpload(field: 'idFront' | 'idBack' | 'eduFront' | 'eduBack', event: Event) {
+function readExifOrientation(file: File): Promise<number> {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const view = new DataView(e.target?.result as ArrayBuffer)
+        if (view.getUint16(0, false) !== 0xFFD8) return resolve(1)
+        let offset = 2
+        while (offset < view.byteLength) {
+          const marker = view.getUint16(offset, false)
+          offset += 2
+          if (marker === 0xFFE1) {
+            if (view.getUint32(offset + 2, false) !== 0x45786966) return resolve(1)
+            const little = view.getUint16(offset + 8, false) === 0x4949
+            const tags = view.getUint16(offset + 10, little)
+            for (let i = 0; i < tags; i++) {
+              const tag = view.getUint16(offset + 12 + i * 12, little)
+              if (tag === 0x0112) return resolve(view.getUint16(offset + 12 + i * 12 + 8, little))
+            }
+            return resolve(1)
+          } else if ((marker & 0xFF00) !== 0xFF00) break
+          else offset += view.getUint16(offset, false)
+        }
+        resolve(1)
+      } catch { resolve(1) }
+    }
+    reader.onerror = () => resolve(1)
+    reader.readAsArrayBuffer(file.slice(0, 64 * 1024))
+  })
+}
+
+async function autoRotateToLandscape(file: File): Promise<File> {
+  try {
+    const orientation = await readExifOrientation(file)
+    // EXIF 6 = 90° CW needed, EXIF 8 = 90° CCW needed, EXIF 3 = 180°, 1 = normal
+    const angleMap: Record<number, number> = { 3: Math.PI, 6: Math.PI / 2, 8: -Math.PI / 2 }
+    const angle = angleMap[orientation]
+    if (angle === undefined) return file
+
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    return new Promise((resolve) => {
+      img.onload = () => {
+        URL.revokeObjectURL(url)
+        const swap = orientation === 6 || orientation === 8
+        const canvas = document.createElement('canvas')
+        canvas.width  = swap ? img.height : img.width
+        canvas.height = swap ? img.width  : img.height
+        const ctx = canvas.getContext('2d')!
+        ctx.translate(canvas.width / 2, canvas.height / 2)
+        ctx.rotate(angle)
+        ctx.drawImage(img, -img.width / 2, -img.height / 2)
+        canvas.toBlob(
+          (blob) => resolve(blob ? new File([blob], file.name, { type: 'image/jpeg' }) : file),
+          'image/jpeg', 0.92,
+        )
+      }
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(file) }
+      img.src = url
+    })
+  } catch {
+    return file
+  }
+}
+
+async function handleUpload(field: UploadField, event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (!file) return
-  form[field] = file
+  ;(event.target as HTMLInputElement).value = '' // allow re-select same file
+
+  const rotated = await autoRotateToLandscape(file)
+  form[field] = rotated
+
   const reader = new FileReader()
   reader.onload = (e) => {
     const result = e.target?.result as string
-    if (field === 'idFront') { form.idFrontPreview = result; runIdCardOCR(file) }
+    if (field === 'idFront') { form.idFrontPreview = result; runIdCardOCR(rotated) }
     else if (field === 'idBack') form.idBackPreview = result
     else if (field === 'eduFront') form.eduFrontPreview = result
     else if (field === 'eduBack') form.eduBackPreview = result
   }
-  reader.readAsDataURL(file)
+  reader.readAsDataURL(rotated)
 }
 
 // Province → postal code map (append if not already present)
