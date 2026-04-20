@@ -72,11 +72,11 @@ export const verifySlip = async (req: Request, res: Response) => {
     }
 
     // ✅ สลิปผ่าน → save slip_path ด้วย
-    await pool.query(`
-      UPDATE applicants
-      SET status = 'paid', paid_at = NOW()
-      WHERE app_id = $1
-    `, [app_id])
+   await pool.query(`
+  UPDATE applicants
+  SET status = 'pending_approve', paid_at = NOW()
+  WHERE app_id = $1
+`, [app_id])
 
     await pool.query(`
       UPDATE payments
@@ -144,15 +144,13 @@ export const confirmEnrollment = async (req: Request, res: Response) => {
     const { app_id, status } = applicant.rows[0]
 
     // ✅ ต้องเป็น paid หรือ enrolled เท่านั้น (enrolled = มอบตัวซ้ำได้ แค่ upsert)
-    if (status === 'pending_payment') {
-      return sendError(res, 'กรุณาชำระเงินก่อนดำเนินการมอบตัว', 400)
-    }
+if (status === 'pending_payment') {
+  return sendError(res, 'กรุณารอ admin ยืนยันการชำระเงินก่อน', 400)
+}
 
-    await client.query('BEGIN')
-
-    await client.query(`
-      UPDATE applicants SET status = 'enrolled' WHERE app_id = $1
-    `, [app_id])
+await client.query(`
+  UPDATE applicants SET status = 'pending_approve' WHERE app_id = $1
+`, [app_id])
 
     const files = req.files as Record<string, Express.Multer.File[]>
 
@@ -214,7 +212,7 @@ export const confirmEnrollment = async (req: Request, res: Response) => {
 export const getEnrollmentStatus = async (req: Request, res: Response) => {
   try {
     const { idCard } = req.params
-   const result = await pool.query(`
+    const result = await pool.query(`
   SELECT 
     ae.ae_id,
     ed.exp_name   AS item_name,
@@ -352,4 +350,21 @@ export const getOrdersByIdCard = async (req: Request, res: Response) => {
     console.error('❌ getOrdersByIdCard error:', err.message) // ✅ เพิ่ม
     sendError(res, 'ไม่สามารถดึงข้อมูล orders ได้', 500, err)
   }
+}
+
+// ========================================================
+
+// POST /admin/payments/approve
+
+// ========================================================
+export const approvePayment = async (req: Request, res: Response) => {
+  const { app_id, approve } = req.body  // approve = true/false
+
+  await pool.query(`
+    UPDATE applicants
+    SET status = $1
+    WHERE app_id = $2 AND status = 'pending_approve'
+  `, [approve ? 'paid' : 'pending_payment', app_id])
+
+  sendSuccess(res, {}, approve ? 'อนุมัติแล้ว' : 'ส่งกลับให้นักเรียนอัปสลิปใหม่')
 }

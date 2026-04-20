@@ -68,8 +68,8 @@
           <div v-if="form.idType" class="col-span-2">
             <label class="text-sm text-gray-600 mb-1 block">{{ idTypeLabel }} *</label>
             <input v-if="form.idType === 'thai_id'" v-model="form.idCard" type="text" inputmode="numeric"
-              :placeholder="idTypePlaceholder" maxlength="13" class="input-field" 
-              @keydown="blockNonDigit" @input="checkDuplicateIdCard(form.idCard)" />
+              :placeholder="idTypePlaceholder" maxlength="13" class="input-field" @keydown="blockNonDigit"
+              @input="checkDuplicateIdCard(form.idCard)" />
             <input v-else v-model="form.idCard" type="text" :placeholder="idTypePlaceholder" maxlength="20"
               class="input-field" @input="form.idCard = form.idCard.toUpperCase(); checkDuplicateIdCard(form.idCard)" />
             <p class="text-xs text-gray-400 mt-1">{{ idTypeHint }}</p>
@@ -140,14 +140,9 @@
 
           <div v-if="form.prevLevel === 'pvc'" class="col-span-2">
             <label class="text-sm text-gray-600 mb-1 block">สาขาวิชาที่จบปวช *</label>
-            <select v-model="form.prevBranch" class="input-field">
-              <option value="">เลือกสาขาวิชา</option>
-              <option v-for="branch in pvcBranches" :key="branch.div_id" :value="branch.div_id">
-                {{ branch.div_name }}
-              </option>
-            </select>
+            <input v-model="form.prevBranch" type="text" placeholder="กรอกสาขาวิชาที่จบปวช" class="input-field" />
             <p v-if="showError && form.prevLevel === 'pvc' && !form.prevBranch" class="text-red-500 text-xs mt-1">
-              ⚠️ กรุณาเลือกสาขาวิชาที่จบปวช
+              ⚠️ กรุณากรอกสาขาวิชาที่จบปวช
             </p>
           </div>
 
@@ -159,7 +154,7 @@
               <p v-if="gpaWarning" class="text-red-500 text-xs mt-1">กรุณากรอกเลขไม่เกิน 4.00</p>
             </Transition>
           </div>
-          
+
           <div v-if="form.prevLevel" class="col-span-2 p-4 rounded-xl border"
             :class="form.prevLevel === 'm3' ? 'bg-blue-50 border-blue-200' : 'bg-emerald-50 border-emerald-200'">
             <p class="text-sm font-medium mb-1" :class="form.prevLevel === 'm3' ? 'text-blue-700' : 'text-emerald-700'">
@@ -167,7 +162,8 @@
             </p>
             <p class="text-sm" :class="form.prevLevel === 'm3' ? 'text-blue-600' : 'text-emerald-600'">
               <span v-if="form.prevLevel === 'm3'">✅ ประกาศนียบัตรวิชาชีพ (ปวช.) เท่านั้น</span>
-              <span v-else-if="form.prevLevel === 'm6'">✅ ประกาศนียบัตรวิชาชีพชั้นสูง (ปวส.) — ทุกสาขาที่รับผู้จบ ม.6</span>
+              <span v-else-if="form.prevLevel === 'm6'">✅ ประกาศนียบัตรวิชาชีพชั้นสูง (ปวส.) — ทุกสาขาที่รับผู้จบ
+                ม.6</span>
               <span v-else-if="form.prevLevel === 'pvc'">✅ ประกาศนียบัตรวิชาชีพชั้นสูง (ปวส.) — ทุกสาขา</span>
             </p>
           </div>
@@ -211,7 +207,8 @@
             </div>
           </div>
         </div>
-        <p v-if="showError" class="text-red-500 text-sm mt-4">⚠️ กรุณาตรวจสอบการกรอกข้อมูลและอัพโหลดหลักฐานให้ครบทุกช่อง</p>
+        <p v-if="showError" class="text-red-500 text-sm mt-4">⚠️ กรุณาตรวจสอบการกรอกข้อมูลและอัพโหลดหลักฐานให้ครบทุกช่อง
+        </p>
       </div>
 
       <!-- Step 3: เลือกสาขา -->
@@ -219,7 +216,8 @@
         <h2 class="text-lg font-semibold text-gray-700 flex items-center gap-2 mb-6">
           <AcademicCapIcon class="w-5 h-5 text-emerald-500" /> เลือกสาขาวิชาที่ต้องการสมัคร
         </h2>
-        <div class="mb-5 inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-xl text-sm font-medium">
+        <div
+          class="mb-5 inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-xl text-sm font-medium">
           <AcademicCapIcon class="w-4 h-4" />
           หลักสูตร: {{ fixedCourseLabel }}
         </div>
@@ -230,8 +228,7 @@
         <div v-else class="grid grid-cols-1 gap-3">
           <div v-for="plan in admissionPlans" :key="plan.ap_id"
             @click="Number(plan.remaining) > 0 && selectPlan(plan.ap_id, plan.cur_id)"
-            class="flex items-center justify-between border-2 rounded-xl px-5 py-4 transition-all"
-            :class="Number(plan.remaining) <= 0
+            class="flex items-center justify-between border-2 rounded-xl px-5 py-4 transition-all" :class="Number(plan.remaining) <= 0
               ? 'border-gray-100 bg-gray-50 cursor-not-allowed opacity-60'
               : form.apId === plan.ap_id
                 ? 'border-emerald-500 bg-emerald-50 cursor-pointer'
@@ -262,15 +259,14 @@
         </div>
 
         <div v-else class="space-y-3">
-          <div v-for="exp in expenses" :key="exp.exp_id"
+          <div v-for="exp in sortedExpenses" :key="exp.exp_id"
             class="flex items-center justify-between border rounded-xl px-4 py-3 transition-all"
             :class="exp.payment_type === 'mandatory' ? 'border-gray-200 bg-gray-50' : 'border-gray-200'">
 
             <!-- ชื่อรายการ -->
             <div class="flex items-center gap-3">
               <!-- Thumbnail รูปภาพ -->
-              <div v-if="exp.exp_img"
-                @click="viewingImage = resolveImgUrl(exp.exp_img)"
+              <div v-if="exp.exp_img" @click="viewingImage = resolveImgUrl(exp.exp_img); viewingExpense = exp"
                 class="w-12 h-12 rounded-xl overflow-hidden border border-gray-200 cursor-pointer flex-shrink-0 hover:ring-2 hover:ring-emerald-400 hover:scale-105 transition-all shadow-sm"
                 title="คลิกเพื่อดูรูปภาพ">
                 <img :src="resolveImgUrl(exp.exp_img)" class="w-full h-full object-cover" />
@@ -290,8 +286,9 @@
                   </span>
                 </p>
                 <!-- ป้ายบอกว่ามีรูป ถ้ามี exp_img -->
-                <p v-if="exp.exp_img" class="text-xs text-emerald-500 mt-0.5 flex items-center gap-1 cursor-pointer hover:text-emerald-600"
-                  @click="viewingImage = resolveImgUrl(exp.exp_img)">
+                <p v-if="exp.exp_img"
+                  class="text-xs text-emerald-500 mt-0.5 flex items-center gap-1 cursor-pointer hover:text-emerald-600"
+                  @click="viewingImage = resolveImgUrl(exp.exp_img); viewingExpense = exp">
                   <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -308,17 +305,15 @@
               {{ exp.exp_cost.toLocaleString() }} บาท
             </div>
             <div v-else class="flex items-center gap-3">
-              <select v-if="exp.exp_sizes && exp.exp_sizes.length > 0"
-                :value="form.expenseOrders[exp.exp_id]?.size"
+              <select v-if="exp.exp_sizes && exp.exp_sizes.length > 0" :value="form.expenseOrders[exp.exp_id]?.size"
                 @change="onSizeChange(exp.exp_id, ($event.target as HTMLSelectElement).value)"
                 class="input-field !w-40 !py-1.5 text-xs">
                 <option value="">เลือกไซส์</option>
                 <option v-for="s in exp.exp_sizes" :key="s" :value="s">{{ s }}</option>
               </select>
               <input v-if="form.expenseOrders[exp.exp_id]?.size?.startsWith('พิเศษ')"
-                v-model="form.expenseOrders[exp.exp_id].customSize"
-                type="text" placeholder="ระบุขนาดเป็นนิ้ว เช่น 48"
-                class="input-field !w-32 !py-1.5 text-xs" />
+                v-model="form.expenseOrders[exp.exp_id].customSize" type="text" placeholder="ระบุขนาดรอบอกเป็นนิ้ว "
+                class="input-field !w-48 !py-1.5 text-xs" />
               <div class="flex items-center gap-2">
                 <button @click="changeQty(exp.exp_id, -1)"
                   class="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-gray-500 hover:bg-gray-100 text-lg leading-none">−</button>
@@ -446,30 +441,60 @@
     </div>
 
     <!-- View Image Modal -->
-  <Teleport to="body">
-  <transition name="modal">
-    <div v-if="viewingImage" class="fixed inset-0 z-[9999] flex items-center justify-center px-4">
-      <div class="fixed inset-0 bg-black/70" @click="viewingImage = ''"></div>
-      <div class="relative z-[10000] w-full max-w-md">
-        
-        <!-- ปุ่มปิด -->
-        <button @click="viewingImage = ''"
-          class="absolute -top-4 -right-4 z-10 w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-125 hover:bg-red-500 hover:text-white text-gray-600">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+    <Teleport to="body">
+      <transition name="modal">
+        <div v-if="viewingImage" class="fixed inset-0 z-[9999] flex items-center justify-center px-4">
+          <div class="fixed inset-0 bg-black/70" @click="viewingImage = ''; viewingExpense = null"></div>
+          <div class="relative z-[10000] w-full max-w-2xl flex gap-3 items-start">
 
-        <!-- รูปภาพ -->
-        <img
-          :src="viewingImage"
-          alt="รูปภาพ"
-          class="w-full max-h-[75vh] object-contain rounded-xl shadow-2xl"
-        />
-      </div>
-    </div>
-  </transition>
-</Teleport>
+            <button @click="viewingImage = ''; viewingExpense = null"
+              class="absolute -top-4 -right-4 z-10 w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-125 hover:bg-red-500 hover:text-white text-gray-600">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <img :src="viewingImage" alt="รูปภาพ"
+              class="flex-1 min-w-0 max-h-[75vh] object-contain rounded-xl shadow-2xl"
+              :class="imageLoading ? 'hidden' : 'block'" @load="imageLoading = false" @error="imageLoading = false" />
+
+            <div v-if="viewingExpense?.exp_sizes && viewingExpense.exp_sizes.length > 0"
+              class="flex-shrink-0 w-64  bg-white/10 backdrop-blur-sm rounded-xl overflow-hidden border border-white/20">
+
+              <!-- หัวตาราง -->
+              <div class="bg-white/20 px-4 py-2 text-center">
+                <p class="text-white text-xs font-bold tracking-wider">📏 ตารางไซส์</p>
+              </div>
+
+              <!-- header row -->
+              <div class="grid grid-cols-2 border-b border-white/20 bg-white/10">
+                <div class="px-4 py-2 text-white text-xs font-bold text-center border-r border-white/20">ไซส์</div>
+                <div class="px-4 py-2 text-white text-xs font-bold text-center">รอบอก (นิ้ว)</div>
+              </div>
+
+              <!-- rows -->
+              <div class="overflow-y-auto max-h-[55vh]">
+                <div v-for="(size, index) in [...viewingExpense.exp_sizes].sort((a, b) => {
+                  const order = ['S', 'M', 'L', 'XL', 'พิเศษ']
+                  const getKey = (s) => order.findIndex(o => s.startsWith(o))
+                  return getKey(a) - getKey(b)
+                })" :key="size" class="grid grid-cols-2 border-b border-white/10 last:border-0"
+                  :class="index % 2 === 0 ? 'bg-white/5' : 'bg-white/10'">
+                  <div class="px-4 py-2 text-white text-xs font-semibold text-center border-r border-white/20">
+                    {{ size.split(' ')[0] }}
+                  </div>
+                  <div class="px-4 py-2 text-white text-xs text-center">
+                    {{ size.split(' ')[1] ?? '-' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+
+          </div>
+        </div>
+      </transition>
+    </Teleport>
 
     <ConfirmToast :show="showConfirm" @confirm="onConfirmed" @cancel="showConfirm = false" />
   </div>
@@ -495,6 +520,8 @@ const gpaWarning = ref(false)
 const yearWarning = ref(false)
 const idCardError = ref('')
 const viewingImage = ref('')
+const viewingExpense = ref<any>(null)
+const imageLoading = ref(false)
 
 const router = useRouter()
 const API_BASE = (import.meta.env.VITE_API_URL as string) || 'http://localhost:3001/api'
@@ -504,7 +531,7 @@ function resolveImgUrl(path: string | null | undefined): string {
   if (path.startsWith('http')) return path
 
   const base = API_BASE.replace('/api', '')
-   console.log('resolveImgUrl base:', base, 'path:', path)
+  console.log('resolveImgUrl base:', base, 'path:', path)
   return `${base}${path}`
 }
 // ข้อมูลจาก API
@@ -598,7 +625,7 @@ async function onPrevLevelChange() {
   form.apId = 0; form.curId = 0
   admissionPlans.value = []; expenses.value = []
   if (!form.prevLevel) return
-  
+
   // Load PVC branches if prevLevel is 'pvc'
   if (form.prevLevel === 'pvc') {
     await loadPvcBranches()
@@ -606,7 +633,7 @@ async function onPrevLevelChange() {
     pvcBranches.value = []
     form.prevBranch = ''
   }
-  
+
   isLoading.value = true
   try {
     const res = await applicationService.getAdmissionPlan(form.prevLevel, '2569')
@@ -628,16 +655,16 @@ async function loadPvcBranches() {
 }
 
 function selectPlan(ap_id: number, cur_id: number) {
-   console.log('selectPlan ap_id:', ap_id, 'cur_id:', cur_id)
+  console.log('selectPlan ap_id:', ap_id, 'cur_id:', cur_id)
   form.apId = ap_id; form.curId = cur_id
   loadExpenses(cur_id)
 }
 
 async function loadExpenses(curId: number) {
-   console.log('loadExpenses called with curId:', curId)
+  console.log('loadExpenses called with curId:', curId)
   try {
     const res = await applicationService.getExpenses(curId)
-     console.log('expenses response:', res.data) 
+    console.log('expenses response:', res.data)
     expenses.value = res.data.data
     expenses.value.forEach((e: any) => {
       if (!form.expenseOrders[e.exp_id]) {
@@ -702,7 +729,7 @@ async function checkDuplicateIdCard(idCard: string) {
     idCardError.value = ''
     return
   }
-  
+
   try {
     const res = await applicationService.checkDuplicateIdCard(idCard)
     if (res.data.data.is_duplicate) {
@@ -829,12 +856,22 @@ async function onConfirmed() {
     })
     router.push('/check-status')
   } catch (err: any) {
-    console.error('Submit form error:', err)
-    console.error('Error response:', err.response?.data)
+    console.error('❌ createApplication error:', err.message)
+    console.error('❌ detail:', err.detail)   // เพิ่มบรรทัดนี้
+    console.error('❌ stack:', err.stack)
+    
     const errorMessage = err.response?.data?.message || err.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง'
     alert(errorMessage)
   } finally {
     isSubmitting.value = false
   }
 }
+
+const sortedExpenses = computed(() =>
+  [...expenses.value].sort((a, b) => {
+    if (a.payment_type === 'mandatory' && b.payment_type !== 'mandatory') return -1
+    if (a.payment_type !== 'mandatory' && b.payment_type === 'mandatory') return 1
+    return 0
+  })
+)
 </script>

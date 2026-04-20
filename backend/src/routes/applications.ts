@@ -8,6 +8,8 @@ import {
   checkStatus,
   getStats,
   checkDuplicateIdCard,
+  getPendingApplicants,
+
 } from '../controllers/applicationController'
 import { upload } from '../middleware/upload'
 
@@ -18,6 +20,7 @@ router.get('/curriculums', getCurriculums)
 router.get('/divisions', getDivisions)
 router.get('/expenses', getExpenses)
 router.get('/admission-plan', getAdmissionPlan)
+router.get('/pending', getPendingApplicants)
 
 // ส่งใบสมัคร
 router.post('/', upload.fields([
