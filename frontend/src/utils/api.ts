@@ -7,17 +7,24 @@ interface ApiResponse<T> {
 }
 
 class ApiService {
+    private getToken() {
+    return localStorage.getItem('auth_token')
+  }
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     const url = `${API_BASE_URL}${endpoint}`
+    const token = this.getToken()
     
 
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...options.headers,
       },
       ...options,
     }
+
+    
 
     try {
       const response = await fetch(url, config)
@@ -32,6 +39,14 @@ class ApiService {
       console.error('API request failed:', error)
       throw error
     }
+  }
+ async getBlob(url: string): Promise<string> {
+    const token = this.getToken()
+    const response = await fetch(url, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+    if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`)
+    return URL.createObjectURL(await response.blob())
   }
 
   // Generic HTTP methods

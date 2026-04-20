@@ -48,7 +48,8 @@
                 <input type="file" accept="image/*" class="hidden"
                   @change="handleUpload(selfHouseRegistration, 'front', $event)" />
                 <div v-if="!selfHouseRegistration.frontPreview" class="flex flex-col items-center gap-2 text-gray-400">
-                  <PhotoIcon class="w-8 h-8" /><span class="text-xs">หน้า - คลิกเพื่ออัปโหลด</span>
+                  <PhotoIcon class="w-8 h-8" /><span class="text-xs">หน้ารายละเอียดตนเอง</span>
+                  <span class="text-xs">(หน้าเเรก)</span>
                 </div>
                 <img v-else :src="selfHouseRegistration.frontPreview" class="w-full h-full object-contain rounded-xl" />
               </div>
@@ -59,7 +60,7 @@
                 <input type="file" accept="image/*" class="hidden"
                   @change="handleUpload(selfHouseRegistration, 'back', $event)" />
                 <div v-if="!selfHouseRegistration.backPreview" class="flex flex-col items-center gap-2 text-gray-400">
-                  <PhotoIcon class="w-8 h-8" /><span class="text-xs">หลัง - คลิกเพื่ออัปโหลด</span>
+                  <PhotoIcon class="w-8 h-8" /><span class="text-xs">หน้ารายละเอียดตนเอง</span>
                 </div>
                 <img v-else :src="selfHouseRegistration.backPreview" class="w-full h-full object-contain rounded-xl" />
               </div>
@@ -78,7 +79,8 @@
                   @change="handleUpload(fatherHouseRegistration, 'front', $event)" />
                 <div v-if="!fatherHouseRegistration.frontPreview"
                   class="flex flex-col items-center gap-2 text-gray-400">
-                  <PhotoIcon class="w-8 h-8" /><span class="text-xs">หน้า - คลิกเพื่ออัปโหลด</span>
+                  <PhotoIcon class="w-8 h-8" /><span class="text-xs">หน้ารายละเอียดบ้านบิดา</span>
+                  <span class="text-xs">(หน้าเเรก)</span>
                 </div>
                 <img v-else :src="fatherHouseRegistration.frontPreview"
                   class="w-full h-full object-contain rounded-xl" />
@@ -90,7 +92,7 @@
                 <input type="file" accept="image/*" class="hidden"
                   @change="handleUpload(fatherHouseRegistration, 'back', $event)" />
                 <div v-if="!fatherHouseRegistration.backPreview" class="flex flex-col items-center gap-2 text-gray-400">
-                  <PhotoIcon class="w-8 h-8" /><span class="text-xs">หลัง - คลิกเพื่ออัปโหลด</span>
+                  <PhotoIcon class="w-8 h-8" /><span class="text-xs">หน้ารายละเอียดบิดา</span>
                 </div>
                 <img v-else :src="fatherHouseRegistration.backPreview"
                   class="w-full h-full object-contain rounded-xl" />
@@ -110,7 +112,8 @@
                   @change="handleUpload(motherHouseRegistration, 'front', $event)" />
                 <div v-if="!motherHouseRegistration.frontPreview"
                   class="flex flex-col items-center gap-2 text-gray-400">
-                  <PhotoIcon class="w-8 h-8" /><span class="text-xs">หน้า - คลิกเพื่ออัปโหลด</span>
+                  <PhotoIcon class="w-8 h-8" /><span class="text-xs">หน้ารายละเอียดบ้านมารดา</span>
+                  <span class="text-xs">(หน้าเเรก)</span>
                 </div>
                 <img v-else :src="motherHouseRegistration.frontPreview"
                   class="w-full h-full object-contain rounded-xl" />
@@ -122,7 +125,7 @@
                 <input type="file" accept="image/*" class="hidden"
                   @change="handleUpload(motherHouseRegistration, 'back', $event)" />
                 <div v-if="!motherHouseRegistration.backPreview" class="flex flex-col items-center gap-2 text-gray-400">
-                  <PhotoIcon class="w-8 h-8" /><span class="text-xs">หลัง - คลิกเพื่ออัปโหลด</span>
+                  <PhotoIcon class="w-8 h-8" /><span class="text-xs">หน้ารายละเอียดมารดา</span>
                 </div>
                 <img v-else :src="motherHouseRegistration.backPreview"
                   class="w-full h-full object-contain rounded-xl" />
@@ -224,156 +227,232 @@
               class="px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium">ถัดไป</button>
           </div>
         </div>
-
         <!-- Step 3: Confirmation -->
         <div v-if="currentStep === 2" class="mb-8">
-          <div class="text-center">
-            <CheckCircleIcon class="w-16 h-16 text-emerald-500 mx-auto mb-4" />
-            <h2 class="text-xl font-semibold text-gray-700 mb-2">ยืนยันข้อมูล</h2>
-            <div class="bg-gray-50 rounded-lg p-6 mb-6 max-w-md mx-auto text-left">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p class="text-sm text-gray-500">ชื่อ-สกุล</p>
-                  <p class="font-medium text-gray-800">{{ userData.prefix }}{{ userData.fullName }}</p>
-                </div>
-                <div>
-                  <p class="text-sm text-gray-500">ยอดที่ต้องชำระ</p>
-                  <p class="font-medium text-gray-800">{{ userData.totalAmount.toLocaleString() }} บาท</p>
-                </div>
-                <div>
-                  <p class="text-sm text-gray-500">หลักสูตร</p>
-                  <p class="font-medium text-gray-800">{{ userData.curName }}</p>
-                </div>
-                <div>
-                  <p class="text-sm text-gray-500">สาขา</p>
-                  <p class="font-medium text-gray-800">{{ userData.divName }}</p>
-                </div>
+          <div class="text-center mb-6">
+            <h2 class="text-xl font-semibold text-gray-700">ยืนยันข้อมูลการมอบตัว</h2>
+          </div>
+
+          <!-- ข้อมูลผู้มอบตัว -->
+          <div class="bg-gray-50 rounded-xl p-5 mb-5">
+            <div class="space-y-2">
+              <div class="flex gap-2">
+                <span class="text-sm text-gray-500 w-24 flex-shrink-0">ชื่อ-สกุล</span>
+                <span class="text-sm font-medium text-gray-800">{{ userData.prefix }}{{ userData.fullName }}</span>
+              </div>
+              <div class="flex gap-2">
+                <span class="text-sm text-gray-500 w-24 flex-shrink-0">หลักสูตร</span>
+                <span class="text-sm font-medium text-gray-800">{{ userData.curName }}</span>
+              </div>
+              <div class="flex gap-2">
+                <span class="text-sm text-gray-500 w-24 flex-shrink-0">สาขาวิชา</span>
+                <span class="text-sm font-medium text-gray-800">{{ userData.divName }}</span>
               </div>
             </div>
-            <div class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-              <h3 class="font-semibold text-gray-700 mb-4">เอกสารที่อัปโหลดทั้งหมด</h3>
-              <div class="mb-6">
-                <h4 class="text-sm font-medium text-gray-600 mb-2">สลิปการโอนเงิน</h4>
-                <div v-if="paymentSlip.frontPreview" class="border border-gray-200 rounded-lg overflow-hidden">
-                  <img :src="paymentSlip.frontPreview" class="w-full h-48 object-contain bg-gray-50" />
-                </div>
-                <div v-else class="border border-gray-200 rounded-lg h-48 flex items-center justify-center bg-gray-50">
-                  <p class="text-gray-400">ไม่มีรูปภาพ</p>
-                </div>
-              </div>
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <h4 class="text-sm font-medium text-gray-600 mb-2">ทะเบียนบ้านตนเอง</h4>
-                  <div class="grid grid-cols-2 gap-2">
-                    <img v-if="selfHouseRegistration.frontPreview" :src="selfHouseRegistration.frontPreview"
-                      class="w-full h-32 object-contain bg-gray-50 border rounded" />
-                    <div v-else class="border rounded h-32 flex items-center justify-center bg-gray-50">
-                      <p class="text-xs text-gray-400">หน้า</p>
-                    </div>
-                    <img v-if="selfHouseRegistration.backPreview" :src="selfHouseRegistration.backPreview"
-                      class="w-full h-32 object-contain bg-gray-50 border rounded" />
-                    <div v-else class="border rounded h-32 flex items-center justify-center bg-gray-50">
-                      <p class="text-xs text-gray-400">หลัง</p>
-                    </div>
+          </div>
+          <!-- รายการเอกสาร -->
+          <div class="bg-white border border-gray-200 rounded-xl p-5 mb-5">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">รายการเอกสารมอบตัว</h3>
+            <div class="space-y-4">
+
+              <!-- ทะเบียนบ้านตนเอง -->
+              <div>
+                <div class="flex items-center gap-3 mb-2">
+                  <div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                    :class="selfHouseRegistration.frontPreview ? 'bg-emerald-100' : 'bg-red-100'">
+                    <svg v-if="selfHouseRegistration.frontPreview" class="w-4 h-4 text-emerald-600" fill="none"
+                      stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <svg v-else class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                        d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                   </div>
+                  <span class="text-sm text-gray-700">1. สำเนาทะเบียนบ้านตนเอง</span>
+                  <span class="ml-auto text-xs font-medium"
+                    :class="selfHouseRegistration.frontPreview ? 'text-emerald-600' : 'text-red-500'">
+                    {{ selfHouseRegistration.frontPreview ? 'อัปโหลดแล้ว' : 'ยังไม่ได้อัปโหลด' }}
+                  </span>
                 </div>
-                <div>
-                  <h4 class="text-sm font-medium text-gray-600 mb-2">ทะเบียนบ้านบิดา</h4>
-                  <div class="grid grid-cols-2 gap-2">
-                    <img v-if="fatherHouseRegistration.frontPreview" :src="fatherHouseRegistration.frontPreview"
-                      class="w-full h-32 object-contain bg-gray-50 border rounded" />
-                    <div v-else class="border rounded h-32 flex items-center justify-center bg-gray-50">
-                      <p class="text-xs text-gray-400">หน้า</p>
-                    </div>
-                    <img v-if="fatherHouseRegistration.backPreview" :src="fatherHouseRegistration.backPreview"
-                      class="w-full h-32 object-contain bg-gray-50 border rounded" />
-                    <div v-else class="border rounded h-32 flex items-center justify-center bg-gray-50">
-                      <p class="text-xs text-gray-400">หลัง</p>
-                    </div>
+                <div v-if="selfHouseRegistration.frontPreview || selfHouseRegistration.backPreview"
+                  class="grid grid-cols-2 gap-2 ml-10">
+                  <div v-if="selfHouseRegistration.frontPreview" class="relative">
+                    <img :src="selfHouseRegistration.frontPreview"
+                      class="w-full h-28 object-cover rounded-lg border border-gray-200 bg-gray-50" />
+                    <span
+                      class="absolute bottom-1 left-1 text-xs bg-black/50 text-white px-1.5 py-0.5 rounded">หน้าแรก</span>
                   </div>
-                </div>
-                <div>
-                  <h4 class="text-sm font-medium text-gray-600 mb-2">ทะเบียนบ้านมารดา</h4>
-                  <div class="grid grid-cols-2 gap-2">
-                    <img v-if="motherHouseRegistration.frontPreview" :src="motherHouseRegistration.frontPreview"
-                      class="w-full h-32 object-contain bg-gray-50 border rounded" />
-                    <div v-else class="border rounded h-32 flex items-center justify-center bg-gray-50">
-                      <p class="text-xs text-gray-400">หน้า</p>
-                    </div>
-                    <img v-if="motherHouseRegistration.backPreview" :src="motherHouseRegistration.backPreview"
-                      class="w-full h-32 object-contain bg-gray-50 border rounded" />
-                    <div v-else class="border rounded h-32 flex items-center justify-center bg-gray-50">
-                      <p class="text-xs text-gray-400">หลัง</p>
-                    </div>
+                  <div v-if="selfHouseRegistration.backPreview" class="relative">
+                    <img :src="selfHouseRegistration.backPreview"
+                      class="w-full h-28 object-cover rounded-lg border border-gray-200 bg-gray-50" />
+                    <span
+                      class="absolute bottom-1 left-1 text-xs bg-black/50 text-white px-1.5 py-0.5 rounded">รายละเอียด</span>
                   </div>
                 </div>
               </div>
+
+              <div class="border-t border-gray-100"></div>
+
+              <!-- ทะเบียนบ้านบิดา -->
+              <div>
+                <div class="flex items-center gap-3 mb-2">
+                  <div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                    :class="fatherHouseRegistration.frontPreview ? 'bg-emerald-100' : 'bg-red-100'">
+                    <svg v-if="fatherHouseRegistration.frontPreview" class="w-4 h-4 text-emerald-600" fill="none"
+                      stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <svg v-else class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                        d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                  <span class="text-sm text-gray-700">2. สำเนาทะเบียนบ้านบิดา</span>
+                  <span class="ml-auto text-xs font-medium"
+                    :class="fatherHouseRegistration.frontPreview ? 'text-emerald-600' : 'text-red-500'">
+                    {{ fatherHouseRegistration.frontPreview ? 'อัปโหลดแล้ว' : 'ยังไม่ได้อัปโหลด' }}
+                  </span>
+                </div>
+                <div v-if="fatherHouseRegistration.frontPreview || fatherHouseRegistration.backPreview"
+                  class="grid grid-cols-2 gap-2 ml-10">
+                  <div v-if="fatherHouseRegistration.frontPreview" class="relative">
+                    <img :src="fatherHouseRegistration.frontPreview"
+                      class="w-full h-28 object-cover rounded-lg border border-gray-200 bg-gray-50" />
+                    <span
+                      class="absolute bottom-1 left-1 text-xs bg-black/50 text-white px-1.5 py-0.5 rounded">หน้าแรก</span>
+                  </div>
+                  <div v-if="fatherHouseRegistration.backPreview" class="relative">
+                    <img :src="fatherHouseRegistration.backPreview"
+                      class="w-full h-28 object-cover rounded-lg border border-gray-200 bg-gray-50" />
+                    <span
+                      class="absolute bottom-1 left-1 text-xs bg-black/50 text-white px-1.5 py-0.5 rounded">รายละเอียด</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="border-t border-gray-100"></div>
+
+              <!-- ทะเบียนบ้านมารดา -->
+              <div>
+                <div class="flex items-center gap-3 mb-2">
+                  <div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                    :class="motherHouseRegistration.frontPreview ? 'bg-emerald-100' : 'bg-red-100'">
+                    <svg v-if="motherHouseRegistration.frontPreview" class="w-4 h-4 text-emerald-600" fill="none"
+                      stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <svg v-else class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                        d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                  <span class="text-sm text-gray-700">3. สำเนาทะเบียนบ้านมารดา</span>
+                  <span class="ml-auto text-xs font-medium"
+                    :class="motherHouseRegistration.frontPreview ? 'text-emerald-600' : 'text-red-500'">
+                    {{ motherHouseRegistration.frontPreview ? 'อัปโหลดแล้ว' : 'ยังไม่ได้อัปโหลด' }}
+                  </span>
+                </div>
+                <div v-if="motherHouseRegistration.frontPreview || motherHouseRegistration.backPreview"
+                  class="grid grid-cols-2 gap-2 ml-10">
+                  <div v-if="motherHouseRegistration.frontPreview" class="relative">
+                    <img :src="motherHouseRegistration.frontPreview"
+                      class="w-full h-28 object-cover rounded-lg border border-gray-200 bg-gray-50" />
+                    <span
+                      class="absolute bottom-1 left-1 text-xs bg-black/50 text-white px-1.5 py-0.5 rounded">หน้าแรก</span>
+                  </div>
+                  <div v-if="motherHouseRegistration.backPreview" class="relative">
+                    <img :src="motherHouseRegistration.backPreview"
+                      class="w-full h-28 object-cover rounded-lg border border-gray-200 bg-gray-50" />
+                    <span
+                      class="absolute bottom-1 left-1 text-xs bg-black/50 text-white px-1.5 py-0.5 rounded">รายละเอียด</span>
+                  </div>
+                </div>
+              </div>
+
             </div>
-            <div class="flex justify-center gap-4">
-              <button @click="goBackStep"
-                class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium">ย้อนกลับ</button>
-              <button @click="handleConfirmation" :disabled="isLoading"
-                class="px-8 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50 transition-colors font-medium">
-                {{ isLoading ? 'กำลังบันทึก...' : 'ยืนยันการมอบตัว' }}
-              </button>
+
+
+          </div>
+
+          <!-- การชำระเงิน + สลิป -->
+          <div class="bg-white border border-gray-200 rounded-xl p-5 mb-6">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">การชำระเงิน</h3>
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-sm text-gray-500">ยอดชำระ</span>
+              <span class="text-base font-semibold text-emerald-600">{{ userData.totalAmount.toLocaleString() }}
+                บาท</span>
             </div>
+            <div v-if="paymentSlip.frontPreview"
+              class="border border-gray-200 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center"
+              style="min-height: 280px;">
+              <img :src="paymentSlip.frontPreview" class="max-w-full max-h-72 object-contain" />
+            </div>
+            <div v-else
+              class="border border-dashed border-gray-300 rounded-lg h-32 flex items-center justify-center bg-gray-50">
+              <p class="text-sm text-gray-400">ไม่มีสลิปการชำระเงิน</p>
+            </div>
+          </div>
+
+          <div class="flex justify-between gap-4">
+            <button @click="goBackStep"
+              class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium">ย้อนกลับ</button>
+            <button @click="handleConfirmation" :disabled="isLoading"
+              class="px-8 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50 transition-colors font-medium">
+              {{ isLoading ? 'กำลังบันทึก...' : 'ยืนยันการมอบตัว' }}
+            </button>
           </div>
         </div>
 
         <!-- Step 4: Success -->
         <div v-if="currentStep === 3" class="mb-8">
           <div class="text-center py-8">
-            <div class="relative w-28 h-28 mx-auto mb-6">
+            <div class="relative w-24 h-24 mx-auto mb-6">
               <div class="absolute inset-0 bg-emerald-100 rounded-full animate-ping opacity-30"></div>
-              <div class="relative w-28 h-28 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg">
-                <CheckBadgeIcon class="w-14 h-14 text-white" />
+              <div class="relative w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg">
+                <CheckBadgeIcon class="w-12 h-12 text-white" />
               </div>
             </div>
-            <h2 class="text-2xl font-bold text-gray-800 mb-2">การมอบตัวสำเร็จแล้ว! 🎉</h2>
-            <p class="text-gray-500 mb-8">ระบบได้บันทึกข้อมูลการมอบตัวของคุณเรียบร้อยแล้ว</p>
-            <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-6 max-w-md mx-auto text-left mb-6">
-              <h3 class="text-sm font-semibold text-emerald-700 mb-3 uppercase tracking-wide">ข้อมูลผู้มอบตัว</h3>
-              <div class="space-y-2">
-                <div class="flex justify-between">
-                  <span class="text-sm text-gray-500">ชื่อ-สกุล</span>
-                  <span class="text-sm font-medium text-gray-800">{{ userData.prefix }}{{ userData.fullName }}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-sm text-gray-500">หลักสูตร</span>
-                  <span class="text-sm font-medium text-gray-800">{{ userData.curName }}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-sm text-gray-500">สาขา</span>
-                  <span class="text-sm font-medium text-gray-800">{{ userData.divName }}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-sm text-gray-500">ยอดที่ชำระ</span>
-                  <span class="text-sm font-medium text-emerald-600">{{ userData.totalAmount.toLocaleString() }}
-                    บาท</span>
-                </div>
-              </div>
-            </div>
-            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 max-w-md mx-auto mb-8 text-left">
-              <p class="text-sm font-semibold text-blue-700 mb-2">📄 เอกสารที่ดาวน์โหลดอัตโนมัติ</p>
-              <ul class="text-sm text-blue-600 space-y-1">
-                <li>✅ ใบรับรองการมอบตัว</li>
-                <li>✅ ใบสั่งซื้อเครื่องแบบนักเรียน</li>
-              </ul>
-              <p class="text-xs text-blue-400 mt-2">หากไม่ได้รับไฟล์ กรุณากดปุ่มดาวน์โหลดซ้ำด้านล่าง</p>
-            </div>
-            <div class="flex flex-col sm:flex-row justify-center gap-3">
-              <button @click="downloadPDFs"
-                class="px-6 py-3 border border-emerald-500 text-emerald-600 rounded-lg hover:bg-emerald-50 transition-colors font-medium flex items-center justify-center gap-2">
-                <ArrowDownTrayIcon class="w-4 h-4" />
-                ดาวน์โหลดเอกสาร PDF
-              </button>
-              <button @click="router.push('/check-status')"
-                class="px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors font-medium">
-                กลับหน้าหลัก
-              </button>
-            </div>
-          </div>
-        </div>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">ระบบบันทึกการมอบตัวแล้ว</h2>
+            <p class="text-gray-500 mb-2">ขอบคุณที่ดำเนินการมอบตัวเรียบร้อยแล้ว</p>
+            <p class="text-sm text-amber-600 font-medium mb-8">กรุณารอเจ้าหน้าที่ตรวจสอบข้อมูล 1-3 วันทำการ</p>
+
+            <!-- แสดงปุ่มดาวน์โหลด PDF เฉพาะเมื่อ admin ยืนยันแล้ว -->
+<template v-if="userData.status === 'enrolled'">
+  <div class="flex flex-col sm:flex-row justify-center gap-3 mt-6">
+    <button @click="downloadPDFs"
+      class="px-6 py-3 border border-emerald-500 text-emerald-600 rounded-lg hover:bg-emerald-50 transition-colors font-medium flex items-center justify-center gap-2">
+      <ArrowDownTrayIcon class="w-4 h-4" />
+      ดาวน์โหลดเอกสาร PDF
+    </button>
+    <button @click="router.push('/check-status')"
+      class="px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors font-medium">
+      กลับหน้าหลัก
+    </button>
+  </div>
+</template>
+
+<template v-else>
+  <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 max-w-md mx-auto mb-6 text-left">
+    <div class="flex items-start gap-3">
+      <svg class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <div>
+        <p class="text-sm font-semibold text-amber-700 mb-1">สถานะ: รอตรวจสอบ</p>
+        <p class="text-xs text-amber-600">เจ้าหน้าที่จะตรวจสอบเอกสารและหลักฐานการชำระเงินของท่าน ภายใน 1-3 วันทำการ เมื่อได้รับการยืนยันแล้วท่านจะสามารถดาวน์โหลดเอกสารได้</p>
+      </div>
+    </div>
+  </div>
+  <button @click="router.push('/check-status')"
+    class="px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors font-medium">
+    กลับหน้าหลัก
+  </button>
+</template>
+         </div>
+        </div> 
+       
+
 
       </template>
     </div>
@@ -502,9 +581,11 @@ onMounted(async () => {
       slipVerifyResult.value = { valid: true }
     }
 
-    if (data.status === 'paid') {
-      currentStep.value = 2
-    }
+if (data.status === 'pending_approve' || data.status === 'enrolled') {
+  currentStep.value = 3
+} else if (data.status === 'paid') {
+  currentStep.value = 2  
+}
   } catch {
     showToast('error', 'โหลดข้อมูลไม่สำเร็จ', 'ไม่สามารถดึงข้อมูลได้ กรุณาลองใหม่')
     setTimeout(() => router.push('/check-status'), 2000)
@@ -565,11 +646,9 @@ const handleSlipUpload = async (event: Event) => {
     const result: SlipVerifyResult = res.data.data
     slipVerifyResult.value = result
 
-    if (result.valid) {
-      // ✅ อัปเดต status ใน local state เป็น paid ทันที
-      userData.value.status = 'paid'
-      showToast('success', 'สลิปถูกต้อง ✅', `ยอดโอน ${result.amount?.toLocaleString()} บาท`)
-    } else {
+  if (result.valid) {
+  showToast('success', 'อัปโหลดสลิปสำเร็จ ✅', `ยอดโอน ${result.amount?.toLocaleString()} บาท กรุณากดถัดไปเพื่อดำเนินการต่อ`)
+} else {
       paymentSlip.front = null
       paymentSlip.frontPreview = ''
       slipVerifyResult.value = null
@@ -591,6 +670,12 @@ const goBack = () => router.push('/check-status')
 const goBackStep = () => { if (currentStep.value > 0) currentStep.value-- }
 
 const handleNextClick = () => {
+  
+  if (userData.value.status === 'pending_approve' || userData.value.status === 'enrolled') {
+    showToast('error', 'ไม่สามารถแก้ไขได้', 'อยู่ระหว่างรอ admin ตรวจสอบ')
+    return
+  }
+
   if (!isAllDocumentsUploaded.value) {
     if (currentStep.value === 1 && paymentSlip.frontPreview && !slipVerifyResult.value?.valid) {
       showToast('error', 'สลิปยังไม่ผ่านการตรวจสอบ', 'กรุณารอผลการตรวจสอบหรืออัปโหลดสลิปใหม่')
@@ -599,6 +684,7 @@ const handleNextClick = () => {
     }
     return
   }
+
   if (currentStep.value < steps.length - 1) currentStep.value++
 }
 
@@ -621,7 +707,7 @@ const handleConfirmation = async () => {
     })
 
     // ✅ อัปเดต local status และ generate PDF เสมอ
-    userData.value.status = 'enrolled'
+   userData.value.status = 'pending_approve'
 
 
     currentStep.value = 3

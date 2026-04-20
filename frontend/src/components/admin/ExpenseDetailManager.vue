@@ -218,7 +218,7 @@
                         @click="triggerFileInput">
                         <!-- มีรูปแล้ว -->
                         <div v-if="imagePreview || originalImgUrl" class="relative group">
-                          <img :src="imagePreview || originalImgUrl" alt="รูปภาพ"
+                          <img :src="imagePreview || getImageUrl(originalImgUrl)" alt="รูปภาพ"
                             class="w-full h-48 object-contain bg-gray-50" />
                           <div
                             class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center">
@@ -337,14 +337,24 @@
       <transition name="modal">
         <div v-if="viewingImage" class="fixed inset-0 z-[9999] flex items-center justify-center px-4">
           <div class="fixed inset-0 bg-black/70" @click="viewingImage = ''"></div>
-          <div class="relative z-[10000] max-w-2xl w-full">
+          <div class="relative z-[10000] w-full max-w-md">
+
+            <!-- ปุ่มปิด -->
             <button @click="viewingImage = ''"
-              class="absolute -top-10 right-0 text-white hover:text-gray-300 transition-colors">
-              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              class="absolute -top-4 -right-4 z-10 w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-125 hover:bg-red-500 hover:text-white text-gray-600">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            <img :src="viewingImage" alt="รูปภาพ" class="w-full rounded-xl shadow-2xl" />
+
+            <!-- Loading -->
+            <div v-if="imageLoading" class="flex items-center justify-center h-48">
+              <div class="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+            </div>
+
+            <!-- รูปภาพ -->
+            <img :src="viewingImage" alt="รูปภาพ" class="w-full max-h-[75vh] object-contain rounded-xl shadow-2xl"
+              :class="imageLoading ? 'hidden' : 'block'" @load="imageLoading = false" @error="imageLoading = false" />
           </div>
         </div>
       </transition>
@@ -398,7 +408,7 @@ import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import { apiService } from '@/utils/api'
 
 // ── Constants ──────────────────────────────────────────
-const SIZES_WITH_NUMBER = ['M', 'L', 'XL'] as const
+const SIZES_WITH_NUMBER = ['S', 'M', 'L', 'XL'] as const
 
 // ── Interfaces ─────────────────────────────────────────
 interface Curriculum {
@@ -433,7 +443,7 @@ const imagePreview = ref<string>('')
 const viewingImage = ref<string>('')
 const fileInputRef = ref<HTMLInputElement | null>(null)
 
-const sizeNumbers = ref<Record<string, string>>({ M: '', L: '', XL: '' })
+const sizeNumbers = ref<Record<string, string>>({ S: '', M: '', L: '', XL: '' })
 const originalImgUrl = ref<string>('')
 const showAddModal = ref(false)
 const showEditModal = ref(false)
@@ -477,8 +487,21 @@ const clearImage = () => {
   if (fileInputRef.value) fileInputRef.value.value = ''
 }
 
+
+const getImageUrl = (path: string) => {
+  if (!path) return ''
+  if (path.startsWith('http') || path.startsWith('data:')) return path
+
+  const base = (import.meta.env.VITE_API_URL || 'http://localhost:3001/api').replace('/api', '')
+  return `${base}${path}`
+}
+
+const imageLoading = ref(false)
+
 const viewImage = (imageUrl: string) => {
-  viewingImage.value = imageUrl
+  const url = getImageUrl(imageUrl)
+  imageLoading.value = true
+  viewingImage.value = url
 }
 
 const handleImageUpload = (event: Event) => {
@@ -580,7 +603,7 @@ const editExpense = (expense: ExpenseDetail) => {
   }
   originalImgUrl.value = expense.exp_img || ''
   imagePreview.value = ''
-  sizeNumbers.value = { M: '', L: '', XL: '' }
+  sizeNumbers.value = { S: '', M: '', L: '', XL: '' }
   showSizeSection.value = expense.exp_sizes ? expense.exp_sizes.length > 0 : false
   showEditModal.value = true
 }
@@ -591,7 +614,7 @@ const closeModal = () => {
   showSizeSection.value = false
   imagePreview.value = ''
   originalImgUrl.value = ''
-  sizeNumbers.value = { M: '', L: '', XL: '' }
+  sizeNumbers.value = { S: '', M: '', L: '', XL: '' }
   if (fileInputRef.value) fileInputRef.value.value = ''
   formData.value = {
     exp_id: 0,

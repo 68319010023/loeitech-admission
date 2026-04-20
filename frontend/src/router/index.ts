@@ -11,6 +11,8 @@ const router = createRouter({
     { path: '/login', component: () => import('../views/LoginView.vue') },
     { path: '/guide', component: () => import('../views/GuideView.vue') },
 
+
+    { path: '/admin/dashboard', component: () => import('@/views/AdminDashboard.vue') , meta: { requiresAuth: true } },
     { path: '/admin/users', component: () => import('../views/AdminUsersView.vue'), meta: { requiresAuth: true } },
     { path: '/admin/manage-users', component: () => import('../views/AdminManageUsersView.vue'), meta: { requiresAuth: true } },
     { path: '/admin/settings', component: () => import('../views/AdminSettingsView.vue'), meta: { requiresAuth: true } },

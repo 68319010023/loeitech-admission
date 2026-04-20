@@ -2,6 +2,27 @@ import { Request, Response } from "express";
 import pool from "../config/db";
 import { sendSuccess, sendError } from "../utils/response";
 
+
+export const getPendingApplicants = async (_req: Request, res: Response) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        a.app_id, a.prefix, a.full_name, a.status, a.created_at,
+        c.cur_shortname, d.div_name
+      FROM applicants a
+      JOIN admission_plan ap ON ap.ap_id = a.ap_id
+      JOIN curriculums c ON c.cur_id = ap.cur_id
+      JOIN divisions d ON d.div_id = ap.div_id
+      WHERE a.status IN ('pending_approve', 'pending_payment')
+      ORDER BY a.created_at DESC
+      LIMIT 20
+    `)
+    sendSuccess(res, result.rows)
+  } catch (err) {
+    sendError(res, 'ไม่สามารถดึงข้อมูลได้', 500, err)
+  }
+}
+
 // ดึงหลักสูตรทั้งหมด
 export const getCurriculums = async (_req: Request, res: Response) => {
   try {
@@ -105,26 +126,11 @@ export const createApplication = async (req: Request, res: Response) => {
     await client.query("BEGIN");
 
     const {
-      id_card_number,
-      id_type,
-      prefix,
-      full_name,
-      address,
-      phone,
-      email,
-      prev_school,
-      prev_level,
-      prev_year,
-      gpa,
-      prev_branch, // Add prev_branch for PVC branch
-      cur_id,
-      div_id,
-      ap_id,
-      doc_type,
-      expenses, // JSON string array ของรายการค่าใช้จ่าย
+      id_card_number, id_type, prefix, full_name, address, phone, email,
+      prev_school, prev_level, prev_year, gpa, prev_branch,
+      cur_id, div_id, ap_id, doc_type, expenses,
     } = req.body;
 
-    // เช็คว่าสมัครซ้ำมั้ย
     const existing = await client.query(
       "SELECT app_id FROM applicants WHERE id_card_number = $1",
       [id_card_number],
@@ -134,17 +140,13 @@ export const createApplication = async (req: Request, res: Response) => {
       return sendError(res, "เลขบัตรประชาชนนี้สมัครแล้ว", 400);
     }
 
-    // เช็คว่าสาขายังมีที่ว่างมั้ย
-    const planCheck = await client.query(
-      `
+    const planCheck = await client.query(`
       SELECT ap.plan_num, COUNT(a.app_id) AS count
       FROM admission_plan ap
       LEFT JOIN applicants a ON a.ap_id = ap.ap_id
       WHERE ap.ap_id = $1
       GROUP BY ap.plan_num
-    `,
-      [ap_id],
-    );
+    `, [ap_id]);
 
     if (planCheck.rows.length > 0) {
       const { plan_num, count } = planCheck.rows[0];
@@ -154,37 +156,20 @@ export const createApplication = async (req: Request, res: Response) => {
       }
     }
 
-    // สร้างใบสมัคร
-    const appResult = await client.query(
-      `
+    const appResult = await client.query(`
       INSERT INTO applicants
         (id_card_number, id_type, prefix, full_name, address, phone, email,
          prev_school, prev_level, prev_year, gpa, prev_branch, cur_id, div_id, ap_id)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
       RETURNING app_id
-    `,
-      [
-        id_card_number,
-        id_type || "thai_id",
-        prefix,
-        full_name,
-        address,
-        phone,
-        email,
-        prev_school,
-        prev_level,
-        prev_year,
-        gpa,
-        prev_branch || null, // Add prev_branch, can be null for non-PVC applicants
-        cur_id,
-        div_id,
-        ap_id,
-      ],
-    );
+    `, [
+      id_card_number, id_type || "thai_id", prefix, full_name, address, phone, email,
+      prev_school, prev_level, prev_year, gpa, prev_branch || null,
+      cur_id, div_id, ap_id,
+    ]);
 
     const app_id = appResult.rows[0].app_id;
 
-    // บันทึกเอกสาร
     const files = req.files as Record<string, Express.Multer.File[]>;
     const docEntries = [
       { key: "id_front", type: "id_front" },
@@ -196,21 +181,14 @@ export const createApplication = async (req: Request, res: Response) => {
     for (const entry of docEntries) {
       const file = files?.[entry.key]?.[0];
       if (file) {
-        await client.query(
-          `
+        await client.query(`
           INSERT INTO documents (app_id, doc_type, file_path, file_name, file_size)
           VALUES ($1, $2, $3, $4, $5)
-        `,
-          [app_id, entry.type, file.path, file.filename, file.size],
-        );
+        `, [app_id, entry.type, file.path, file.filename, file.size]);
       }
     }
 
-    // บันทึกรายการค่าใช้จ่าย
-    let totalAmount = 0;
-    let requiredAmount = 0;
-    let optionalAmount = 0;
-
+    let totalAmount = 0, requiredAmount = 0, optionalAmount = 0;
     const expenseList = JSON.parse(expenses || "[]");
     for (const exp of expenseList) {
       if (exp.quantity <= 0) continue;
@@ -219,47 +197,30 @@ export const createApplication = async (req: Request, res: Response) => {
       if (exp.is_required) requiredAmount += total;
       else optionalAmount += total;
 
-      await client.query(
-        `
+      await client.query(`
         INSERT INTO applicant_expenses
           (app_id, exp_id, quantity, size, unit_price, total_price, is_required)
         VALUES ($1,$2,$3,$4,$5,$6,$7)
-      `,
-        [
-          app_id,
-          exp.exp_id,
-          exp.quantity,
-          exp.size || null,
-          exp.unit_price,
-          total,
-          exp.is_required,
-        ],
-      );
+      `, [app_id, exp.exp_id, exp.quantity, exp.size || null, exp.unit_price, total, exp.is_required]);
     }
 
-    // สร้างรายการชำระเงิน
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 3);
 
-    await client.query(
-      `
+    await client.query(`
       INSERT INTO payments (app_id, total_amount, required_amount, optional_amount, due_date)
       VALUES ($1,$2,$3,$4,$5)
-    `,
-      [app_id, totalAmount, requiredAmount, optionalAmount, dueDate],
-    );
+    `, [app_id, totalAmount, requiredAmount, optionalAmount, dueDate]);
 
     await client.query("COMMIT");
+    sendSuccess(res, { app_id, total_amount: totalAmount, due_date: dueDate }, "ส่งใบสมัครเรียบร้อยแล้ว", 201);
 
-    sendSuccess(
-      res,
-      { app_id, total_amount: totalAmount, due_date: dueDate },
-      "ส่งใบสมัครเรียบร้อยแล้ว",
-      201,
-    );
   } catch (err: any) {
     await client.query("ROLLBACK");
-     console.error('❌ createApplication error:', err.message, err.stack)
+    console.error('❌ createApplication error:', err.message)
+    console.error('❌ detail:', err.detail)
+    console.error('❌ hint:', err.hint)
+    console.error('❌ where:', err.where)
     sendError(res, "เกิดข้อผิดพลาดในการส่งใบสมัคร", 500, err);
   } finally {
     client.release();
@@ -274,7 +235,8 @@ export const checkStatus = async (req: Request, res: Response) => {
       `
       SELECT
         a.app_id, a.prefix, a.full_name, a.status, a.created_at,
-        a.phone, a.id_card_number,
+        a.phone, a.id_card_number, a.address, a.email,
+        a.prev_school, a.prev_level, a.prev_year, a.gpa,
         c.cur_name, d.div_name,
         p.total_amount, p.required_amount, p.due_date,
         p.paid_at, p.verified_at, p.slip_sender, p.slip_receiver,
@@ -296,7 +258,8 @@ export const checkStatus = async (req: Request, res: Response) => {
       WHERE a.id_card_number = $1
         GROUP BY
         a.app_id, a.prefix, a.full_name, a.status, a.created_at,
-        a.phone, a.id_card_number,
+        a.phone, a.id_card_number, a.address, a.email,
+        a.prev_school, a.prev_level, a.prev_year, a.gpa,
         c.cur_name, d.div_name,
         p.total_amount, p.required_amount, p.due_date,
         p.paid_at, p.verified_at, p.slip_sender, p.slip_receiver,
@@ -335,15 +298,45 @@ sendSuccess(res, {
 };
 
 // สถิติ
+//  unction  0 duplicate ID card
+export const checkDuplicateIdCard = async (req: Request, res: Response) => {
+  try {
+    const { id_card_number } = req.body;
+    
+    if (!id_card_number) {
+      return sendError(res, "  0  ID card number is required", 400);
+    }
+
+    const result = await pool.query(
+      "SELECT app_id, full_name, status FROM applicants WHERE id_card_number = $1",
+      [id_card_number]
+    );
+
+    if (result.rows.length > 0) {
+      return sendSuccess(res, {
+        is_duplicate: true,
+        applicant: result.rows[0]
+      }, "  0  ID card already exists");
+    }
+
+    sendSuccess(res, {
+      is_duplicate: false
+    }, "  0  ID card is available");
+  } catch (err) {
+    sendError(res, "  0  Error checking duplicate ID card", 500, err);
+  }
+};
+
 export const getStats = async (_req: Request, res: Response) => {
   try {
-    const overview = await pool.query(`
+  const overview = await pool.query(`
   SELECT
     COUNT(*) AS total_applicants,
     COUNT(*) FILTER (WHERE status != 'enrolled') AS applicant_count,
     COUNT(*) FILTER (WHERE status = 'paid') AS paid,
     COUNT(*) FILTER (WHERE status = 'enrolled') AS enrolled,
-    COUNT(*) FILTER (WHERE status = 'pending_payment') AS pending
+    COUNT(*) FILTER (WHERE status = 'pending_approve') AS pending_approve,
+    COUNT(*) FILTER (WHERE status = 'pending_payment') AS pending_payment
   FROM applicants
 `);
 
@@ -404,3 +397,5 @@ export const getStats = async (_req: Request, res: Response) => {
     sendError(res, "เกิดข้อผิดพลาด", 500, err);
   }
 };
+
+

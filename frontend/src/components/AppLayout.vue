@@ -4,7 +4,8 @@
     <div v-if="sidebarOpen" class="fixed inset-0 bg-black/40 z-30 lg:hidden" @click="sidebarOpen = false" />
 
     <!-- Sidebar -->
-    <aside class="fixed lg:static inset-y-0 left-0 z-40 w-64 flex-shrink-0 flex flex-col transition-transform duration-300"
+    <aside
+      class="fixed lg:static inset-y-0 left-0 z-40 w-64 h-screen flex-shrink-0 flex flex-col overflow-hidden transition-transform duration-300"
       :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
       style="background: linear-gradient(to bottom, rgba(20, 184, 166, 0.9), rgba(101, 163, 13, 0.9))">
       <!-- Logo -->
@@ -54,17 +55,23 @@
         <div v-if="authStore.isAuthenticated">
           <p class="text-white/50 text-xs font-medium px-3 py-2 mt-4">เจ้าหน้าที่</p>
 
+          <RouterLink to="/admin/dashboard"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+            :class="$route.path.startsWith('/admin/dashboard') ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'">
+            <HomeIcon class="w-5 h-5" /> Dashboard
+          </RouterLink>
+
           <RouterLink to="/admin/users"
             class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
             :class="$route.path.startsWith('/admin/users') ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'">
-            <UserGroupIcon class="w-5 h-5" /> ข้อมูลผู้ใช้
+            <UserGroupIcon class="w-5 h-5" /> ข้อมูลผู้สมัคร
           </RouterLink>
 
 
           <RouterLink to="/admin/manage-users"
             class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
             :class="$route.path.startsWith('/admin/manage-users') ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'">
-            <UserGroupIcon class="w-5 h-5" /> จัดการสมาชิก
+            <UserGroupIcon class="w-5 h-5" /> ผู้ใช้งานระบบ
           </RouterLink>
 
           <RouterLink to="/admin/settings"
@@ -142,6 +149,7 @@ import { useRouter, useRoute } from 'vue-router'
 import {
   AcademicCapIcon,
   DocumentTextIcon,
+  HomeIcon,
   UserGroupIcon,
   Cog6ToothIcon,
   MagnifyingGlassIcon,

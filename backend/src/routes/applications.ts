@@ -7,6 +7,8 @@ import {
   createApplication,
   checkStatus,
   getStats,
+  checkDuplicateIdCard,
+  getPendingApplicants,
 } from '../controllers/applicationController'
 import { ocrIdCard } from '../controllers/ocrController'
 import { upload } from '../middleware/upload'
@@ -18,6 +20,7 @@ router.get('/curriculums', getCurriculums)
 router.get('/divisions', getDivisions)
 router.get('/expenses', getExpenses)
 router.get('/admission-plan', getAdmissionPlan)
+router.get('/pending', getPendingApplicants)
 
 // OCR บัตรประชาชน (Gemini Vision)
 router.post('/ocr-idcard', upload.single('image'), ocrIdCard)
@@ -30,10 +33,13 @@ router.post('/', upload.fields([
   { name: 'edu_back', maxCount: 1 },
 ]), createApplication)
 
+// ตรวจสอบบัตรประชาชนซ้ำ
+router.post('/check-duplicate', checkDuplicateIdCard)
+
 // ตรวจสอบสถานะ
 router.get('/check/:idCard', checkStatus)
 
 // สถิติ
 router.get('/stats', getStats)
 
-export default router
+export default router

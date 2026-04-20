@@ -38,6 +38,10 @@ export const applicationService = {
     checkStatus: (idCard: string) =>
         api.get(`/applications/check/${idCard}`),
 
+    // ตรวจสอบซ้ำ idCard
+    checkDuplicateIdCard: (idCard: string) =>
+        api.post('/applications/check-duplicate', { id_card_number: idCard }),
+
     // สถิติ
     getStats: () => api.get('/applications/stats'),
 }
