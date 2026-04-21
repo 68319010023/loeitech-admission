@@ -61,8 +61,7 @@
               Export ที่เลือก
             </button>
 
-            <button v-if="selectedExportType === 'students'" @click="exportAll()"
-              :disabled="ocrProgress.running" class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
+            <button v-if="selectedExportType === 'students'" @click="exportAll()" :disabled="ocrProgress.running" class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
                      bg-gradient-to-r from-gray-600 to-gray-800 text-white shadow-md shadow-gray-300
                      hover:shadow-lg hover:shadow-gray-400 hover:-translate-y-0.5
                      disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
@@ -88,8 +87,8 @@
               Export สรุปยอดการสั่งซื้อ
             </button>
 
-            <button v-if="selectedExportType === 'payments'" @click="exportAll()"
-              :disabled="ocrProgress.running" class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
+            <button v-if="selectedExportType === 'payments'" @click="openPaymentSlipOnly()"
+             :disabled="ocrProgress.running" class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
                      bg-gradient-to-r from-gray-600 to-gray-800 text-white shadow-md shadow-gray-300
                      hover:shadow-lg hover:shadow-gray-400 hover:-translate-y-0.5
                      disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
@@ -112,8 +111,7 @@
         <p class="text-sm text-gray-500">เลือกประเภทข้อมูลและเลือกรายชื่อที่ต้องการส่งออก</p>
         <div class="flex gap-2 flex-wrap">
           <button v-for="item in exportItems" :key="item.type"
-            @click="selectedExportType = selectedExportType === item.type ? '' : item.type; selectedIds = []"
-            :class="[
+            @click="selectedExportType = selectedExportType === item.type ? '' : item.type; selectedIds = []" :class="[
               'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition',
               selectedExportType === item.type
                 ? 'bg-green-500 text-white border-green-500'
@@ -151,7 +149,7 @@
             <ChevronDown
               class="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
           </div>
-          <div v-if="selectedExportType === 'students' || !selectedExportType" class="relative">
+          <div v-if="!selectedExportType" class="relative">
             <select v-model="selectedStatus"
               class="pl-4 pr-8 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none bg-white appearance-none cursor-pointer min-w-[140px] text-gray-700">
               <option value="">ทุกสถานะ</option>
@@ -162,25 +160,17 @@
             <ChevronDown
               class="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
           </div>
-          <div v-if="selectedExportType === 'payments'" class="relative">
+          <div v-if="selectedExportType === 'students'" class="relative">
             <Calendar class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input v-model="paymentDateFilter" type="text" placeholder="วัน/เดือน/ปี"
-              @input="formatDateInput"
-              maxlength="10"
-              class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none" />
-          </div>
-          <div v-if="selectedExportType === 'orders'" class="relative">
-            <Calendar class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input v-model="orderDateFilter" type="text" placeholder="วัน/เดือน/ปี"
-              @input="formatDateInput"
-              maxlength="10"
+            <input v-model="studentDateSearch" type="text" placeholder="วัน/เดือน/ปี"
               class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none" />
           </div>
         </div>
       </div>
 
       <!-- Badge filter -->
-      <div v-if="selectedBranch || selectedCurFilter || selectedStatus || (selectedExportType === 'payments' && paymentDateFilter) || (selectedExportType === 'orders' && orderDateFilter)"
+      <div
+        v-if="selectedBranch || selectedCurFilter || selectedStatus || (selectedExportType === 'payments' && paymentDateFilter) || (selectedExportType === 'orders' && orderDateFilter)"
         class="flex items-center gap-2 flex-wrap">
         <span class="text-xs text-gray-400">กรองโดย:</span>
         <span v-if="selectedCurFilter"
@@ -296,7 +286,8 @@
 
         <!-- ประเภทอื่นๆ -->
         <StudentsTable v-else-if="selectedExportType === 'students'" :data="paginatedData" :selected-ids="selectedIds"
-          @update:selected-ids="selectedIds = $event" @toggle-all="toggleAll" :is-all-selected="isAllSelected" />
+          @update:selected-ids="selectedIds = $event" @toggle-all="toggleAll" :is-all-selected="isAllSelected"
+          @update:date-search="studentDateSearch = $event" />
         <PaymentsTable v-else-if="selectedExportType === 'payments'" :data="paginatedData" :selected-ids="selectedIds"
           @update:selected-ids="selectedIds = $event" @toggle-all="toggleAll" :is-all-selected="isAllSelected" />
         <OrdersTable v-else-if="selectedExportType === 'orders'" :data="paginatedData" :selected-ids="selectedIds"
@@ -515,6 +506,9 @@ const InfoField = {
   }
 }
 
+const studentDateSearch = ref('')
+
+
 // ─── Info Modal state ─────────────────────────────────────────
 const infoModal = ref({
   open: false,
@@ -676,7 +670,9 @@ const filteredExportData = computed(() =>
     const matchName = !exportSearch.value || fullDisplay.includes(exportSearch.value)
     const matchBranch = !selectedBranch.value || row.สาขาวิชา === selectedBranch.value
     const matchCur = !selectedCurFilter.value || row.หลักสูตร.includes(selectedCurFilter.value)
-    const matchStatus = !selectedStatus.value || (row.สถานะ && row.สถานะ === selectedStatus.value)
+    const matchStatus = selectedExportType.value === 'students'
+      ? row.สถานะ === 'enrolled'
+      : (!selectedStatus.value || (row.สถานะ && row.สถานะ === selectedStatus.value))
 
     let matchDate = true
     if (selectedExportType.value === 'payments' && paymentDateFilter.value) {
@@ -685,7 +681,15 @@ const filteredExportData = computed(() =>
       matchDate = row.วันที่ชำระ && normalizeDateForSearch(row.วันที่ชำระ).includes(normalizeDateForSearch(orderDateFilter.value))
     }
 
-    return matchName && matchBranch && matchCur && matchStatus && matchDate
+    const matchEnrolledDate = selectedExportType.value !== 'students' || !studentDateSearch.value
+      ? true
+      : (() => {
+        if (!row.enrolled_at) return false
+        const dateStr = new Date(row.enrolled_at).toLocaleDateString('th-TH')
+        return dateStr.includes(studentDateSearch.value)
+      })()
+
+    return matchName && matchBranch && matchCur && matchStatus && matchDate && matchEnrolledDate
   }).sort((a, b) => {
     const statusOrder = { 'pending_approve': 1, 'pending_payment': 2, 'enrolled': 3 }
     const aStatus = statusOrder[a.สถานะ as keyof typeof statusOrder] || 999
@@ -827,6 +831,39 @@ function parseEduDocText(text: string): Record<string, string> {
   return result
 }
 
+
+
+
+
+function parseHouseRegText(text: string): Record<string, string> {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+  const result: Record<string, string> = {}
+
+  // รหัสประจำบ้าน 11 หลัก
+  const houseCodeMatch = text.replace(/[\s\-]/g, '').match(/\d{11}/)
+  if (houseCodeMatch) result['รหัสประจำบ้าน'] = houseCodeMatch[0]
+
+  // รายการที่อยู่
+  const addrKeywords = ['บ้านเลขที่', 'หมู่ที่', 'ถนน', 'ตำบล', 'แขวง', 'อำเภอ', 'เขต', 'จังหวัด']
+  const addrLines = lines.filter(l => addrKeywords.some(kw => l.includes(kw)))
+  if (addrLines.length > 0) result['ที่อยู่'] = addrLines.join(' ')
+
+  // ชื่อนามสกุลในทะเบียนบ้าน
+  const prefixes = ['นาย', 'นาง', 'นางสาว', 'เด็กชาย', 'เด็กหญิง']
+  const nameLines = lines.filter(l => prefixes.some(p => l.startsWith(p)))
+  if (nameLines[0]) result['ชื่อเจ้าบ้าน'] = nameLines[0]
+  if (nameLines[1]) result['ชื่อบิดา'] = nameLines[1]
+  if (nameLines[2]) result['ชื่อมารดา'] = nameLines[2]
+
+  // เลข 13 หลัก (เลขบัตรของคนในทะเบียนบ้าน)
+  const idMatches = [...text.replace(/[\s\-]/g, '').matchAll(/\d{13}/g)]
+  if (idMatches[0]) result['เลขบัตรเจ้าบ้าน'] = idMatches[0][0]
+  if (idMatches[1]) result['เลขบัตรบิดา'] = idMatches[1][0]
+  if (idMatches[2]) result['เลขบัตรมารดา'] = idMatches[2][0]
+
+  return result
+}
+
 // ─── Export ──────────────────────────────────────────────────
 const sheetNames: Record<string, string> = {
   applicants: 'ข้อมูลผู้สมัคร',
@@ -848,7 +885,22 @@ async function buildExportData(rows: any[], isExportAll = false): Promise<object
     const row = rows[i]
     ocrProgress.value.current = i + 1
     ocrProgress.value.name = `${row.คำนำหน้า}${row.ชื่อ_นามสกุล}`
+    let dbData: Record<string, any> = {}
+    try {
+      const dbRes = await api.get(`/applications/check/${row.เลขบัตรประชาชน}`)
+      const d = dbRes.data?.data
+      if (d) {
+        dbData = {
+          วันเดือนปีเกิด: d.birth_date ? new Date(d.birth_date).toLocaleDateString('th-TH') : '',
+          โรงเรียนเก่า: d.prev_school || '',
+          วุฒิการศึกษาเดิม: d.prev_level || '',
+          สาขาวิชาเดิม: d.prev_major || '',
+          GPA: d.gpa || '',
+        }
+      }
+    } catch { }
 
+    result.push({ ...cleanRow, ...dbData, ...allOcr })
     if (isExportAll && !row._isPaid) {
       continue
     }
@@ -862,8 +914,18 @@ async function buildExportData(rows: any[], isExportAll = false): Promise<object
           for (const doc of docs) {
             if (!doc.file_url) continue
             const url = resolveUrl(doc.file_url)
-            const mode = doc.doc_type.startsWith('id') ? 'id' : 'edu'
-            const ocr = await runOCRFromUrl(url, mode)
+            let ocr: Record<string, string> = {}
+            if (doc.doc_type.startsWith('id')) {
+              ocr = await runOCRFromUrl(url, 'id')
+            } else if (doc.doc_type.startsWith('edu')) {
+              ocr = await runOCRFromUrl(url, 'edu')
+            } else if (doc.doc_type.includes('house')) {
+              const res2 = await fetch(url)
+              const blob = await res2.blob()
+              const imgUrl = URL.createObjectURL(blob)
+              const { data: { text } } = await Tesseract.recognize(imgUrl, 'tha+eng', { logger: () => { } })
+              ocr = parseHouseRegText(text)
+            }
             Object.entries(ocr).forEach(([k, v]) => { allOcr[`${doc.doc_type}_${k}`] = v })
           }
         }
@@ -884,7 +946,16 @@ async function buildExportData(rows: any[], isExportAll = false): Promise<object
       }
       result.push({ ...paymentRow, ...allOcr })
     } else {
-      const cleanRow = Object.fromEntries(Object.entries(row).filter(([key]) => !key.startsWith('_')))
+      const cleanRow = {
+        ลำดับ: row.ลำดับ,
+        คำนำหน้า: row.คำนำหน้า,
+        ชื่อ_นามสกุล: row.ชื่อ_นามสกุล,
+        หลักสูตร: row.หลักสูตร,
+        สาขาวิชา: row.สาขาวิชา,
+        เลขบัตรประชาชน: row.เลขบัตรประชาชน,
+        เบอร์โทร: row.เบอร์โทร,
+        อีเมล: row.อีเมล,
+      }
       result.push({ ...cleanRow, ...allOcr })
     }
   }

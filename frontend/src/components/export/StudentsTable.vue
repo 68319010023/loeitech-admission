@@ -14,7 +14,7 @@
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-50">
-        <tr v-for="row in data" :key="row.ลำดับ"
+        <tr v-for="row in filteredData" :key="row.ลำดับ"
           :class="['hover:bg-gray-50', selectedIds.includes(row.ลำดับ) ? 'bg-green-50/50' : '']">
           <td class="px-4 py-3 text-center">
             <input type="checkbox" :value="row.ลำดับ" :checked="selectedIds.includes(row.ลำดับ)"
@@ -37,7 +37,7 @@
             </button>
           </td>
         </tr>
-        <tr v-if="data.length === 0">
+        <tr v-if="filteredData.length === 0">
           <td colspan="6" class="px-4 py-8 text-center text-gray-400">ไม่พบข้อมูล</td>
         </tr>
       </tbody>
@@ -136,7 +136,16 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:selected-ids': [ids: string[]]
   'toggle-all': []
+  'update:date-search': [val: string]
 }>()
+
+const dateSearch = ref('')
+
+watch(dateSearch, (val) => {
+  emit('update:date-search', val)
+})
+
+const filteredData = computed(() => props.data)
 
 const toggleRow = (id: string) => {
   const current = [...props.selectedIds]
