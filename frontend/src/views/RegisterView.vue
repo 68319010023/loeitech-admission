@@ -20,6 +20,12 @@
       </div>
     </div>
 
+    <!-- Hidden inputs shared across all upload fields (outside v-if so always rendered) -->
+    <input ref="cameraInputRef" type="file" accept="image/*" capture="environment" class="hidden"
+      @change="handleUpload(uploadPicker.field, $event)" />
+    <input ref="galleryInputRef" type="file" accept="image/*" class="hidden"
+      @change="handleUpload(uploadPicker.field, $event)" />
+
     <div class="bg-white rounded-2xl shadow-sm p-8">
 
       <!-- Step 1: ข้อมูลส่วนตัว -->
@@ -30,11 +36,6 @@
         <div class="grid grid-cols-2 gap-4">
           <div class="col-span-2">
             <p class="text-sm font-medium text-gray-700 mb-3">อัพโหลดภาพบัตรประชาชน *</p>
-            <!-- Hidden inputs shared across all upload fields -->
-            <input ref="cameraInputRef" type="file" accept="image/*" capture="environment" class="hidden"
-              @change="handleUpload(uploadPicker.field, $event)" />
-            <input ref="galleryInputRef" type="file" accept="image/*" class="hidden"
-              @change="handleUpload(uploadPicker.field, $event)" />
 
             <div class="grid grid-cols-2 gap-4">
               <div>
