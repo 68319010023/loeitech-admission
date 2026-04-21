@@ -10,9 +10,8 @@
           <th class="px-4 py-3 text-left">ชื่อ-สกุล</th>
           <th class="px-4 py-3 text-left">หลักสูตร</th>
           <th class="px-4 py-3 text-left">สาขา</th>
-          <th class="px-4 py-3 text-center">สถานะ</th>
-          <th class="px-4 py-3 text-left">เบอร์ติดต่อ</th>
-          <th class="px-4 py-3 text-center">สลิป</th>
+          <th class="px-4 py-3 text-center">วันที่ชำระ</th>
+          <th class="px-4 py-3 text-center">ใบรายการสั่งจอง</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-50">
@@ -30,29 +29,25 @@
               {{ row.สาขาวิชา }}
             </span>
           </td>
-          <td class="px-4 py-3 text-center">
-            <span :class="[
-              'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold',
-              row._isPaid
-                ? 'bg-green-50 text-green-700 border border-green-200'
-                : 'bg-red-50 text-red-500 border border-red-200'
-            ]">
-              {{ row._isPaid ? '✓ ชำระแล้ว' : '✗ ยังไม่ชำระ' }}
-            </span>
-          </td>
-          <td class="px-4 py-3 text-gray-600 text-sm">
-            {{ row.เบอร์โทร || '-' }}
+          <td class="px-4 py-3 text-center text-sm text-gray-600">
+            {{ row.วันที่ชำระ || '-' }}
           </td>
           <td class="px-4 py-3 text-center">
-            <button v-if="row._slipUrl" @click="openSlipModal(row)"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg text-xs font-semibold transition">
-              <Eye class="w-3.5 h-3.5" /> ดูสลิป
-            </button>
-            <span v-else class="text-xs text-gray-300">-</span>
+            <div class="flex items-center justify-center gap-2">
+              <button v-if="row._slipUrl" @click="openSlipModal(row)"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg text-xs font-semibold transition">
+                <Eye class="w-3.5 h-3.5" /> ดูสลิป
+              </button>
+              <button @click="generatePDF(row)"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 hover:bg-green-100 text-green-600 rounded-lg text-xs font-semibold transition">
+                <Download class="w-3.5 h-3.5" /> PDF
+              </button>
+              <span v-if="!row._slipUrl" class="text-xs text-gray-300">-</span>
+            </div>
           </td>
         </tr>
         <tr v-if="data.length === 0">
-          <td colspan="7" class="px-4 py-8 text-center text-gray-400">ไม่พบข้อมูล</td>
+          <td colspan="6" class="px-4 py-8 text-center text-gray-400">ไม่พบข้อมูล</td>
         </tr>
       </tbody>
     </table>
@@ -94,7 +89,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Eye, ExternalLink, X } from 'lucide-vue-next'
+import { Eye, ExternalLink, X, Download } from 'lucide-vue-next'
 
 const props = defineProps<{
   data: any[]
@@ -105,6 +100,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:selected-ids': [ids: string[]]
   'toggle-all': []
+  'generate-pdf': [row: any]
 }>()
 
 const toggleRow = (id: string) => {
@@ -124,5 +120,9 @@ const openSlipModal = (row: any) => {
     name: `${row.คำนำหน้า}${row.ชื่อ_นามสกุล}`,
     slipUrl: row._slipUrl,
   }
+}
+
+const generatePDF = (row: any) => {
+  emit('generate-pdf', row)
 }
 </script>

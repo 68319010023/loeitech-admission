@@ -9,7 +9,7 @@
           <th class="px-4 py-3 text-left">ชื่อ-สกุล</th>
           <th class="px-4 py-3 text-left">หลักสูตร</th>
           <th class="px-4 py-3 text-left">สาขา</th>
-          <th class="px-4 py-3 text-center">สถานะ</th>
+          <th class="px-4 py-3 text-center">วันที่ชำระ</th>
           <th class="px-4 py-3 text-center">สลิป</th>
         </tr>
       </thead>
@@ -32,15 +32,8 @@
               {{ row.สาขาวิชา }}
             </span>
           </td>
-          <td class="px-4 py-3 text-center">
-            <span :class="[
-              'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold',
-              row._isPaid
-                ? 'bg-green-50 text-green-700 border border-green-200'
-                : 'bg-red-50 text-red-500 border border-red-200'
-            ]">
-              {{ row._isPaid ? '✓ ชำระแล้ว' : '✗ ยังไม่ชำระ' }}
-            </span>
+          <td class="px-4 py-3 text-center text-sm text-gray-600">
+            {{ row.วันที่ชำระ || '-' }}
           </td>
           <td class="px-4 py-3 text-center">
             <button
