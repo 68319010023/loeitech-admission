@@ -4,7 +4,8 @@
       <div class="flex items-center justify-between">
         <div>
           <h1 class="text-4xl font-bold text-gray-900 flex items-center">
-            <div class="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
+            <div
+              class="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
               <User class="w-6 h-6 text-white" />
             </div>
             ข้อมูลผู้สมัคร
@@ -39,11 +40,8 @@
             <span class="text-sm text-green-700 font-semibold">{{ selectedIds.length }} รายการ</span>
           </div>
 
-          <button
-            v-if="selectedExportType === 'students'"
-            @click="exportPDF"
-            :disabled="selectedIds.length === 0 || ocrProgress.running"
-            class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
+          <button v-if="selectedExportType === 'students'" @click="exportPDF"
+            :disabled="selectedIds.length === 0 || ocrProgress.running" class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
                    bg-gradient-to-r from-red-400 to-rose-500 text-white shadow-md shadow-red-200
                    hover:shadow-lg hover:shadow-red-300 hover:-translate-y-0.5
                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
@@ -51,10 +49,7 @@
             Export PDF
           </button>
 
-          <button
-            @click="exportSelected"
-            :disabled="selectedIds.length === 0 || ocrProgress.running"
-            class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
+          <button @click="exportSelected" :disabled="selectedIds.length === 0 || ocrProgress.running" class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
                    bg-gradient-to-r from-emerald-400 to-green-500 text-white shadow-md shadow-green-200
                    hover:shadow-lg hover:shadow-green-300 hover:-translate-y-0.5
                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
@@ -62,10 +57,7 @@
             Export ที่เลือก
           </button>
 
-          <button
-            @click="exportAll"
-            :disabled="ocrProgress.running"
-            class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
+          <button @click="exportAll" :disabled="ocrProgress.running" class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
                    bg-gradient-to-r from-gray-600 to-gray-800 text-white shadow-md shadow-gray-300
                    hover:shadow-lg hover:shadow-gray-400 hover:-translate-y-0.5
                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
@@ -78,10 +70,7 @@
       <!-- Row 2: ประเภท -->
       <p class="text-sm text-gray-500">เลือกประเภทข้อมูลและเลือกรายชื่อที่ต้องการส่งออก</p>
       <div class="flex gap-2 flex-wrap">
-        <button
-          v-for="item in exportItems"
-          :key="item.type"
-          @click="selectedExportType = item.type; selectedIds = []"
+        <button v-for="item in exportItems" :key="item.type" @click="selectedExportType = item.type; selectedIds = []"
           :class="[
             'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition',
             selectedExportType === item.type
@@ -97,42 +86,39 @@
       <div class="flex flex-col sm:flex-row gap-2">
         <div class="relative flex-1">
           <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            v-model="exportSearch"
-            type="text"
-            placeholder="ค้นหาชื่อ-สกุล..."
+          <input v-model="exportSearch" type="text" placeholder="ค้นหาชื่อ-สกุล..."
             class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none" />
         </div>
         <div class="relative">
-          <select
-            v-model="selectedCurFilter"
+          <select v-model="selectedCurFilter"
             class="pl-4 pr-8 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none bg-white appearance-none cursor-pointer min-w-[120px] text-gray-700">
             <option value="">ทุกหลักสูตร</option>
             <option value="ปวช">ปวช</option>
             <option value="ปวส">ปวส</option>
           </select>
-          <ChevronDown class="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+          <ChevronDown
+            class="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
         </div>
         <div class="relative">
           <Filter class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          <select
-            v-model="selectedBranch"
+          <select v-model="selectedBranch"
             class="pl-9 pr-8 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none bg-white appearance-none cursor-pointer min-w-[160px] text-gray-700">
             <option value="">ทุกสาขาวิชา</option>
             <option v-for="b in allBranches" :key="b" :value="b">{{ b }}</option>
           </select>
-          <ChevronDown class="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+          <ChevronDown
+            class="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
         </div>
-        <div v-if="selectedExportType === 'applicants'" class="relative">
-          <select
-            v-model="selectedStatus"
+        <div class="relative">
+          <select v-model="selectedStatus"
             class="pl-4 pr-8 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none bg-white appearance-none cursor-pointer min-w-[140px] text-gray-700">
             <option value="">ทุกสถานะ</option>
             <option value="pending_payment">สมัครใหม่</option>
             <option value="pending_approve">รอตรวจสอบ</option>
             <option value="enrolled">มอบตัวแล้ว</option>
           </select>
-          <ChevronDown class="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+          <ChevronDown
+            class="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
         </div>
       </div>
     </div>
@@ -143,24 +129,31 @@
       <span v-if="selectedCurFilter"
         class="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full border border-blue-200">
         {{ selectedCurFilter }}
-        <button @click="selectedCurFilter = ''" class="hover:text-blue-900"><X class="w-3 h-3" /></button>
+        <button @click="selectedCurFilter = ''" class="hover:text-blue-900">
+          <X class="w-3 h-3" />
+        </button>
       </span>
       <span v-if="selectedBranch"
         class="inline-flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 text-xs font-semibold rounded-full border border-green-200">
         สาขา: {{ selectedBranch }}
-        <button @click="selectedBranch = ''" class="hover:text-green-900"><X class="w-3 h-3" /></button>
+        <button @click="selectedBranch = ''" class="hover:text-green-900">
+          <X class="w-3 h-3" />
+        </button>
       </span>
-      <span v-if="selectedStatus && selectedExportType === 'applicants'"
+      <span v-if="selectedStatus"
         class="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-50 text-purple-700 text-xs font-semibold rounded-full border border-purple-200">
         สถานะ: {{ getStatusLabel(selectedStatus) }}
-        <button @click="selectedStatus = ''" class="hover:text-purple-900"><X class="w-3 h-3" /></button>
+        <button @click="selectedStatus = ''" class="hover:text-purple-900">
+          <X class="w-3 h-3" />
+        </button>
       </span>
       <span class="text-xs text-gray-400">พบ {{ filteredExportData.length }} รายการ</span>
     </div>
 
     <!-- Loading -->
     <div v-if="isLoading" class="text-center py-12 text-gray-400">
-      <div class="inline-block w-6 h-6 border-2 border-green-400 border-t-transparent rounded-full animate-spin mb-2"></div>
+      <div class="inline-block w-6 h-6 border-2 border-green-400 border-t-transparent rounded-full animate-spin mb-2">
+      </div>
       <p class="text-sm">กำลังโหลดข้อมูล...</p>
     </div>
 
@@ -171,47 +164,24 @@
 
     <!-- Child Tables -->
     <template v-else>
-      <ApplicantsTable
-        v-if="selectedExportType === 'applicants'"
-        :data="paginatedData"
-        :selected-ids="selectedIds"
-        @update:selected-ids="selectedIds = $event"
-        @toggle-all="toggleAll"
-        :is-all-selected="isAllSelected"
-      />
-      <StudentsTable
-        v-else-if="selectedExportType === 'students'"
-        :data="paginatedData"
-        :selected-ids="selectedIds"
-        @update:selected-ids="selectedIds = $event"
-        @toggle-all="toggleAll"
-        :is-all-selected="isAllSelected"
-      />
-      <PaymentsTable
-        v-else-if="selectedExportType === 'payments'"
-        :data="paginatedData"
-        :selected-ids="selectedIds"
-        @update:selected-ids="selectedIds = $event"
-        @toggle-all="toggleAll"
-        :is-all-selected="isAllSelected"
-      />
-      <OrdersTable
-        v-else-if="selectedExportType === 'orders'"
-        :data="paginatedData"
-        :selected-ids="selectedIds"
-        @update:selected-ids="selectedIds = $event"
-        @toggle-all="toggleAll"
-        :is-all-selected="isAllSelected"
-      />
+
+      <StudentsTable v-if="selectedExportType === 'students'" :data="paginatedData" :selected-ids="selectedIds"
+        @update:selected-ids="selectedIds = $event" @toggle-all="toggleAll" :is-all-selected="isAllSelected" />
+      <PaymentsTable v-else-if="selectedExportType === 'payments'" :data="paginatedData" :selected-ids="selectedIds"
+        @update:selected-ids="selectedIds = $event" @toggle-all="toggleAll" :is-all-selected="isAllSelected" />
+      <OrdersTable v-else-if="selectedExportType === 'orders'" :data="paginatedData" :selected-ids="selectedIds"
+        @update:selected-ids="selectedIds = $event" @toggle-all="toggleAll" :is-all-selected="isAllSelected" />
     </template>
 
     <!-- Pagination -->
-    <div v-if="totalPages > 1" class="flex items-center justify-between bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-2">
+    <div v-if="totalPages > 1"
+      class="flex items-center justify-between bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-2">
       <p class="text-xs text-gray-400">
         แสดง
         <span class="font-semibold text-green-600">{{ (currentPage - 1) * pageSize + 1 }}</span>
         <span class="text-gray-300 mx-0.5">—</span>
-        <span class="font-semibold text-green-600">{{ Math.min(currentPage * pageSize, filteredExportData.length) }}</span>
+        <span class="font-semibold text-green-600">{{ Math.min(currentPage * pageSize, filteredExportData.length)
+          }}</span>
         จาก
         <span class="font-semibold text-gray-700">{{ filteredExportData.length }}</span> รายการ
       </p>
@@ -221,17 +191,14 @@
         <button @click="currentPage--" :disabled="currentPage === 1"
           class="w-8 h-8 flex items-center justify-center rounded-xl text-sm text-gray-400 hover:bg-green-50 hover:text-green-600 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-150">‹</button>
         <template v-for="p in totalPages" :key="p">
-          <button
-            v-if="p === 1 || p === totalPages || (p >= currentPage - 1 && p <= currentPage + 1)"
-            @click="currentPage = p"
-            :class="[
+          <button v-if="p === 1 || p === totalPages || (p >= currentPage - 1 && p <= currentPage + 1)"
+            @click="currentPage = p" :class="[
               'w-8 h-8 flex items-center justify-center rounded-xl text-sm font-semibold transition-all duration-150',
               currentPage === p
                 ? 'bg-green-500 text-white shadow-sm shadow-green-200'
                 : 'text-gray-500 hover:bg-green-50 hover:text-green-600'
             ]">{{ p }}</button>
-          <span
-            v-else-if="p === currentPage - 2 || p === currentPage + 2"
+          <span v-else-if="p === currentPage - 2 || p === currentPage + 2"
             class="w-6 text-center text-gray-300 text-xs select-none">···</span>
         </template>
         <button @click="currentPage++" :disabled="currentPage === totalPages"
@@ -245,7 +212,8 @@
     <div v-if="ocrProgress.running" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div class="bg-white rounded-2xl shadow-xl p-6 w-80 space-y-4">
         <div class="flex items-center gap-3">
-          <div class="w-8 h-8 border-2 border-green-400 border-t-transparent rounded-full animate-spin flex-shrink-0"></div>
+          <div class="w-8 h-8 border-2 border-green-400 border-t-transparent rounded-full animate-spin flex-shrink-0">
+          </div>
           <div>
             <p class="font-semibold text-gray-800 text-sm">กำลังอ่านบัตรประชาชน...</p>
             <p class="text-xs text-gray-400 mt-0.5">{{ ocrProgress.current }} / {{ ocrProgress.total }} รายการ</p>
@@ -253,7 +221,8 @@
         </div>
         <div class="w-full bg-gray-100 rounded-full h-2">
           <div class="bg-green-500 h-2 rounded-full transition-all"
-            :style="{ width: ocrProgress.total > 0 ? (ocrProgress.current / ocrProgress.total * 100) + '%' : '0%' }"></div>
+            :style="{ width: ocrProgress.total > 0 ? (ocrProgress.current / ocrProgress.total * 100) + '%' : '0%' }">
+          </div>
         </div>
         <p class="text-xs text-gray-400 text-center">{{ ocrProgress.name }}</p>
       </div>
@@ -273,7 +242,7 @@ import * as XLSX from 'xlsx'
 import Tesseract from 'tesseract.js'
 import jsPDF from 'jspdf'
 
-import ApplicantsTable from '@/components/export/ApplicantsTable.vue'
+
 import StudentsTable from '@/components/export/StudentsTable.vue'
 import PaymentsTable from '@/components/export/PaymentsTable.vue'
 import OrdersTable from '@/components/export/OrdersTable.vue'
@@ -288,8 +257,7 @@ const resolveUrl = (path: string | null | undefined) => {
 }
 
 const exportItems = [
-  { label: 'ข้อมูลผู้สมัคร', icon: User, type: 'applicants' },
-  { label: 'ประวัติ', icon: Users, type: 'students' },
+  { label: 'ประวัตินักเรียน', icon: Users, type: 'students' },
   { label: 'ค่าบำรุงการศึกษา', icon: CreditCard, type: 'payments' },
   { label: 'เครื่องแบบและอุปกรณ์', icon: ShoppingBag, type: 'orders' },
 ]
@@ -406,13 +374,10 @@ const filteredExportData = computed(() =>
     const matchStatus = !selectedStatus.value || row.สถานะ === selectedStatus.value
     return matchName && matchBranch && matchCur && matchStatus
   }).sort((a, b) => {
-    if (selectedExportType.value === 'applicants' && !selectedStatus.value) {
-      const statusOrder = { 'pending_approve': 1, 'pending_payment': 2, 'enrolled': 3 }
-      const aStatus = statusOrder[a.สถานะ as keyof typeof statusOrder] || 999
-      const bStatus = statusOrder[b.สถานะ as keyof typeof statusOrder] || 999
-      return aStatus - bStatus
-    }
-    return 0
+    const statusOrder = { 'pending_approve': 1, 'pending_payment': 2, 'enrolled': 3 }
+    const aStatus = statusOrder[a.สถานะ as keyof typeof statusOrder] || 999
+    const bStatus = statusOrder[b.สถานะ as keyof typeof statusOrder] || 999
+    return aStatus - bStatus
   })
 )
 
@@ -453,7 +418,7 @@ watch([exportSearch, selectedBranch, selectedCurFilter, selectedExportType], () 
 async function runOCRFromUrl(imageUrl: string, mode: 'id' | 'edu' = 'id'): Promise<Record<string, string>> {
   if (!imageUrl) return {}
   try {
-    const { data: { text } } = await Tesseract.recognize(imageUrl, 'tha+eng', { logger: () => {} })
+    const { data: { text } } = await Tesseract.recognize(imageUrl, 'tha+eng', { logger: () => { } })
     return mode === 'id' ? parseThaiIDText(text) : parseEduDocText(text)
   } catch {
     return {}

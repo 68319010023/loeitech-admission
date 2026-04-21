@@ -6,29 +6,27 @@
           <th class="px-4 py-3 text-center w-10">
             <input type="checkbox" @change="$emit('toggle-all')" :checked="isAllSelected" />
           </th>
-          <th class="px-4 py-3 text-center">สถานะ</th>
+
           <th class="px-4 py-3 text-left">ชื่อ-สกุล</th>
           <th class="px-4 py-3 text-left">หลักสูตร</th>
           <th class="px-4 py-3 text-left">สาขา</th>
+          <th class="px-4 py-3 text-center">สถานะ</th>
+          <th class="px-4 py-3 text-left">เบอร์ติดต่อ</th>
           <th class="px-4 py-3 text-center">สลิป</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-50">
-        <tr
-          v-for="row in data"
-          :key="row.ลำดับ"
+        <tr v-for="row in data" :key="row.ลำดับ"
           :class="['hover:bg-gray-50', selectedIds.includes(row.ลำดับ) ? 'bg-green-50/50' : '']">
           <td class="px-4 py-3 text-center">
-            <input
-              type="checkbox"
-              :value="row.ลำดับ"
-              :checked="selectedIds.includes(row.ลำดับ)"
+            <input type="checkbox" :value="row.ลำดับ" :checked="selectedIds.includes(row.ลำดับ)"
               @change="toggleRow(row.ลำดับ)" />
           </td>
           <td class="px-4 py-3 text-gray-800">{{ row.คำนำหน้า }}{{ row.ชื่อ_นามสกุล }}</td>
           <td class="px-4 py-3 text-gray-500">{{ row.หลักสูตร }}</td>
           <td class="px-4 py-3">
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700">
+            <span
+              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700">
               {{ row.สาขาวิชา }}
             </span>
           </td>
@@ -42,10 +40,11 @@
               {{ row._isPaid ? '✓ ชำระแล้ว' : '✗ ยังไม่ชำระ' }}
             </span>
           </td>
+          <td class="px-4 py-3 text-gray-600 text-sm">
+            {{ row.เบอร์โทร || '-' }}
+          </td>
           <td class="px-4 py-3 text-center">
-            <button
-              v-if="row._slipUrl"
-              @click="openSlipModal(row)"
+            <button v-if="row._slipUrl" @click="openSlipModal(row)"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg text-xs font-semibold transition">
               <Eye class="w-3.5 h-3.5" /> ดูสลิป
             </button>
@@ -53,7 +52,7 @@
           </td>
         </tr>
         <tr v-if="data.length === 0">
-          <td colspan="6" class="px-4 py-8 text-center text-gray-400">ไม่พบข้อมูล</td>
+          <td colspan="7" class="px-4 py-8 text-center text-gray-400">ไม่พบข้อมูล</td>
         </tr>
       </tbody>
     </table>
@@ -61,11 +60,10 @@
 
   <!-- Slip Modal -->
   <Teleport to="body">
-    <div
-      v-if="slipModal.open"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+    <div v-if="slipModal.open" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
       @click.self="slipModal.open = false">
-      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden flex flex-col" style="max-height: 90vh">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden flex flex-col"
+        style="max-height: 90vh">
         <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
           <div>
             <p class="font-bold text-gray-800 text-base">สลิปการชำระเงิน</p>
@@ -76,16 +74,15 @@
           </button>
         </div>
         <div class="flex-1 flex items-center justify-center p-4 bg-gray-50 overflow-auto">
-          <img :src="slipModal.slipUrl" class="max-w-full rounded-xl object-contain shadow-md" style="max-height: 65vh" />
+          <img :src="slipModal.slipUrl" class="max-w-full rounded-xl object-contain shadow-md"
+            style="max-height: 65vh" />
         </div>
         <div class="flex justify-end gap-2 px-5 py-3 border-t border-gray-100 bg-gray-50 flex-shrink-0">
-          <button
-            @click="slipModal.open = false"
+          <button @click="slipModal.open = false"
             class="px-4 py-2 text-sm text-gray-500 hover:bg-gray-200 rounded-xl font-semibold transition">
             ปิด
           </button>
-          <button
-            @click="() => window.open(slipModal.slipUrl, '_blank')"
+          <button @click="() => window.open(slipModal.slipUrl, '_blank')"
             class="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-semibold transition">
             <ExternalLink class="w-4 h-4" /> เปิดในแท็บใหม่
           </button>
