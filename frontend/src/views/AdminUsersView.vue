@@ -1,311 +1,553 @@
 <template>
-  <div class="bg-white shadow-lg border-b border-emerald-100">
-    <div class="max-w-7xl mx-auto px-6 py-8">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-4xl font-bold text-gray-900 flex items-center">
-            <div
-              class="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
-              <User class="w-6 h-6 text-white" />
-            </div>
-            ข้อมูลผู้สมัคร
-          </h1>
-          <p class="text-gray-600 mt-3 text-lg">เลือกและดาวน์โหลดข้อมูลนักเรียนในรูปแบบไฟล์</p>
-        </div>
-        <div class="flex items-center space-x-3">
-          <div class="flex items-center bg-emerald-50 px-4 py-2 rounded-lg">
-            <div class="w-3 h-3 bg-emerald-500 rounded-full mr-2 animate-pulse"></div>
-            <span class="text-emerald-700 font-medium">ระบบพร้อมใช้งาน</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  <div><!-- ✅ root wrapper -->
 
-  <div class="p-4 space-y-4">
-
-    <!-- Export Controls Card -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-3">
-
-      <!-- Row 1: ชื่อ + ปุ่ม Export -->
-      <div class="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 class="text-xl font-bold text-gray-800">ส่งออกข้อมูล</h1>
-          <p class="text-sm text-gray-400">วิทยาลัยเทคนิคเลย</p>
-        </div>
-
-        <div class="flex items-center gap-2 flex-wrap">
-          <div class="flex items-center gap-1.5 bg-green-50 px-3 py-1.5 rounded-lg">
-            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span class="text-sm text-green-700 font-semibold">{{ selectedIds.length }} รายการ</span>
-          </div>
-
-          <button v-if="selectedExportType === 'students'" @click="exportPDF"
-            :disabled="selectedIds.length === 0 || ocrProgress.running" class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
-                   bg-gradient-to-r from-red-400 to-rose-500 text-white shadow-md shadow-red-200
-                   hover:shadow-lg hover:shadow-red-300 hover:-translate-y-0.5
-                   disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
-            <Download class="w-4 h-4 group-hover:animate-bounce" />
-            Export PDF
-          </button>
-
-          <button v-if="selectedExportType === 'students'" @click="exportSelected()" :disabled="selectedIds.length === 0 || ocrProgress.running" class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
-                   bg-gradient-to-r from-emerald-400 to-green-500 text-white shadow-md shadow-green-200
-                   hover:shadow-lg hover:shadow-green-300 hover:-translate-y-0.5
-                   disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
-            <Download class="w-4 h-4 group-hover:animate-bounce" />
-            Export  ที่เลือก
-          </button>
-
-          <button v-if="selectedExportType === 'students'" @click="exportAll()" :disabled="ocrProgress.running" class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
-                   bg-gradient-to-r from-gray-600 to-gray-800 text-white shadow-md shadow-gray-300
-                   hover:shadow-lg hover:shadow-gray-400 hover:-translate-y-0.5
-                   disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
-            <Download class="w-4 h-4 group-hover:animate-bounce" />
-            Export  ทั้งหมด
-          </button>
-
-          <button v-if="selectedExportType === 'payments'" @click="exportPaymentsListPDF()" :disabled="ocrProgress.running" class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
-                   bg-gradient-to-r from-emerald-400 to-green-500 text-white shadow-md shadow-green-200
-                   hover:shadow-lg hover:shadow-green-300 hover:-translate-y-0.5
-                   disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
-            <Download class="w-4 h-4 group-hover:animate-bounce" />
-            Export รายชื่อผู้ชำระเงิน
-          </button>
-
-          <button v-if="selectedExportType === 'orders'" @click="exportOrdersListPDF()" :disabled="ocrProgress.running" class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
-                   bg-gradient-to-r from-emerald-400 to-green-500 text-white shadow-md shadow-green-200
-                   hover:shadow-lg hover:shadow-green-300 hover:-translate-y-0.5
-                   disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
-            <Download class="w-4 h-4 group-hover:animate-bounce" />
-            Export สรุปยอดการสั่งซื้อ
-          </button>
-
-          <button v-if="selectedExportType === 'payments'" @click="exportAll()" :disabled="ocrProgress.running" class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
-                   bg-gradient-to-r from-gray-600 to-gray-800 text-white shadow-md shadow-gray-300
-                   hover:shadow-lg hover:shadow-gray-400 hover:-translate-y-0.5
-                   disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
-            <Download class="w-4 h-4 group-hover:animate-bounce" />
-            Export ใบแสดงการชำระเงิน
-          </button>
-
-          <button v-if="selectedExportType === 'orders'" @click="exportCombinedOrdersPDF()" :disabled="selectedIds.length === 0 || ocrProgress.running" class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
-                   bg-gradient-to-r from-gray-600 to-gray-800 text-white shadow-md shadow-gray-300
-                   hover:shadow-lg hover:shadow-gray-400 hover:-translate-y-0.5
-                   disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
-            <Download class="w-4 h-4 group-hover:animate-bounce" />
-            Export ใบรายการ
-          </button>
-        </div>
-      </div>
-
-      <!-- Row 2: ประเภท -->
-      <p class="text-sm text-gray-500">เลือกประเภทข้อมูลและเลือกรายชื่อที่ต้องการส่งออก</p>
-      <div class="flex gap-2 flex-wrap">
-        <button v-for="item in exportItems" :key="item.type" @click="selectedExportType = item.type; selectedIds = []"
-          :class="[
-            'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition',
-            selectedExportType === item.type
-              ? 'bg-green-500 text-white border-green-500'
-              : 'bg-white text-gray-600 border-gray-200 hover:border-green-400'
-          ]">
-          <component :is="item.icon" class="w-4 h-4" />
-          {{ item.label }}
-        </button>
-      </div>
-
-      <!-- Row 3: Filters -->
-      <div class="flex flex-col sm:flex-row gap-2">
-        <div class="relative flex-1">
-          <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input v-model="exportSearch" type="text" placeholder="ค้นหาชื่อ-สกุล..."
-            class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none" />
-        </div>
-        <div class="relative">
-          <select v-model="selectedCurFilter"
-            class="pl-4 pr-8 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none bg-white appearance-none cursor-pointer min-w-[120px] text-gray-700">
-            <option value="">ทุกหลักสูตร</option>
-            <option value="ปวช">ปวช</option>
-            <option value="ปวส">ปวส</option>
-          </select>
-          <ChevronDown
-            class="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-        </div>
-        <div class="relative">
-          <Filter class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          <select v-model="selectedBranch"
-            class="pl-9 pr-8 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none bg-white appearance-none cursor-pointer min-w-[160px] text-gray-700">
-            <option value="">ทุกสาขาวิชา</option>
-            <option v-for="b in allBranches" :key="b" :value="b">{{ b }}</option>
-          </select>
-          <ChevronDown
-            class="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-        </div>
-        <div v-if="selectedExportType === 'students'" class="relative">
-          <select v-model="selectedStatus"
-            class="pl-4 pr-8 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none bg-white appearance-none cursor-pointer min-w-[140px] text-gray-700">
-            <option value="">ทุกสถานะ</option>
-            <option value="pending_payment">สมัครใหม่</option>
-            <option value="pending_approve">รอตรวจสอบ</option>
-            <option value="enrolled">มอบตัวแล้ว</option>
-          </select>
-          <ChevronDown
-            class="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-        </div>
-        <div v-if="selectedExportType === 'payments'" class="relative">
-          <Calendar class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input v-model="paymentDateFilter" type="text" placeholder="วัน/เดือน/ปี"
-            @input="formatDateInput"
-            maxlength="10"
-            class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none" />
-        </div>
-        <div v-if="selectedExportType === 'orders'" class="relative">
-          <Calendar class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input v-model="orderDateFilter" type="text" placeholder="วัน/เดือน/ปี"
-            @input="formatDateInput"
-            maxlength="10"
-            class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none" />
-        </div>
-      </div>
-    </div>
-
-    <!-- Badge filter -->
-    <div v-if="selectedBranch || selectedCurFilter || selectedStatus || (selectedExportType === 'payments' && paymentDateFilter) || (selectedExportType === 'orders' && orderDateFilter)" class="flex items-center gap-2 flex-wrap">
-      <span class="text-xs text-gray-400">กรองโดย:</span>
-      <span v-if="selectedCurFilter"
-        class="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full border border-blue-200">
-        {{ selectedCurFilter }}
-        <button @click="selectedCurFilter = ''" class="hover:text-blue-900">
-          <X class="w-3 h-3" />
-        </button>
-      </span>
-      <span v-if="selectedBranch"
-        class="inline-flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 text-xs font-semibold rounded-full border border-green-200">
-        สาขา: {{ selectedBranch }}
-        <button @click="selectedBranch = ''" class="hover:text-green-900">
-          <X class="w-3 h-3" />
-        </button>
-      </span>
-      <span v-if="selectedExportType === 'students' && selectedStatus"
-        class="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-50 text-purple-700 text-xs font-semibold rounded-full border border-purple-200">
-        สถานะ: {{ getStatusLabel(selectedStatus) }}
-        <button @click="selectedStatus = ''" class="hover:text-purple-900">
-          <X class="w-3 h-3" />
-        </button>
-      </span>
-      <span v-if="selectedExportType === 'payments' && paymentDateFilter"
-        class="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-50 text-orange-700 text-xs font-semibold rounded-full border border-orange-200">
-        วันที่ชำระ : {{ paymentDateFilter }}
-        <button @click="paymentDateFilter = ''" class="hover:text-orange-900">
-          <X class="w-3 h-3" />
-        </button>
-      </span>
-      <span v-if="selectedExportType === 'orders' && orderDateFilter"
-        class="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-semibold rounded-full border border-indigo-200">
-        วันที่ชำระ : {{ orderDateFilter }}
-        <button @click="orderDateFilter = ''" class="hover:text-indigo-900">
-          <X class="w-3 h-3" />
-        </button>
-      </span>
-      <span class="text-xs text-gray-400">พบ {{ filteredExportData.length }} รายการ</span>
-    </div>
-
-    <!-- Loading -->
-    <div v-if="isLoading" class="text-center py-12 text-gray-400">
-      <div class="inline-block w-6 h-6 border-2 border-green-400 border-t-transparent rounded-full animate-spin mb-2">
-      </div>
-      <p class="text-sm">กำลังโหลดข้อมูล...</p>
-    </div>
-
-    <div v-else-if="error" class="text-center py-12">
-      <p class="text-red-400 text-sm">{{ error }}</p>
-      <button @click="fetchApplicants" class="mt-2 text-sm text-green-600 underline">ลองใหม่</button>
-    </div>
-
-    <!-- Child Tables -->
-    <template v-else>
-
-      <StudentsTable v-if="selectedExportType === 'students'" :data="paginatedData" :selected-ids="selectedIds"
-        @update:selected-ids="selectedIds = $event" @toggle-all="toggleAll" :is-all-selected="isAllSelected" />
-      <PaymentsTable v-else-if="selectedExportType === 'payments'" :data="paginatedData" :selected-ids="selectedIds"
-        @update:selected-ids="selectedIds = $event" @toggle-all="toggleAll" :is-all-selected="isAllSelected" />
-      <OrdersTable v-else-if="selectedExportType === 'orders'" :data="paginatedData" :selected-ids="selectedIds"
-        @update:selected-ids="selectedIds = $event" @toggle-all="toggleAll" :is-all-selected="isAllSelected" @generate-pdf="handleGeneratePDF" />
-    </template>
-
-    <!-- Pagination -->
-    <div v-if="totalPages > 1"
-      class="flex items-center justify-between bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-2">
-      <p class="text-xs text-gray-400">
-        แสดง
-        <span class="font-semibold text-green-600">{{ (currentPage - 1) * pageSize + 1 }}</span>
-        <span class="text-gray-300 mx-0.5">—</span>
-        <span class="font-semibold text-green-600">{{ Math.min(currentPage * pageSize, filteredExportData.length)
-          }}</span>
-        จาก
-        <span class="font-semibold text-gray-700">{{ filteredExportData.length }}</span> รายการ
-      </p>
-      <div class="flex items-center gap-1">
-        <button @click="currentPage = 1" :disabled="currentPage === 1"
-          class="w-8 h-8 flex items-center justify-center rounded-xl text-sm text-gray-400 hover:bg-green-50 hover:text-green-600 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-150">«</button>
-        <button @click="currentPage--" :disabled="currentPage === 1"
-          class="w-8 h-8 flex items-center justify-center rounded-xl text-sm text-gray-400 hover:bg-green-50 hover:text-green-600 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-150">‹</button>
-        <template v-for="p in totalPages" :key="p">
-          <button v-if="p === 1 || p === totalPages || (p >= currentPage - 1 && p <= currentPage + 1)"
-            @click="currentPage = p" :class="[
-              'w-8 h-8 flex items-center justify-center rounded-xl text-sm font-semibold transition-all duration-150',
-              currentPage === p
-                ? 'bg-green-500 text-white shadow-sm shadow-green-200'
-                : 'text-gray-500 hover:bg-green-50 hover:text-green-600'
-            ]">{{ p }}</button>
-          <span v-else-if="p === currentPage - 2 || p === currentPage + 2"
-            class="w-6 text-center text-gray-300 text-xs select-none">···</span>
-        </template>
-        <button @click="currentPage++" :disabled="currentPage === totalPages"
-          class="w-8 h-8 flex items-center justify-center rounded-xl text-sm text-gray-400 hover:bg-green-50 hover:text-green-600 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-150">›</button>
-        <button @click="currentPage = totalPages" :disabled="currentPage === totalPages"
-          class="w-8 h-8 flex items-center justify-center rounded-xl text-sm text-gray-400 hover:bg-green-50 hover:text-green-600 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-150">»</button>
-      </div>
-    </div>
-
-    <!-- OCR Progress Modal -->
-    <div v-if="ocrProgress.running" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div class="bg-white rounded-2xl shadow-xl p-6 w-80 space-y-4">
-        <div class="flex items-center gap-3">
-          <div class="w-8 h-8 border-2 border-green-400 border-t-transparent rounded-full animate-spin flex-shrink-0">
-          </div>
+    <!-- Header -->
+    <div class="bg-white shadow-lg border-b border-emerald-100">
+      <div class="max-w-7xl mx-auto px-6 py-8">
+        <div class="flex items-center justify-between">
           <div>
-            <p class="font-semibold text-gray-800 text-sm">กำลังอ่านบัตรประชาชน...</p>
-            <p class="text-xs text-gray-400 mt-0.5">{{ ocrProgress.current }} / {{ ocrProgress.total }} รายการ</p>
+            <h1 class="text-4xl font-bold text-gray-900 flex items-center">
+              <div
+                class="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
+                <User class="w-6 h-6 text-white" />
+              </div>
+              ข้อมูลผู้สมัคร
+            </h1>
+            <p class="text-gray-600 mt-3 text-lg">เลือกและดาวน์โหลดข้อมูลนักเรียนในรูปแบบไฟล์</p>
+          </div>
+          <div class="flex items-center space-x-3">
+            <div class="flex items-center bg-emerald-50 px-4 py-2 rounded-lg">
+              <div class="w-3 h-3 bg-emerald-500 rounded-full mr-2 animate-pulse"></div>
+              <span class="text-emerald-700 font-medium">ระบบพร้อมใช้งาน</span>
+            </div>
           </div>
         </div>
-        <div class="w-full bg-gray-100 rounded-full h-2">
-          <div class="bg-green-500 h-2 rounded-full transition-all"
-            :style="{ width: ocrProgress.total > 0 ? (ocrProgress.current / ocrProgress.total * 100) + '%' : '0%' }">
-          </div>
-        </div>
-        <p class="text-xs text-gray-400 text-center">{{ ocrProgress.name }}</p>
       </div>
     </div>
 
-  </div>
+    <div class="p-4 space-y-4">
+
+      <!-- Export Controls Card -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-3">
+
+        <!-- Row 1: ชื่อ + ปุ่ม Export -->
+        <div class="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h1 class="text-xl font-bold text-gray-800">ส่งออกข้อมูล</h1>
+            <p class="text-sm text-gray-400">วิทยาลัยเทคนิคเลย</p>
+          </div>
+
+          <div class="flex items-center gap-2 flex-wrap">
+            <div class="flex items-center gap-1.5 bg-green-50 px-3 py-1.5 rounded-lg">
+              <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span class="text-sm text-green-700 font-semibold">{{ selectedIds.length }} รายการ</span>
+            </div>
+
+            <button v-if="selectedExportType === 'students'" @click="exportPDF"
+              :disabled="selectedIds.length === 0 || ocrProgress.running" class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
+                     bg-gradient-to-r from-red-400 to-rose-500 text-white shadow-md shadow-red-200
+                     hover:shadow-lg hover:shadow-red-300 hover:-translate-y-0.5
+                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
+              <Download class="w-4 h-4 group-hover:animate-bounce" />
+              Export PDF
+            </button>
+
+            <button v-if="selectedExportType === 'students'" @click="exportSelected()"
+              :disabled="selectedIds.length === 0 || ocrProgress.running" class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
+                     bg-gradient-to-r from-emerald-400 to-green-500 text-white shadow-md shadow-green-200
+                     hover:shadow-lg hover:shadow-green-300 hover:-translate-y-0.5
+                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
+              <Download class="w-4 h-4 group-hover:animate-bounce" />
+              Export ที่เลือก
+            </button>
+
+            <button v-if="selectedExportType === 'students'" @click="exportAll()"
+              :disabled="ocrProgress.running" class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
+                     bg-gradient-to-r from-gray-600 to-gray-800 text-white shadow-md shadow-gray-300
+                     hover:shadow-lg hover:shadow-gray-400 hover:-translate-y-0.5
+                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
+              <Download class="w-4 h-4 group-hover:animate-bounce" />
+              Export ทั้งหมด
+            </button>
+
+            <button v-if="selectedExportType === 'payments'" @click="exportPaymentsListPDF()"
+              :disabled="ocrProgress.running" class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
+                     bg-gradient-to-r from-emerald-400 to-green-500 text-white shadow-md shadow-green-200
+                     hover:shadow-lg hover:shadow-green-300 hover:-translate-y-0.5
+                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
+              <Download class="w-4 h-4 group-hover:animate-bounce" />
+              Export รายชื่อผู้ชำระเงิน
+            </button>
+
+            <button v-if="selectedExportType === 'orders'" @click="exportOrdersListPDF()"
+              :disabled="ocrProgress.running" class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
+                     bg-gradient-to-r from-emerald-400 to-green-500 text-white shadow-md shadow-green-200
+                     hover:shadow-lg hover:shadow-green-300 hover:-translate-y-0.5
+                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
+              <Download class="w-4 h-4 group-hover:animate-bounce" />
+              Export สรุปยอดการสั่งซื้อ
+            </button>
+
+            <button v-if="selectedExportType === 'payments'" @click="exportAll()"
+              :disabled="ocrProgress.running" class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
+                     bg-gradient-to-r from-gray-600 to-gray-800 text-white shadow-md shadow-gray-300
+                     hover:shadow-lg hover:shadow-gray-400 hover:-translate-y-0.5
+                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
+              <Download class="w-4 h-4 group-hover:animate-bounce" />
+              Export ใบแสดงการชำระเงิน
+            </button>
+
+            <button v-if="selectedExportType === 'orders'" @click="exportCombinedOrdersPDF()"
+              :disabled="selectedIds.length === 0 || ocrProgress.running" class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
+                     bg-gradient-to-r from-gray-600 to-gray-800 text-white shadow-md shadow-gray-300
+                     hover:shadow-lg hover:shadow-gray-400 hover:-translate-y-0.5
+                     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
+              <Download class="w-4 h-4 group-hover:animate-bounce" />
+              Export ใบรายการ
+            </button>
+          </div>
+        </div>
+
+        <!-- Row 2: ประเภท -->
+        <p class="text-sm text-gray-500">เลือกประเภทข้อมูลและเลือกรายชื่อที่ต้องการส่งออก</p>
+        <div class="flex gap-2 flex-wrap">
+          <button v-for="item in exportItems" :key="item.type"
+            @click="selectedExportType = selectedExportType === item.type ? '' : item.type; selectedIds = []"
+            :class="[
+              'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition',
+              selectedExportType === item.type
+                ? 'bg-green-500 text-white border-green-500'
+                : 'bg-white text-gray-600 border-gray-200 hover:border-green-400'
+            ]">
+            <component :is="item.icon" class="w-4 h-4" />
+            {{ item.label }}
+          </button>
+        </div>
+
+        <!-- Row 3: Filters -->
+        <div class="flex flex-col sm:flex-row gap-2">
+          <div class="relative flex-1">
+            <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input v-model="exportSearch" type="text" placeholder="ค้นหาชื่อ-สกุล..."
+              class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none" />
+          </div>
+          <div class="relative">
+            <select v-model="selectedCurFilter"
+              class="pl-4 pr-8 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none bg-white appearance-none cursor-pointer min-w-[120px] text-gray-700">
+              <option value="">ทุกหลักสูตร</option>
+              <option value="ปวช">ปวช</option>
+              <option value="ปวส">ปวส</option>
+            </select>
+            <ChevronDown
+              class="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+          </div>
+          <div class="relative">
+            <Filter class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <select v-model="selectedBranch"
+              class="pl-9 pr-8 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none bg-white appearance-none cursor-pointer min-w-[160px] text-gray-700">
+              <option value="">ทุกสาขาวิชา</option>
+              <option v-for="b in allBranches" :key="b" :value="b">{{ b }}</option>
+            </select>
+            <ChevronDown
+              class="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+          </div>
+          <div v-if="selectedExportType === 'students' || !selectedExportType" class="relative">
+            <select v-model="selectedStatus"
+              class="pl-4 pr-8 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none bg-white appearance-none cursor-pointer min-w-[140px] text-gray-700">
+              <option value="">ทุกสถานะ</option>
+              <option value="pending_payment">สมัครใหม่</option>
+              <option value="pending_approve">รอตรวจสอบ</option>
+              <option value="enrolled">มอบตัวแล้ว</option>
+            </select>
+            <ChevronDown
+              class="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+          </div>
+          <div v-if="selectedExportType === 'payments'" class="relative">
+            <Calendar class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input v-model="paymentDateFilter" type="text" placeholder="วัน/เดือน/ปี"
+              @input="formatDateInput"
+              maxlength="10"
+              class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none" />
+          </div>
+          <div v-if="selectedExportType === 'orders'" class="relative">
+            <Calendar class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input v-model="orderDateFilter" type="text" placeholder="วัน/เดือน/ปี"
+              @input="formatDateInput"
+              maxlength="10"
+              class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Badge filter -->
+      <div v-if="selectedBranch || selectedCurFilter || selectedStatus || (selectedExportType === 'payments' && paymentDateFilter) || (selectedExportType === 'orders' && orderDateFilter)"
+        class="flex items-center gap-2 flex-wrap">
+        <span class="text-xs text-gray-400">กรองโดย:</span>
+        <span v-if="selectedCurFilter"
+          class="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full border border-blue-200">
+          {{ selectedCurFilter }}
+          <button @click="selectedCurFilter = ''" class="hover:text-blue-900">
+            <X class="w-3 h-3" />
+          </button>
+        </span>
+        <span v-if="selectedBranch"
+          class="inline-flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 text-xs font-semibold rounded-full border border-green-200">
+          สาขา: {{ selectedBranch }}
+          <button @click="selectedBranch = ''" class="hover:text-green-900">
+            <X class="w-3 h-3" />
+          </button>
+        </span>
+        <span v-if="selectedStatus"
+          class="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-50 text-purple-700 text-xs font-semibold rounded-full border border-purple-200">
+          สถานะ: {{ getStatusLabel(selectedStatus) }}
+          <button @click="selectedStatus = ''" class="hover:text-purple-900">
+            <X class="w-3 h-3" />
+          </button>
+        </span>
+        <span v-if="selectedExportType === 'payments' && paymentDateFilter"
+          class="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-50 text-orange-700 text-xs font-semibold rounded-full border border-orange-200">
+          วันที่ชำระ : {{ paymentDateFilter }}
+          <button @click="paymentDateFilter = ''" class="hover:text-orange-900">
+            <X class="w-3 h-3" />
+          </button>
+        </span>
+        <span v-if="selectedExportType === 'orders' && orderDateFilter"
+          class="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-semibold rounded-full border border-indigo-200">
+          วันที่ชำระ : {{ orderDateFilter }}
+          <button @click="orderDateFilter = ''" class="hover:text-indigo-900">
+            <X class="w-3 h-3" />
+          </button>
+        </span>
+        <span class="text-xs text-gray-400">พบ {{ filteredExportData.length }} รายการ</span>
+      </div>
+
+      <!-- Loading -->
+      <div v-if="isLoading" class="text-center py-12 text-gray-400">
+        <div class="inline-block w-6 h-6 border-2 border-green-400 border-t-transparent rounded-full animate-spin mb-2">
+        </div>
+        <p class="text-sm">กำลังโหลดข้อมูล...</p>
+      </div>
+
+      <div v-else-if="error" class="text-center py-12">
+        <p class="text-red-400 text-sm">{{ error }}</p>
+        <button @click="fetchApplicants" class="mt-2 text-sm text-green-600 underline">ลองใหม่</button>
+      </div>
+
+      <!-- Child Tables -->
+      <template v-else>
+
+        <!-- หน้าแรก: ตารางแบบ inline -->
+        <div v-if="!selectedExportType" class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-500">
+              <tr>
+                <th class="px-4 py-3 text-center w-10">
+                  <input type="checkbox" @change="toggleAll" :checked="isAllSelected" />
+                </th>
+                <th class="px-4 py-3 text-left">ชื่อ-สกุล</th>
+                <th class="px-4 py-3 text-left">หลักสูตร</th>
+                <th class="px-4 py-3 text-left">สาขาวิชา</th>
+                <th class="px-4 py-3 text-center">สถานะ</th>
+                <th class="px-4 py-3 text-left">เบอร์โทร</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+              <tr v-for="row in paginatedData" :key="row.ลำดับ"
+                :class="['cursor-pointer hover:bg-gray-50', selectedIds.includes(row.ลำดับ) ? 'bg-green-50/50' : '']"
+                @click="openInfoModal(row)">
+                <td class="px-4 py-3 text-center" @click.stop>
+                  <input type="checkbox" :value="row.ลำดับ" :checked="selectedIds.includes(row.ลำดับ)" @change="() => {
+                    const idx = selectedIds.indexOf(row.ลำดับ)
+                    if (idx === -1) selectedIds.push(row.ลำดับ)
+                    else selectedIds.splice(idx, 1)
+                  }" />
+                </td>
+                <td class="px-4 py-3 text-gray-800">{{ row.คำนำหน้า }}{{ row.ชื่อ_นามสกุล }}</td>
+                <td class="px-4 py-3 text-gray-500">{{ row.หลักสูตร }}</td>
+                <td class="px-4 py-3">
+                  <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700">
+                    {{ row.สาขาวิชา }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-center">
+                  <span :class="[
+                    'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold',
+                    row.สถานะ === 'enrolled' ? 'bg-green-50 text-green-700 border border-green-200' :
+                      row.สถานะ === 'paid' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                        row.สถานะ === 'pending_approve' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' :
+                          'bg-gray-50 text-gray-500 border border-gray-200'
+                  ]">
+                    {{
+                      row.สถานะ === 'enrolled' ? '✓ มอบตัวแล้ว' :
+                        row.สถานะ === 'paid' ? '✅ พร้อมมอบตัว' :
+                          row.สถานะ === 'pending_approve' ? '⏳ รอตรวจสอบ' : '📋 สมัครใหม่'
+                    }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-gray-600">{{ row.เบอร์โทร || '-' }}</td>
+              </tr>
+              <tr v-if="paginatedData.length === 0">
+                <td colspan="6" class="px-4 py-8 text-center text-gray-400">ไม่พบข้อมูล</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ประเภทอื่นๆ -->
+        <StudentsTable v-else-if="selectedExportType === 'students'" :data="paginatedData" :selected-ids="selectedIds"
+          @update:selected-ids="selectedIds = $event" @toggle-all="toggleAll" :is-all-selected="isAllSelected" />
+        <PaymentsTable v-else-if="selectedExportType === 'payments'" :data="paginatedData" :selected-ids="selectedIds"
+          @update:selected-ids="selectedIds = $event" @toggle-all="toggleAll" :is-all-selected="isAllSelected" />
+        <OrdersTable v-else-if="selectedExportType === 'orders'" :data="paginatedData" :selected-ids="selectedIds"
+          @update:selected-ids="selectedIds = $event" @toggle-all="toggleAll" :is-all-selected="isAllSelected"
+          @generate-pdf="handleGeneratePDF" />
+
+      </template>
+
+      <!-- Pagination -->
+      <div v-if="totalPages > 1"
+        class="flex items-center justify-between bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-2">
+        <p class="text-xs text-gray-400">
+          แสดง
+          <span class="font-semibold text-green-600">{{ (currentPage - 1) * pageSize + 1 }}</span>
+          <span class="text-gray-300 mx-0.5">—</span>
+          <span class="font-semibold text-green-600">{{ Math.min(currentPage * pageSize, filteredExportData.length)
+            }}</span>
+          จาก
+          <span class="font-semibold text-gray-700">{{ filteredExportData.length }}</span> รายการ
+        </p>
+        <div class="flex items-center gap-1">
+          <button @click="currentPage = 1" :disabled="currentPage === 1"
+            class="w-8 h-8 flex items-center justify-center rounded-xl text-sm text-gray-400 hover:bg-green-50 hover:text-green-600 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-150">«</button>
+          <button @click="currentPage--" :disabled="currentPage === 1"
+            class="w-8 h-8 flex items-center justify-center rounded-xl text-sm text-gray-400 hover:bg-green-50 hover:text-green-600 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-150">‹</button>
+          <template v-for="p in totalPages" :key="p">
+            <button v-if="p === 1 || p === totalPages || (p >= currentPage - 1 && p <= currentPage + 1)"
+              @click="currentPage = p" :class="[
+                'w-8 h-8 flex items-center justify-center rounded-xl text-sm font-semibold transition-all duration-150',
+                currentPage === p
+                  ? 'bg-green-500 text-white shadow-sm shadow-green-200'
+                  : 'text-gray-500 hover:bg-green-50 hover:text-green-600'
+              ]">{{ p }}</button>
+            <span v-else-if="p === currentPage - 2 || p === currentPage + 2"
+              class="w-6 text-center text-gray-300 text-xs select-none">···</span>
+          </template>
+          <button @click="currentPage++" :disabled="currentPage === totalPages"
+            class="w-8 h-8 flex items-center justify-center rounded-xl text-sm text-gray-400 hover:bg-green-50 hover:text-green-600 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-150">›</button>
+          <button @click="currentPage = totalPages" :disabled="currentPage === totalPages"
+            class="w-8 h-8 flex items-center justify-center rounded-xl text-sm text-gray-400 hover:bg-green-50 hover:text-green-600 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-150">»</button>
+        </div>
+      </div>
+
+      <!-- OCR Progress Modal -->
+      <div v-if="ocrProgress.running" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div class="bg-white rounded-2xl shadow-xl p-6 w-80 space-y-4">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 border-2 border-green-400 border-t-transparent rounded-full animate-spin flex-shrink-0">
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-gray-700">กำลังประมวลผล...</p>
+              <p class="text-xs text-gray-400">{{ ocrProgress.name }}</p>
+            </div>
+          </div>
+          <div class="w-full bg-gray-100 rounded-full h-2">
+            <div class="bg-green-400 h-2 rounded-full transition-all duration-300"
+              :style="{ width: `${(ocrProgress.current / ocrProgress.total) * 100}%` }"></div>
+          </div>
+          <p class="text-xs text-gray-400 text-right">{{ ocrProgress.current }} / {{ ocrProgress.total }}</p>
+        </div>
+      </div>
+
+    </div><!-- ✅ ปิด div.p-4 -->
+
+    <!-- Info Modal -->
+    <Teleport to="body">
+      <div v-if="infoModal.open" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+        @click.self="infoModal.open = false">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden flex flex-col"
+          style="max-height: 90vh">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                <User class="w-5 h-5 text-emerald-600" />
+              </div>
+              <div>
+                <p class="font-bold text-gray-800 text-base">{{ infoModal.name }}</p>
+                <span :class="[
+                  'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold mt-0.5',
+                  infoModal.status === 'enrolled' ? 'bg-green-50 text-green-700' :
+                    infoModal.status === 'paid' ? 'bg-blue-50 text-blue-700' :
+                      infoModal.status === 'pending_approve' ? 'bg-yellow-50 text-yellow-700' :
+                        'bg-gray-50 text-gray-500'
+                ]">
+                  {{
+                    infoModal.status === 'enrolled' ? '✓ มอบตัวแล้ว' :
+                      infoModal.status === 'paid' ? '✅ พร้อมมอบตัว' :
+                        infoModal.status === 'pending_approve' ? '⏳ รอตรวจสอบ' : '📋 สมัครใหม่'
+                  }}
+                </span>
+              </div>
+            </div>
+            <button @click="infoModal.open = false" class="p-2 hover:bg-gray-100 rounded-lg transition">
+              <X class="w-5 h-5 text-gray-500" />
+            </button>
+          </div>
+          <div class="overflow-y-auto flex-1 px-5 py-4 space-y-4">
+            <div v-if="infoModal.loading" class="flex items-center justify-center py-10 text-gray-400">
+              <div class="w-6 h-6 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin mr-2">
+              </div>
+              <span class="text-sm">กำลังโหลด...</span>
+            </div>
+            <template v-else-if="infoModal.data">
+              <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">ข้อมูลส่วนตัว</p>
+                <div class="grid grid-cols-2 gap-3">
+                  <InfoField label="ชื่อ-สกุล" :value="`${infoModal.data.prefix}${infoModal.data.full_name}`" />
+                  <InfoField label="เลขบัตรประชาชน" :value="infoModal.data.id_card_number" />
+                  <InfoField label="เบอร์โทร" :value="infoModal.data.phone" />
+                  <InfoField label="อีเมล" :value="infoModal.data.email" />
+                  <InfoField label="ที่อยู่" :value="infoModal.data.address" class="col-span-2" />
+                </div>
+              </div>
+
+              <div class="border-t border-gray-100"></div>
+
+              <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">หลักสูตรที่สมัคร</p>
+                <div class="grid grid-cols-2 gap-3">
+                  <InfoField label="หลักสูตร" :value="infoModal.data.cur_name" />
+                  <InfoField label="สาขาวิชา" :value="infoModal.data.div_name" />
+                </div>
+              </div>
+
+              <div class="border-t border-gray-100"></div>
+
+              <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">ประวัติการศึกษา</p>
+                <div class="grid grid-cols-2 gap-3">
+                  <InfoField label="สถานศึกษาเดิม" :value="infoModal.data.prev_school" />
+                  <InfoField label="วุฒิการศึกษา" :value="prevLevelLabel(infoModal.data.prev_level)" />
+                  <InfoField label="ปีที่จบ" :value="infoModal.data.prev_year" />
+                  <InfoField label="เกรดเฉลี่ย (GPA)" :value="infoModal.data.gpa" />
+                </div>
+              </div>
+
+              <div class="border-t border-gray-100"></div>
+
+              <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">การชำระเงิน</p>
+                <div class="grid grid-cols-2 gap-3">
+                  <InfoField label="ยอดที่ต้องชำระ"
+                    :value="infoModal.data.total_amount ? `${Number(infoModal.data.total_amount).toLocaleString()} บาท` : '-'" />
+                  <InfoField label="วันที่ชำระ"
+                    :value="infoModal.data.paid_at ? new Date(infoModal.data.paid_at).toLocaleDateString('th-TH') : 'ยังไม่ชำระ'" />
+                </div>
+              </div>
+            </template>
+          </div>
+          <!-- Footer -->
+          <div class="flex items-center justify-between px-5 py-3 border-t border-gray-100 bg-gray-50 flex-shrink-0">
+            <p class="text-xs text-gray-400">
+              วันที่สมัคร: {{ infoModal.data ? new Date(infoModal.data.created_at).toLocaleDateString('th-TH') : '-' }}
+            </p>
+            <div class="flex gap-2">
+              <button @click="infoModal.open = false"
+                class="px-4 py-2 text-sm text-gray-500 hover:bg-gray-200 rounded-xl transition font-semibold">
+                ปิด
+              </button>
+
+              <button v-if="infoModal.status === 'pending_payment'" @click="openPaymentSlipOnly"
+                class="inline-flex items-center gap-1.5 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-sm font-semibold transition">
+                <FileText class="w-4 h-4" /> ใบแจ้งชำระเงิน
+              </button>
+
+              <button v-else-if="infoModal.status === 'pending_approve'" @click="openDocModalFromInfo"
+                class="inline-flex items-center gap-1.5 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl text-sm font-semibold transition">
+                <Eye class="w-4 h-4" /> รายละเอียดการสมัคร
+              </button>
+
+              <button v-else-if="infoModal.status === 'paid'" @click="openDocModalFromInfo"
+                class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-semibold transition">
+                <Eye class="w-4 h-4" /> รายละเอียดการสมัคร
+              </button>
+
+              <button v-else-if="infoModal.status === 'enrolled'" @click="printEnrollmentCert"
+                class="inline-flex items-center gap-1.5 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl text-sm font-semibold transition">
+                <BookCheck class="w-4 h-4" /> เอกสารมอบตัว
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+  </div><!-- ✅ ปิด root div -->
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, h } from 'vue'
 import { apiService } from '@/utils/api'
+
 import {
   Download, CreditCard, ShoppingBag,
-  Users, Search, Filter, ChevronDown, X, User, Calendar,
+  Users, Search, Filter, ChevronDown, X, User, Eye, FileText, BookCheck, Calendar,
 } from 'lucide-vue-next'
 import * as XLSX from 'xlsx'
 import Tesseract from 'tesseract.js'
 import jsPDF from 'jspdf'
 
-
 import StudentsTable from '@/components/export/StudentsTable.vue'
 import PaymentsTable from '@/components/export/PaymentsTable.vue'
 import OrdersTable from '@/components/export/OrdersTable.vue'
+
+import api from '@/services/httpClient'
+import { exportPaymentPDF } from '@/utils/exportPaymentPDF'
+
+// ─── InfoField inline component ──────────────────────────────
+const InfoField = {
+  props: ['label', 'value'],
+  setup(props: any) {
+    return () => h('div', [
+      h('p', { class: 'text-xs text-gray-400 mb-0.5' }, props.label),
+      h('p', { class: 'text-sm font-medium text-gray-800' }, props.value || '-'),
+    ])
+  }
+}
+
+// ─── Info Modal state ─────────────────────────────────────────
+const infoModal = ref({
+  open: false,
+  name: '',
+  status: '',
+  appId: '' as any,
+  loading: false,
+  data: null as any,
+})
+
+const prevLevelLabel = (level: string) => {
+  const map: Record<string, string> = { m3: 'ม.3', m6: 'ม.6', pvc: 'ปวช.' }
+  return map[level] || level || '-'
+}
+
+const openInfoModal = async (row: any) => {
+  infoModal.value = {
+    open: true,
+    name: `${row.คำนำหน้า}${row.ชื่อ_นามสกุล}`,
+    status: row.สถานะ,
+    appId: row.ลำดับ,
+    loading: true,
+    data: null,
+  }
+  try {
+    const res = await api.get(`/applications/check/${row.เลขบัตรประชาชน}`)
+    infoModal.value.data = res.data?.data
+  } catch (e) {
+    console.error('โหลดข้อมูลไม่สำเร็จ', e)
+  } finally {
+    infoModal.value.loading = false
+  }
+}
 
 const API_BASE = (import.meta.env.VITE_API_URL as string)?.replace(/\/api$/, '') || 'http://localhost:3001'
 const resolveUrl = (path: string | null | undefined) => {
@@ -326,7 +568,7 @@ const exportItems = [
 const applicants = ref<any[]>([])
 const isLoading = ref(false)
 const error = ref('')
-const selectedExportType = ref('students')
+const selectedExportType = ref('')
 const exportSearch = ref('')
 const selectedBranch = ref('')
 const selectedCurFilter = ref('')
@@ -372,16 +614,8 @@ const currentData = computed(() =>
       หลักสูตร: a.curriculum.cur_shortname,
       สาขาวิชา: a.division.div_name,
     }
-    if (selectedExportType.value === 'applicants') {
-      return {
-        ...base,
-        เบอร์โทร: a.phone,
-        สถานะ: a.status,
-        อีเมล: a.email,
-        วันที่สมัคร: new Date(a.created_at).toLocaleDateString('th-TH'),
-      }
-    }
-    if (selectedExportType.value === 'students') {
+
+    if (selectedExportType.value === '' || selectedExportType.value === 'students') {
       return {
         ...base,
         เลขบัตรประชาชน: a.id_card_number,
@@ -389,14 +623,17 @@ const currentData = computed(() =>
         อีเมล: a.email,
         สถานะ: a.status,
         วันที่สมัคร: new Date(a.created_at).toLocaleDateString('th-TH'),
+        enrolled_at: a.enrolled_at ?? null,
         _idFrontUrl: resolveUrl(a.id_front_url),
         _idBackUrl: a.id_back_url || '',
         _eduFrontUrl: a.edu_front_url || '',
       }
     }
+
     if (selectedExportType.value === 'payments') {
       return {
         ...base,
+        enrolled_at: a.enrolled_at ?? null,
         ยอดชำระ: a.payment?.total_amount ?? '-',
         วันที่ชำระ: a.payment?.paid_at
           ? new Date(a.payment.paid_at).toLocaleDateString('th-TH')
@@ -409,15 +646,11 @@ const currentData = computed(() =>
           : '',
       }
     }
+
     // orders
     return {
       ...base,
-      จำนวน: a.order?.quantity ?? '-',
-      รายการ: a.order?.item_name ?? '-',
-      ราคา: a.order?.price ?? '-',
-      วันที่สั่งซื้อ: a.order?.order_date
-        ? new Date(a.order.order_date).toLocaleDateString('th-TH')
-        : '-',
+      enrolled_at: a.enrolled_at ?? null,
       ยอดชำระ: a.payment?.total_amount ?? '-',
       หลักฐานการชำระ_ใบเสร็จ: a.payment?.slip_name ?? '-',
       วันที่ชำระ: a.payment?.paid_at
@@ -444,15 +677,14 @@ const filteredExportData = computed(() =>
     const matchBranch = !selectedBranch.value || row.สาขาวิชา === selectedBranch.value
     const matchCur = !selectedCurFilter.value || row.หลักสูตร.includes(selectedCurFilter.value)
     const matchStatus = !selectedStatus.value || (row.สถานะ && row.สถานะ === selectedStatus.value)
-    
-    // Handle date filtering for both payments and orders
+
     let matchDate = true
     if (selectedExportType.value === 'payments' && paymentDateFilter.value) {
       matchDate = row.วันที่ชำระ && normalizeDateForSearch(row.วันที่ชำระ).includes(normalizeDateForSearch(paymentDateFilter.value))
     } else if (selectedExportType.value === 'orders' && orderDateFilter.value) {
       matchDate = row.วันที่ชำระ && normalizeDateForSearch(row.วันที่ชำระ).includes(normalizeDateForSearch(orderDateFilter.value))
     }
-    
+
     return matchName && matchBranch && matchCur && matchStatus && matchDate
   }).sort((a, b) => {
     const statusOrder = { 'pending_approve': 1, 'pending_payment': 2, 'enrolled': 3 }
@@ -495,14 +727,11 @@ watch([exportSearch, selectedBranch, selectedCurFilter, selectedStatus, paymentA
   currentPage.value = 1
 })
 
-// 1. 2. 3. 1. 2. 3.
 const formatDateInput = (event: Event) => {
   const input = event.target as HTMLInputElement
   const currentValue = input.value
-  
-  // 1. 2. 3. 1. 2. 3. 1. 2. 3.
+
   if (currentValue.endsWith('/') && currentValue.length > 1) {
-    // 1. 2. 3. 1. 2. 3. 1. 2. 3. 1. 2. 3.
     const newValue = currentValue.slice(0, -1)
     if (selectedExportType.value === 'payments') {
       paymentDateFilter.value = newValue
@@ -511,16 +740,16 @@ const formatDateInput = (event: Event) => {
     }
     return
   }
-  
-  let value = input.value.replace(/\D/g, '') // 1. 2. 3. 1. 2. 3.
-  
+
+  let value = input.value.replace(/\D/g, '')
+
   if (value.length >= 2) {
     value = value.slice(0, 2) + '/' + value.slice(2)
   }
   if (value.length >= 5) {
     value = value.slice(0, 5) + '/' + value.slice(5, 9)
   }
-  
+
   if (selectedExportType.value === 'payments') {
     paymentDateFilter.value = value
   } else if (selectedExportType.value === 'orders') {
@@ -528,21 +757,15 @@ const formatDateInput = (event: Event) => {
   }
 }
 
-// 1. 2. 3. 1. 2. 3. 1. 2. 3.
 const normalizeDateForSearch = (dateStr: string) => {
-  // 1. 2. 3. 23/4/2569 -> 23/04/2569
-  // 1. 2. 3. 23/04/2569 -> 23/04/2569
   if (!dateStr) return dateStr
-  
   const parts = dateStr.split('/')
   if (parts.length === 3) {
-    // 1. 2. 3. 1. 2. 3.
     const day = parts[0].padStart(2, '0')
     const month = parts[1].padStart(2, '0')
     const year = parts[2]
     return `${day}/${month}/${year}`
   }
-  
   return dateStr
 }
 
@@ -625,14 +848,12 @@ async function buildExportData(rows: any[], isExportAll = false): Promise<object
     const row = rows[i]
     ocrProgress.value.current = i + 1
     ocrProgress.value.name = `${row.คำนำหน้า}${row.ชื่อ_นามสกุล}`
-    
-    // กรองเฉพาะผู้ที่ชำระเงินแล้วสำหรับ Export ทั้งหมด แต่ Export ที่เลือกให้ผ่านทุกคน
+
     if (isExportAll && !row._isPaid) {
       continue
     }
-    
+
     let allOcr: Record<string, string> = {}
-    // 1. 2. 3. 1. 2. 3. 1. 2. 3.
     if (selectedExportType.value !== 'payments') {
       try {
         const res = await apiService.getApplicantDocuments(row.ลำดับ)
@@ -650,8 +871,7 @@ async function buildExportData(rows: any[], isExportAll = false): Promise<object
         console.warn('OCR all docs failed for', row.ชื่อ_นามสกุล, e)
       }
     }
-    
-    // สำหรับ payments ให้เก็บเฉพาะคอลัมน์ที่ต้องการ
+
     if (selectedExportType.value === 'payments') {
       const paymentRow = {
         ลำดับ: row.ลำดับ,
@@ -681,32 +901,12 @@ async function doExport(rows: any[], isExportAll = false) {
 }
 
 const exportSelected = async () => {
-  // Export ที่เลือก - สามารถ export ทุกคนได้ ไม่ว่าจะชำระเงินหรือไม่
   const rows = currentData.value.filter(r => selectedIds.value.includes(r.ลำดับ))
-  await doExport(rows, false) // false = ไม่กรองคนที่ยังไม่ชำระ
+  await doExport(rows, false)
 }
 
 const exportAll = async () => {
-  await doExport(filteredExportData.value, true) // true = กรองเฉพาะคนที่ชำระเงินแล้ว
-}
-
-const exportAllPaymentsPDF = async () => {
-  if (selectedExportType.value !== 'payments') return
-  ocrProgress.value = { running: true, current: 0, total: filteredExportData.value.length, name: 'กำลังเริ่มสร้าง...' }
-  try {
-    const rows = filteredExportData.value
-    if (rows.length === 0) throw new Error('ไม่พบข้อมูล')
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i]
-      ocrProgress.value.current = i + 1
-      ocrProgress.value.name = `${row.คำนำหน้า || ''}${row.ชื่อ_นามสกุล || ''}`
-      await generatePaymentPDF(row)
-    }
-  } catch (err) {
-    console.error('❌ Error exporting all payments PDF:', err)
-  } finally {
-    ocrProgress.value.running = false
-  }
+  await doExport(filteredExportData.value, true)
 }
 
 const exportPaymentsListPDF = async () => {
@@ -720,53 +920,46 @@ const exportPaymentsListPDF = async () => {
       doc.addFont('THSarabunNew.ttf', 'THSarabun', 'normal')
       doc.addFont('THSarabunNew.ttf', 'THSarabun', 'bold')
     }
-    
+
     const pageW = 210
     const pageH = 297
     const margin = 15
     const L = margin
     const R = pageW - margin
     let y = margin
-    
+
     const setFont = (font: string, style: string, size: number) => {
       doc.setFont(font, style)
       doc.setFontSize(size)
     }
-    
-    // Header
+
     setFont('THSarabun', 'bold', 18)
     doc.text('รายชื่อผู้ชำระเงินค่าบำรุงการศึกษา', pageW / 2, y, { align: 'center' })
     y += 10
-    
-    // Date range
+
     setFont('THSarabun', 'normal', 14)
     doc.text('วันที่________ถึงวันที่________', pageW / 2, y, { align: 'center' })
     y += 10
-    
-    // Table headers
+
     const headers = ['ลำดับ', 'ชื่อ-สกุล', 'หลักสูตร', 'สาขาวิชา', 'วันที่ชำระ', 'ยอดรวม']
     const colWidths = [15, 60, 25, 40, 30, 25]
     let x = L
-    
+
     setFont('THSarabun', 'bold', 12)
     headers.forEach((header, i) => {
       doc.text(header, x, y)
       x += colWidths[i]
     })
     y += 6
-    
-    // Table line
+
     doc.line(L, y, R, y)
     y += 4
-    
-    // Table data - Filter only paid users for payments export
+
     const rows = filteredExportData.value.filter(row => row._isPaid)
     rows.forEach((row, index) => {
       if (y > pageH - 30) {
         doc.addPage()
         y = margin
-        
-        // Repeat headers on new page
         setFont('THSarabun', 'bold', 12)
         x = L
         headers.forEach((header, i) => {
@@ -777,7 +970,7 @@ const exportPaymentsListPDF = async () => {
         doc.line(L, y, R, y)
         y += 4
       }
-      
+
       x = L
       const data = [
         String(index + 1),
@@ -787,19 +980,14 @@ const exportPaymentsListPDF = async () => {
         row.วันที่ชำระ || '',
         row.ยอดชำระ || ''
       ]
-      
+
       data.forEach((text, i) => {
-        // Convert to string and ensure it's valid
         const textValue = String(text || '')
-        
-        // Use helvetica for numbers and English, THSarabun for Thai
         if (i === 0 || /^\d+$/.test(textValue) || /^[a-zA-Z0-9\s\-\/]+$/.test(textValue)) {
           setFont('helvetica', 'normal', 11)
         } else {
           setFont('THSarabun', 'normal', 11)
         }
-        
-        // Ensure text is a valid string before passing to jsPDF
         if (textValue && textValue.trim() !== '') {
           doc.text(textValue, x, y)
         }
@@ -807,15 +995,14 @@ const exportPaymentsListPDF = async () => {
       })
       y += 6
     })
-    
-    // Footer
+
     y += 10
     setFont('THSarabun', 'normal', 12)
     doc.text(`จำนวน ${rows.length} รายการ`, pageW / 2, y, { align: 'center' })
-    
+
     const filename = `รายงานการชำระเงิน_${new Date().toISOString().split('T')[0]}.pdf`
     doc.save(filename)
-    
+
   } catch (err) {
     console.error('❌ Error exporting payments list PDF:', err)
   } finally {
@@ -834,55 +1021,48 @@ const exportOrdersListPDF = async () => {
       doc.addFont('THSarabunNew.ttf', 'THSarabun', 'normal')
       doc.addFont('THSarabunNew.ttf', 'THSarabun', 'bold')
     }
-    
+
     const pageW = 210
     const pageH = 297
     const margin = 15
     const L = margin
     const R = pageW - margin
     let y = margin
-    
+
     const setFont = (font: string, style: string, size: number) => {
       doc.setFont(font, style)
       doc.setFontSize(size)
     }
-    
-    // Header
+
     setFont('THSarabun', 'bold', 18)
     doc.text('ใบสรุปยอดการสั่งซื้อเครื่องแบบและอุปกรณ์', pageW / 2, y, { align: 'center' })
     y += 10
-    
-    // Date range
+
     setFont('THSarabun', 'normal', 14)
     doc.text('วันที่________ถึงวันที่________', pageW / 2, y, { align: 'center' })
     y += 10
-    
-    // Table headers
+
     const headers = ['ลำดับ', 'ชื่อ-สกุล', 'หลักสูตร', 'สาขาวิชา', 'วันที่ชำระ', 'จำนวนเงิน']
     const colWidths = [15, 60, 25, 40, 30, 25]
     let x = L
-    
+
     setFont('THSarabun', 'bold', 12)
     headers.forEach((header, i) => {
       doc.text(header, x, y)
       x += colWidths[i]
     })
     y += 6
-    
-    // Table line
+
     doc.line(L, y, R, y)
     y += 4
-    
-    // Table data - Filter only paid users for orders export
+
     const rows = filteredExportData.value.filter(row => row._isPaid)
     let totalAmount = 0
-    
+
     rows.forEach((row, index) => {
       if (y > pageH - 30) {
         doc.addPage()
         y = margin
-        
-        // Repeat headers on new page
         setFont('THSarabun', 'bold', 12)
         x = L
         headers.forEach((header, i) => {
@@ -893,7 +1073,7 @@ const exportOrdersListPDF = async () => {
         doc.line(L, y, R, y)
         y += 4
       }
-      
+
       x = L
       const data = [
         String(index + 1),
@@ -903,23 +1083,17 @@ const exportOrdersListPDF = async () => {
         row.วันที่ชำระ || '',
         row.ยอดชำระ || ''
       ]
-      
-      // Calculate total
+
       const amount = parseFloat(String(row.ยอดชำระ || '0').replace(/[^0-9.]/g, ''))
       totalAmount += amount
-      
+
       data.forEach((text, i) => {
-        // Convert to string and ensure it's valid
         const textValue = String(text || '')
-        
-        // Use helvetica for numbers and English, THSarabun for Thai
         if (i === 0 || /^\d+$/.test(textValue) || /^[a-zA-Z0-9\s\-\/]+$/.test(textValue)) {
           setFont('helvetica', 'normal', 11)
         } else {
           setFont('THSarabun', 'normal', 11)
         }
-        
-        // Ensure text is a valid string before passing to jsPDF
         if (textValue && textValue.trim() !== '') {
           doc.text(textValue, x, y)
         }
@@ -927,25 +1101,23 @@ const exportOrdersListPDF = async () => {
       })
       y += 6
     })
-    
-    // Total line
+
     y += 6
     doc.line(L, y, R, y)
     y += 6
-    
+
     setFont('THSarabun', 'bold', 18)
     doc.text('รวม', L + 140, y)
     setFont('helvetica', 'bold', 12)
     doc.text(totalAmount.toFixed(2), L + 170, y)
-    
-    // Footer
+
     y += 10
     setFont('THSarabun', 'normal', 12)
     doc.text(`จำนวน ${rows.length} รายการ`, pageW / 2, y, { align: 'center' })
-    
+
     const filename = `สรุปยอดการสั่งซื้อ_${new Date().toISOString().split('T')[0]}.pdf`
     doc.save(filename)
-    
+
   } catch (err) {
     console.error('❌ Error exporting orders list PDF:', err)
   } finally {
@@ -968,7 +1140,7 @@ const exportPDF = async () => {
       const row = rows[i]
       ocrProgress.value.current = i + 1
       ocrProgress.value.name = `${row.คำนำหน้า || ''}${row.ชื่อ_นามสกุล || ''}`
-      
+
       if (selectedExportType.value === 'students') {
         let ocrData = {}
         try {
@@ -988,49 +1160,22 @@ const exportPDF = async () => {
   }
 }
 
-const exportOrdersPDF = async () => {
-  if (selectedIds.value.length === 0) {
-    alert('กรุณาเลือกผู้ใช้ที่ต้องการ Export ก่อน')
-    return
-  }
-  if (selectedExportType.value !== 'orders') return
-  
-  ocrProgress.value = { running: true, current: 0, total: selectedIds.value.length, name: 'กำลังเริ่มสร้าง...' }
-  try {
-    const rows = currentData.value.filter(r => selectedIds.value.includes(r.ลำดับ))
-    if (rows.length === 0) throw new Error('ไม่พบข้อมูลที่เลือก')
-    
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i]
-      ocrProgress.value.current = i + 1
-      ocrProgress.value.name = `${row.คำนำหน้า || ''}${row.ชื่อ_นามสกุล || ''}`
-      
-      await generateCombinedOrderPDF(row)
-    }
-  } catch (err) {
-    console.error('❌ Error exporting orders PDF:', err)
-  } finally {
-    ocrProgress.value.running = false
-  }
-}
-
 const exportCombinedOrdersPDF = async () => {
   if (selectedIds.value.length === 0) {
     alert('กรุณาเลือกผู้ใช้ที่ต้องการ Export ก่อน')
     return
   }
   if (selectedExportType.value !== 'orders') return
-  
+
   ocrProgress.value = { running: true, current: 0, total: selectedIds.value.length, name: 'กำลังเริ่มสร้าง...' }
   try {
     const rows = currentData.value.filter(r => selectedIds.value.includes(r.ลำดับ))
     if (rows.length === 0) throw new Error('ไม่พบข้อมูลที่เลือก')
-    
+
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i]
       ocrProgress.value.current = i + 1
       ocrProgress.value.name = `${row.คำนำหน้า || ''}${row.ชื่อ_นามสกุล || ''}`
-      
       await generateCombinedOrderPDF(row)
     }
   } catch (err) {
@@ -1067,6 +1212,261 @@ async function loadThaiFont(): Promise<string> {
     return ''
   }
 }
+
+// ─── Doc Modal ────────────────────────────────────────────────
+const docModal = ref({
+  open: false,
+  name: '',
+  appId: '',
+  status: '',
+  slipApproved: null as boolean | null,
+  documents: [] as { doc_type: string; file_url: string }[],
+  activeTab: '' as string,
+  imgError: false,
+  imgLoading: false,
+  enrolledData: null as any,
+})
+
+const blobUrl = ref<string>('')
+
+const DOC_FILTER: Record<string, string[]> = {
+  pending_payment: ['payment_slip'],
+  pending_approve: [
+    'payment_slip', 'id_front', 'id_back',
+    'edu_front', 'edu_back', 'letter_front', 'letter_back',
+  ],
+  paid: [
+    'payment_slip', 'id_front', 'id_back',
+    'edu_front', 'edu_back', 'letter_front', 'letter_back',
+  ],
+  enrolled: [
+    'self_house_front', 'self_house_back',
+    'father_house_front', 'father_house_back',
+    'mother_house_front', 'mother_house_back',
+  ],
+}
+
+const openPaymentSlipOnly = async () => {
+  infoModal.value.open = false
+  const d = infoModal.value.data
+  if (!d) return
+  await exportPaymentPDF({
+    prefix: d.prefix || '',
+    fullName: d.full_name || '',
+    idCard: d.id_card_number || '',
+    phone: d.phone || '',
+    courseLabel: d.cur_name || '',
+    branchName: d.div_name || '',
+    totalPrice: Number(d.total_amount) || 0,
+    dueDate: d.due_date
+      ? new Date(d.due_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })
+      : '',
+  })
+}
+
+const openDocModalFromInfo = () => {
+  infoModal.value.open = false
+  openDocModal({
+    ลำดับ: infoModal.value.appId,
+    คำนำหน้า: '',
+    ชื่อ_นามสกุล: infoModal.value.name,
+    สถานะ: infoModal.value.status,
+    _filterByStatus: true,
+  })
+}
+
+async function loadFont(): Promise<string> {
+  const res = await fetch('/fonts/THSarabunNew.ttf')
+  const buffer = await res.arrayBuffer()
+  const bytes = new Uint8Array(buffer)
+  let binary = ''
+  bytes.forEach(b => binary += String.fromCharCode(b))
+  return btoa(binary)
+}
+
+const printEnrollmentCert = async () => {
+  const d = docModal.value.enrolledData || infoModal.value.data || {}
+
+  const fontBase64 = await loadFont()
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+
+  doc.addFileToVFS('THSarabunNew.ttf', fontBase64)
+  doc.addFont('THSarabunNew.ttf', 'THSarabun', 'normal')
+  doc.addFont('THSarabunNew.ttf', 'THSarabun', 'bold')
+  doc.setFont('THSarabun')
+
+  const pageW = 210
+  const margin = 15
+  let y = 2
+
+  try {
+    const logoRes = await fetch('/src/assets/loeitech-logo.png')
+    const logoBuffer = await logoRes.arrayBuffer()
+    const logoBase64 = btoa(String.fromCharCode(...new Uint8Array(logoBuffer)))
+    doc.addImage(logoBase64, 'PNG', pageW / 2 - 20, y, 40, 40)
+    y += 45
+  } catch (error) {
+    console.error('Failed to load logo:', error)
+  }
+
+  doc.setFontSize(22)
+  doc.setFont('THSarabun', 'bold')
+  doc.text('ใบรับรองการมอบตัว', pageW / 2, y, { align: 'center' })
+  y += 8
+
+  doc.setFontSize(14)
+  doc.setFont('THSarabun', 'normal')
+  doc.text('วิทยาลัยเทคนิคเลย', pageW / 2, y, { align: 'center' })
+  y += 10
+
+  doc.setDrawColor(16, 185, 130)
+  doc.setLineWidth(0.8)
+  doc.line(15, y, pageW - 15, y)
+  y += 12
+
+  doc.setFontSize(13)
+  doc.setFont('THSarabun', 'bold')
+  doc.text('ขอรับรองว่า', pageW / 2, y, { align: 'center' })
+  y += 10
+
+  doc.setFontSize(18)
+  doc.text(`${d.prefix}${d.full_name}`, pageW / 2, y, { align: 'center' })
+  y += 8
+
+  doc.setFontSize(12)
+  doc.setFont('THSarabun', 'normal')
+  doc.text(`หมายเลขประจำตัว: ${d.id_card_number}`, pageW / 2, y, { align: 'center' })
+  y += 12
+
+  doc.setFontSize(13)
+  doc.text('ได้ดำเนินการมอบตัวเป็นนักเรียนนักศึกษาเรียบร้อยแล้ว', pageW / 2, y, { align: 'center' })
+  y += 8
+
+  doc.setFont('THSarabun', 'bold')
+  doc.text(`หลักสูตร: ${d.cur_name}`, pageW / 2, y, { align: 'center' })
+  y += 7
+  doc.text(`สาขาวิชา: ${d.div_name}`, pageW / 2, y, { align: 'center' })
+  y += 12
+
+  doc.setFont('THSarabun', 'normal')
+  doc.setFontSize(12)
+  const enrolledAt = d.enrolled_at
+    ? new Date(d.enrolled_at).toLocaleDateString('th-TH')
+    : new Date(d.updated_at).toLocaleDateString('th-TH')
+  doc.text(`วันที่มอบตัว: ${enrolledAt}`, pageW / 2, y, { align: 'center' })
+  y += 10
+
+  doc.setFillColor(240, 253, 244)
+  doc.setDrawColor(16, 185, 130)
+  doc.setLineWidth(0.5)
+  doc.roundedRect(15, y, pageW - 30, 14, 3, 3, 'FD')
+  doc.setFontSize(13)
+  doc.setFont('THSarabun', 'bold')
+  doc.setTextColor(5, 150, 105)
+  doc.text('สถานะ: มอบตัวเสร็จสมบูรณ์ ✓', pageW / 2, y + 9, { align: 'center' })
+  doc.setTextColor(0, 0, 0)
+  y += 19
+
+  doc.setFillColor(255, 251, 235)
+  doc.setDrawColor(251, 191, 36)
+  doc.setLineWidth(0.4)
+  doc.roundedRect(margin, y, pageW - margin * 2, 24, 3, 3, 'FD')
+  doc.setFontSize(13)
+  doc.setFont('THSarabun', 'bold')
+  doc.setTextColor(146, 64, 14)
+  doc.text('หมายเหตุ', margin + 4, y + 7)
+  doc.setFont('THSarabun', 'normal')
+  doc.setFontSize(12)
+  doc.text('1. เอกสารนี้ไม่ใช่สัญญาการมอบตัวเป็น นักเรียน นักศึกษา', margin + 4, y + 14)
+  doc.text('2. โปรดนำเอกสารนี้ พร้อมวุฒิการศึกษาเดิมติดต่อที่งานทะเบียน วิทยาลัยเทคนิคเลยในวันปฐมนิเทศ', margin + 4, y + 21)
+  doc.setTextColor(0, 0, 0)
+  y += 30
+
+  doc.setFontSize(10)
+  doc.setFont('THSarabun', 'normal')
+  doc.setTextColor(150, 150, 150)
+  doc.text(`พิมพ์เมื่อ: ${new Date().toLocaleString('th-TH')}`, pageW / 2, y, { align: 'center' })
+
+  doc.save(`ใบรับรองการมอบตัว-${d.id_card_number}.pdf`)
+}
+
+const openDocModal = async (row: any) => {
+  docModal.value = {
+    open: true,
+    name: `${row.คำนำหน้า}${row.ชื่อ_นามสกุล}`,
+    appId: row.ลำดับ,
+    status: row._showAll ? '' : (row.สถานะ || ''),
+    slipApproved: null,
+    documents: [],
+    activeTab: '',
+    imgError: false,
+    imgLoading: false,
+    enrolledData: null,
+  }
+  try {
+    const res = await apiService.getApplicantDocuments(row.ลำดับ)
+    if (res.success) {
+      let docs = res.data.documents as { doc_type: string; file_url: string }[]
+      docModal.value.enrolledData = res.data.applicant || null
+
+      if (row._showAll) {
+        docs = docs.filter((d: any) => d.doc_type !== 'payment_slip')
+      } else if (row._filterByStatus && row.สถานะ) {
+        const allowed = DOC_FILTER[row.สถานะ] ?? null
+        if (allowed) docs = docs.filter((d: any) => allowed.includes(d.doc_type))
+      }
+
+      docModal.value.documents = docs.filter((d: any, i: number, self: any[]) =>
+        i === self.findIndex((t: any) => t.doc_type === d.doc_type)
+      )
+
+      if (typeof res.data.slip_approved === 'boolean') {
+        docModal.value.slipApproved = res.data.slip_approved
+      }
+
+      if (!row._showAll && row.สถานะ === 'pending_payment') {
+        docModal.value.activeTab = docModal.value.documents.find(
+          d => d.doc_type === 'payment_slip'
+        )?.doc_type || '__no_slip__'
+      } else if (!row._showAll && row.สถานะ === 'enrolled') {
+        docModal.value.activeTab = '__enrollment_cert__'
+      } else {
+        docModal.value.activeTab = docModal.value.documents[0]?.doc_type || ''
+      }
+    }
+  } catch (e) {
+    console.error('โหลดเอกสารไม่สำเร็จ', e)
+  }
+}
+
+const currentDocUrl = computed(() =>
+  resolveUrl(docModal.value.documents.find(d => d.doc_type === docModal.value.activeTab)?.file_url)
+)
+
+watch(
+  () => [docModal.value.activeTab, docModal.value.documents] as const,
+  async ([tab]) => {
+    blobUrl.value = ''
+    if (!tab || tab.startsWith('__')) return
+    const url = resolveUrl(
+      docModal.value.documents.find(d => d.doc_type === tab)?.file_url
+    )
+    if (!url) return
+    docModal.value.imgLoading = true
+    docModal.value.imgError = false
+    try {
+      const res = await fetch(url)
+      if (!res.ok) throw new Error('fetch failed')
+      const blob = await res.blob()
+      blobUrl.value = URL.createObjectURL(blob)
+    } catch {
+      docModal.value.imgError = true
+    } finally {
+      docModal.value.imgLoading = false
+    }
+  },
+  { immediate: true, deep: true }
+)
 
 async function generateStudentPDF(studentData: any) {
   try {
@@ -1274,82 +1674,73 @@ async function generatePaymentPDF(paymentData: any) {
     f('bold', 16)
     doc.text('ใบเสร็จรับเงินค่าบำรุงการศึกษา', pageW / 2, y, { align: 'center' })
     y += 10
-    
+
     f('normal', 14)
     doc.text('เลขที่ใบเสร็จ', L, y)
     doc.line(L + 25, y, L + 60, y)
     doc.text('วันที่', L + 70, y)
     doc.line(L + 85, y, L + 120, y)
     y += 8
-    
+
     f('bold', 14)
     doc.text('ข้อมูลนักเรียน', L, y)
     y += 7
-    
+
     f('normal', 14)
     doc.text('ชื่อ-สกุล', L, y)
     doc.line(L + 20, y, L + 90, y)
     put(`${paymentData.คำนำหน้า || ''}${paymentData.ชื่อ_นามสกุล || ''}`, L + 21, y)
     y += 7
-    
+
     doc.text('รหัสนักเรียน', L, y)
     doc.line(L + 20, y, L + 40, y)
     put(paymentData.ลำดับ, L + 21, y)
-    
     doc.text('หลักสูตร', L + 50, y)
     doc.line(L + 65, y, L + 90, y)
     put(paymentData.หลักสูตร, L + 66, y)
-    
     doc.text('สาขาวิชา', L + 100, y)
     doc.line(L + 115, y, R, y)
     put(paymentData.สาขาวิชา, L + 116, y)
     y += 10
-    
+
     f('bold', 14)
     doc.text('รายการค่าบำรุงการศึกษา', L, y)
     y += 8
-    
-    // Table header
+
     f('bold', 12)
     doc.text('ลำดับ', L, y)
     doc.text('รายการ', L + 15, y)
     doc.text('จำนวนเงิน', L + 100, y)
     y += 6
-    
-    // Table line
     doc.line(L, y, R, y)
     y += 2
-    
-    // Table content
+
     f('normal', 12)
     doc.text('1', L, y)
     doc.text('ค่าบำรุงการศึกษา', L + 15, y)
     put(paymentData.ยอดชำระ, L + 100, y)
     y += 8
-    
-    // Table line
+
     doc.line(L, y, R, y)
     y += 6
-    
-    // Total
+
     f('bold', 14)
     doc.text('รวมทั้งสิ้น', L + 70, y)
     put(paymentData.ยอดชำระ, L + 100, y)
     y += 10
-    
+
     f('normal', 14)
     doc.text('วันที่ชำระเงิน', L, y)
     put(paymentData.วันที่ชำระ, L + 30, y)
     y += 8
-    
     doc.text('หลักฐานการชำระ', L, y)
     put(paymentData.หลักฐานการชำระ_ใบเสร็จ, L + 30, y)
     y += 15
-    
+
     f('normal', 12)
     doc.text('..................................................', pageW / 2, y, { align: 'center' })
     doc.text('ผู้รับเงิน', pageW / 2, y + 5, { align: 'center' })
-    
+
     doc.save(`ใบเสร็จค่าบำรุง_${paymentData.ชื่อ_นามสกุล || 'payment'}.pdf`)
   } catch (err) {
     console.error('Payment PDF Error:', err)
@@ -1365,118 +1756,105 @@ async function generateCombinedOrderPDF(orderData: any) {
       doc.addFont('THSarabunNew.ttf', 'THSarabun', 'normal')
       doc.addFont('THSarabunNew.ttf', 'THSarabun', 'bold')
     }
-    
+
     const pageW = 210
-    const pageH = 297
     const L = 15
     const R = 195
     let y = 15
-    
+
     const f = (style: 'normal' | 'bold', size: number) => { doc.setFont('THSarabun', style); doc.setFontSize(size) }
     const put = (text: string | number | undefined, x: number, y: number) => {
       if (!text && text !== 0) return
       f('bold', 14); doc.text(String(text), x, y); f('normal', 14)
     }
-    
-    // === หน้า 1: ใบแสดงการชำระเงิน ===
+
+    // หน้า 1: ใบแสดงการชำระเงิน
     f('bold', 18)
     doc.text('วิทยาลัยเทคนิคเลย', pageW / 2, y, { align: 'center' })
     y += 10
-    
+
     f('bold', 16)
     doc.text('ใบเสร็จรับเงินค่าบำรุงการศึกษา', pageW / 2, y, { align: 'center' })
     y += 12
-    
+
     f('normal', 14)
     doc.text('เลขที่ใบเสร็จ', L, y)
     doc.line(L + 30, y, L + 70, y)
     doc.text('วันที่', L + 80, y)
     doc.line(L + 100, y, L + 140, y)
     y += 10
-    
+
     f('bold', 14)
     doc.text('ข้อมูลนักเรียน', L, y)
     y += 8
-    
+
     f('normal', 14)
     doc.text('ชื่อ-สกุล', L, y)
     doc.line(L + 25, y, L + 100, y)
     put(`${orderData.คำนำหน้า || ''}${orderData.ชื่อ_นามสกุล || ''}`, L + 26, y)
     y += 8
-    
+
     doc.text('รหัสนักเรียน', L, y)
     doc.line(L + 25, y, L + 50, y)
     put(orderData.ลำดับ, L + 26, y)
-    
     doc.text('หลักสูตร', L + 60, y)
     doc.line(L + 75, y, L + 100, y)
     put(orderData.หลักสูตร, L + 76, y)
-    
     doc.text('สาขาวิชา', L + 110, y)
     doc.line(L + 125, y, R, y)
     put(orderData.สาขาวิชา, L + 126, y)
     y += 12
-    
+
     f('bold', 14)
     doc.text('รายการค่าบำรุงการศึกษา', L, y)
     y += 10
-    
-    // Table header
+
     f('bold', 12)
     doc.text('ลำดับ', L, y)
     doc.text('รายการ', L + 20, y)
     doc.text('จำนวนเงิน', L + 120, y)
     y += 7
-    
-    // Table line
     doc.line(L, y, R, y)
     y += 3
-    
-    // Table content
+
     f('normal', 12)
     doc.text('1', L, y)
     doc.text('ค่าบำรุงการศึกษา', L + 20, y)
     put(orderData.ยอดชำระ, L + 120, y)
     y += 10
-    
-    // Table line
+
     doc.line(L, y, R, y)
     y += 8
-    
-    // Total
+
     f('bold', 14)
     doc.text('รวมทั้งสิ้น', L + 80, y)
     put(orderData.ยอดชำระ, L + 120, y)
     y += 12
-    
+
     f('normal', 14)
     doc.text('วันที่ชำระเงิน', L, y)
     put(orderData.วันที่ชำระ, L + 40, y)
     y += 8
-    
     doc.text('หลักฐานการชำระ', L, y)
     put(orderData.หลักฐานการชำระ_ใบเสร็จ, L + 40, y)
     y += 20
-    
+
     f('normal', 12)
     doc.text('..................................................', pageW / 2, y, { align: 'center' })
     doc.text('ผู้รับเงิน', pageW / 2, y + 5, { align: 'center' })
-    
-    // === หน้า 2: สลิป ===
+
+    // หน้า 2: สลิป
     doc.addPage()
     y = 15
-    
+
     f('bold', 18)
     doc.text('หลักฐานการชำระเงิน (สลิป)', pageW / 2, y, { align: 'center' })
     y += 15
-    
+
     if (orderData._slipUrl) {
-      // Add slip image if available
       try {
         doc.text('รูปสลิป:', L, y)
         y += 10
-        // Note: In a real implementation, you would need to load and add the image
-        // For now, we'll just show a placeholder
         doc.rect(L, y, 100, 80)
         doc.text('รูปสลิปจะปรากฏที่นี่', L + 50, y + 40, { align: 'center' })
         y += 90
@@ -1491,39 +1869,36 @@ async function generateCombinedOrderPDF(orderData: any) {
       doc.text('ไม่พบรูปสลิป', L, y)
       y += 10
     }
-    
-    // === หน้า 3: ใบรายการสั่งซื้อเครื่องแบบ ===
+
+    // หน้า 3: ใบรายการสั่งซื้อเครื่องแบบ
     doc.addPage()
     y = 15
-    
+
     f('bold', 18)
     doc.text('ใบรายการสั่งซื้อเครื่องแบบและอุปกรณ์', pageW / 2, y, { align: 'center' })
     y += 12
-    
+
     f('normal', 14)
     doc.text('ชื่อ-สกุล', L, y)
     doc.line(L + 25, y, L + 100, y)
     put(`${orderData.คำนำหน้า || ''}${orderData.ชื่อ_นามสกุล || ''}`, L + 26, y)
     y += 8
-    
+
     doc.text('รหัสนักเรียน', L, y)
     doc.line(L + 25, y, L + 50, y)
     put(orderData.ลำดับ, L + 26, y)
-    
     doc.text('หลักสูตร', L + 60, y)
     doc.line(L + 75, y, L + 100, y)
     put(orderData.หลักสูตร, L + 76, y)
-    
     doc.text('สาขาวิชา', L + 110, y)
     doc.line(L + 125, y, R, y)
     put(orderData.สาขาวิชา, L + 126, y)
     y += 12
-    
+
     f('bold', 14)
     doc.text('รายการสั่งซื้อ', L, y)
     y += 10
-    
-    // Table header
+
     f('bold', 12)
     doc.text('ลำดับ', L, y)
     doc.text('รายการ', L + 20, y)
@@ -1531,12 +1906,9 @@ async function generateCombinedOrderPDF(orderData: any) {
     doc.text('ราคา', L + 110, y)
     doc.text('รวม', L + 140, y)
     y += 7
-    
-    // Table line
     doc.line(L, y, R, y)
     y += 3
-    
-    // Table content
+
     f('normal', 12)
     doc.text('1', L, y)
     doc.text(orderData.รายการ || '-', L + 20, y)
@@ -1544,33 +1916,30 @@ async function generateCombinedOrderPDF(orderData: any) {
     doc.text(orderData.ราคา ? String(orderData.ราคา) : '-', L + 110, y)
     put(orderData.ยอดชำระ, L + 140, y)
     y += 10
-    
-    // Table line
+
     doc.line(L, y, R, y)
     y += 8
-    
-    // Total
+
     f('bold', 14)
     doc.text('รวมทั้งสิ้น', L + 90, y)
     put(orderData.ยอดชำระ, L + 140, y)
     y += 12
-    
+
     f('normal', 14)
     doc.text('วันที่สั่งซื้อ', L, y)
     doc.text(orderData.วันที่สั่งซื้อ ? String(orderData.วันที่สั่งซื้อ) : '-', L + 40, y)
     y += 8
-    
     doc.text('วันที่ชำระเงิน', L, y)
     put(orderData.วันที่ชำระ, L + 40, y)
     y += 20
-    
+
     f('normal', 12)
     doc.text('..................................................', pageW / 2, y, { align: 'center' })
     doc.text('ผู้สั่งซื้อ', pageW / 2, y + 5, { align: 'center' })
-    
+
     const filename = `ใบรายการสั่งซื้อ_${orderData.ชื่อ_นามสกุล || 'order'}.pdf`
     doc.save(filename)
-    
+
   } catch (err) {
     console.error('Combined Order PDF Error:', err)
   }

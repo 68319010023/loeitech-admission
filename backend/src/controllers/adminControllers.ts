@@ -28,6 +28,7 @@ export const getApplicants = async (_req: Request, res: Response) => {
         p.paid_at,
         p.slip_name,
         p.slip_path,
+        e.enrolled_at,   
         -- เพิ่ม 2 บรรทัดนี้
         MAX(CASE WHEN doc.doc_type = 'id_front' THEN doc.file_path END) AS id_front_path,
         MAX(CASE WHEN doc.doc_type = 'id_back'  THEN doc.file_path END) AS id_back_path,
@@ -36,6 +37,7 @@ export const getApplicants = async (_req: Request, res: Response) => {
       JOIN curriculums c ON a.cur_id = c.cur_id
       JOIN divisions d ON a.div_id = d.div_id
       LEFT JOIN payments p ON a.app_id = p.app_id
+      LEFT JOIN enrollments e ON e.app_id = a.app_id
       -- เพิ่ม LEFT JOIN นี้
       LEFT JOIN documents doc ON doc.app_id = a.app_id
       -- เพิ่ม GROUP BY เพราะใช้ MAX()
@@ -44,7 +46,8 @@ export const getApplicants = async (_req: Request, res: Response) => {
         a.phone, a.email, a.status, a.created_at,
         c.cur_id, c.cur_name, c.cur_shortname,
         d.div_id, d.div_name,
-        p.total_amount, p.paid_at, p.slip_name, p.slip_path 
+        p.total_amount, p.paid_at, p.slip_name, p.slip_path,
+        e.enrolled_at
       ORDER BY a.created_at DESC
     `
     const result = await pool.query(query)
@@ -59,6 +62,9 @@ export const getApplicants = async (_req: Request, res: Response) => {
       email:          row.email,
       status:         row.status,
       created_at:     row.created_at,
+       enrolled_at: row.enrolled_at,
+      
+
       // เพิ่ม 2 field นี้
       id_front_url:   toUrl(row.id_front_path),
       id_back_url:    toUrl(row.id_back_path),

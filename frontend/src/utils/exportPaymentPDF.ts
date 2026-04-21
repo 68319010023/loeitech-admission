@@ -43,7 +43,7 @@ export async function exportPaymentPDF(data: PaymentPDFData) {
   }
 
   const pageW = 210
-  let y = 20
+  let y = 2
 
   // เพิ่มโลโก้
   try {
@@ -178,7 +178,7 @@ async function generateOrderPage(doc: jsPDF, data: PaymentPDFData, fontBase64: s
   doc.setFont('THSarabun')
 
   const pageW = 210
-  let y = 20
+  let y = 2
 
   // เพิ่มโลโก้
   try {

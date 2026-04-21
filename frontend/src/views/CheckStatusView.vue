@@ -264,7 +264,7 @@ async function checkStatus() {
       enrolledAt: data.enrolled_at ? formatDate(data.enrolled_at) : null,
       raw: data,
     }
-
+    console.log('🔍 raw data:', result.value.raw)
     const isPaid = data.status === 'paid' || data.status === 'enrolled'
     const isEnrolled = data.status === 'enrolled'
 
@@ -323,7 +323,19 @@ async function downloadEnrollmentCert() {
   doc.setFont('THSarabun')
 
   const pageW = 210
-  let y = 25
+  const margin = 15
+  let y = 2
+
+  // เพิ่มโลโก้
+  try {
+    const logoRes = await fetch('/src/assets/loeitech-logo.png')
+    const logoBuffer = await logoRes.arrayBuffer()
+    const logoBase64 = btoa(String.fromCharCode(...new Uint8Array(logoBuffer)))
+    doc.addImage(logoBase64, 'PNG', pageW / 2 - 20, y, 40, 40)
+    y += 45
+  } catch (error) {
+    console.error('Failed to load logo:', error)
+  }
 
   doc.setFontSize(22)
   doc.setFont('THSarabun', 'bold')
@@ -332,7 +344,7 @@ async function downloadEnrollmentCert() {
 
   doc.setFontSize(14)
   doc.setFont('THSarabun', 'normal')
-  doc.text('วิทยาลัยเทคนิคเลย — ระบบรับสมัครนักเรียนนักศึกษาออนไลน์', pageW / 2, y, { align: 'center' })
+  doc.text('วิทยาลัยเทคนิคเลย ', pageW / 2, y, { align: 'center' })
   y += 10
 
   doc.setDrawColor(16, 185, 130)
@@ -378,7 +390,24 @@ async function downloadEnrollmentCert() {
   doc.setTextColor(5, 150, 105)
   doc.text('สถานะ: มอบตัวเสร็จสมบูรณ์ ✓', pageW / 2, y + 9, { align: 'center' })
   doc.setTextColor(0, 0, 0)
-  y += 25
+  y += 19
+
+  doc.setFillColor(255, 251, 235)
+  doc.setDrawColor(251, 191, 36)
+  doc.setLineWidth(0.4)
+  doc.roundedRect(margin, y, pageW - margin * 2, 24, 3, 3, 'FD')
+
+  doc.setFontSize(13)
+  doc.setFont('THSarabun', 'bold')
+  doc.setTextColor(146, 64, 14)
+  doc.text('หมายเหตุ', margin + 4, y + 7)
+
+  doc.setFont('THSarabun', 'normal')
+  doc.setFontSize(12)
+  doc.text('1. เอกสารนี้ไม่ใช่สัญญาการมอบตัวเป็น นักเรียน นักศึกษา', margin + 4, y + 14)
+  doc.text('2. โปรดนำเอกสารน์ พร้อมวุฒิการศึกษาเดิมติดต่อที่งาน ทะเบียน วิทยาลัยเทคนิคเลยในวันปฐมนิเทศ', margin + 4, y + 21)
+  doc.setTextColor(0, 0, 0)
+  y += 30
 
   doc.setFontSize(10)
   doc.setFont('THSarabun', 'normal')
@@ -412,54 +441,90 @@ async function downloadPaymentReceipt() {
   doc.setFont('THSarabun')
 
   const pageW = 210
-  let y = 25
+  const margin = 15
+  let y = 2
 
-  // หัวเรื่อง
-  doc.setFontSize(22)
+
+// ─── โลโก้ ────────────────────────────────────────────────
+try {
+    const logoRes = await fetch('/src/assets/loeitech-logo.png')
+    const logoBuffer = await logoRes.arrayBuffer()
+    const logoBase64 = btoa(String.fromCharCode(...new Uint8Array(logoBuffer)))
+    doc.addImage(logoBase64, 'PNG', pageW / 2 - 20, y, 40, 40)
+    y += 45
+  } catch (error) {
+    console.error('Failed to load logo:', error)
+  }
+
+  // ─── Header ───────────────────────────────────────────────
+  doc.setFontSize(24)
   doc.setFont('THSarabun', 'bold')
   doc.text('ใบแสดงการชำระเงิน', pageW / 2, y, { align: 'center' })
-  y += 8
+  y += 9
 
-  doc.setFontSize(13)
+  doc.setFontSize(15)
   doc.setFont('THSarabun', 'normal')
   doc.text('วิทยาลัยเทคนิคเลย — ระบบรับสมัครนักเรียนนักศึกษาออนไลน์', pageW / 2, y, { align: 'center' })
-  y += 10
+  y += 8
 
   doc.setDrawColor(16, 185, 130)
   doc.setLineWidth(0.8)
-  doc.line(15, y, pageW - 15, y)
-  y += 12
+  doc.line(margin, y, pageW - margin, y)
+  y += 10
 
-  // ข้อมูลผู้สมัคร
-  const raw = result.value.raw
-  const fields = [
+  // ─── Layout: ซ้าย 55% | ขวา 40% ──────────────────────────
+  const colLeftX = margin
+  const colLeftW = 108          // ขยายขึ้น
+  const colRightX = margin + colLeftW + 5
+  const colRightW = pageW - colRightX - margin  // ~67mm
+  const sectionStartY = y
+
+  // ════ คอลัมน์ซ้าย ════════════════════════════════════════
+
+  // — ข้อมูลผู้สมัคร —
+  doc.setFontSize(13)
+  doc.setFont('THSarabun', 'bold')
+  doc.setTextColor(5, 150, 105)
+  doc.text('ข้อมูลผู้สมัคร', colLeftX, y)
+  doc.setTextColor(0, 0, 0)
+  y += 7
+
+  const infoFields = [
     { label: 'ชื่อ-สกุล', value: result.value.name },
     { label: 'หมายเลขประจำตัว', value: idCard.value },
     { label: 'หลักสูตร', value: result.value.course },
     { label: 'สาขาวิชา', value: result.value.branch },
   ]
 
-  doc.setFontSize(13)
-  for (const f of fields) {
+  for (const f of infoFields) {
+    doc.setFontSize(11)
     doc.setFont('THSarabun', 'bold')
-    doc.text(`${f.label}:`, 20, y)
+    doc.setTextColor(80, 80, 80)
+    doc.text(`${f.label}`, colLeftX, y)
+    y += 5
     doc.setFont('THSarabun', 'normal')
-    doc.text(f.value ?? '-', 70, y)
-    y += 8
+    doc.setFontSize(13)
+    doc.setTextColor(0, 0, 0)
+    const lines = doc.splitTextToSize(f.value ?? '-', colLeftW - 2)
+    doc.text(lines, colLeftX, y)
+    y += lines.length * 6 + 2
   }
 
-  y += 4
+  y += 2
   doc.setDrawColor(220, 220, 220)
   doc.setLineWidth(0.3)
-  doc.line(15, y, pageW - 15, y)
-  y += 10
+  doc.line(colLeftX, y, colLeftX + colLeftW, y)
+  y += 7
 
-  // ข้อมูลการชำระเงิน
-  doc.setFontSize(14)
+  // — ข้อมูลการชำระเงิน —
+  doc.setFontSize(13)
   doc.setFont('THSarabun', 'bold')
-  doc.text('ข้อมูลการชำระเงิน', 20, y)
-  y += 9
+  doc.setTextColor(5, 150, 105)
+  doc.text('ข้อมูลการชำระเงิน', colLeftX, y)
+  doc.setTextColor(0, 0, 0)
+  y += 7
 
+  const raw = result.value.raw
   const payFields = [
     { label: 'ยอดที่ชำระ', value: `${Number(result.value.totalAmount).toLocaleString()} บาท` },
     { label: 'วันที่ชำระเงิน', value: result.value.paidAt ?? '-' },
@@ -467,30 +532,110 @@ async function downloadPaymentReceipt() {
     { label: 'ธนาคารผู้รับ', value: raw.slip_receiver ?? '-' },
   ]
 
-  doc.setFontSize(13)
   for (const f of payFields) {
+    doc.setFontSize(11)
     doc.setFont('THSarabun', 'bold')
-    doc.text(`${f.label}:`, 20, y)
+    doc.setTextColor(80, 80, 80)
+    doc.text(`${f.label}`, colLeftX, y)
+    y += 5
     doc.setFont('THSarabun', 'normal')
-    doc.text(f.value ?? '-', 70, y)
+    doc.setFontSize(13)
+    doc.setTextColor(0, 0, 0)
+    doc.text(f.value ?? '-', colLeftX, y)
     y += 8
   }
 
-  y += 8
+  // ════ คอลัมน์ขวา: รูปสลิป ════════════════════════════════
+  const slipUrl: string | undefined =
+    raw.slip_path || raw.slip_url || raw.payment_slip_url || raw.slip_image
 
-  // กล่องสถานะ
+  const boxH = 100   // ความสูงกรอบสลิป
+  doc.setDrawColor(200, 200, 200)
+  doc.setLineWidth(0.4)
+  doc.setFillColor(249, 250, 251)
+  doc.roundedRect(colRightX, sectionStartY, colRightW, boxH, 3, 3, 'FD')
+
+  doc.setFontSize(11)
+  doc.setFont('THSarabun', 'bold')
+  doc.setTextColor(100, 100, 100)
+  doc.text('หลักฐานการชำระเงิน', colRightX + colRightW / 2, sectionStartY + 7, { align: 'center' })
+  doc.setTextColor(0, 0, 0)
+
+  if (slipUrl) {
+    try {
+      const resolvedUrl = slipUrl.startsWith('http')
+        ? slipUrl
+        : `${(import.meta.env.VITE_API_URL as string)?.replace(/\/api$/, '') || 'http://localhost:3001'}${slipUrl}`
+
+      const token = localStorage.getItem('auth_token')
+      const imgRes = await fetch(resolvedUrl, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      })
+      const imgBuffer = await imgRes.arrayBuffer()
+      const imgBytes = new Uint8Array(imgBuffer)
+      let binary = ''
+      imgBytes.forEach(b => binary += String.fromCharCode(b))
+      const imgBase64 = btoa(binary)
+      const isPng = resolvedUrl.toLowerCase().includes('.png')
+
+      // รูปอยู่ใน boxH - header (7mm) - padding
+      doc.addImage(
+        imgBase64,
+        isPng ? 'PNG' : 'JPEG',
+        colRightX + 3,
+        sectionStartY + 11,
+        colRightW - 6,
+        boxH - 14
+      )
+    } catch {
+      doc.setFontSize(11)
+      doc.setFont('THSarabun', 'normal')
+      doc.setTextColor(150, 150, 150)
+      doc.text('ไม่สามารถโหลดรูปสลิปได้', colRightX + colRightW / 2, sectionStartY + 55, { align: 'center' })
+      doc.setTextColor(0, 0, 0)
+    }
+  } else {
+    doc.setFontSize(11)
+    doc.setFont('THSarabun', 'normal')
+    doc.setTextColor(150, 150, 150)
+    doc.text('ไม่พบหลักฐานการชำระเงิน', colRightX + colRightW / 2, sectionStartY + 55, { align: 'center' })
+    doc.setTextColor(0, 0, 0)
+  }
+
+  // ─── ใช้ y ที่มากกว่า ─────────────────────────────────────
+  y = Math.max(y, sectionStartY + boxH + 8)
+
+  // ─── กล่องสถานะ ───────────────────────────────────────────
   doc.setFillColor(240, 253, 244)
   doc.setDrawColor(16, 185, 130)
   doc.setLineWidth(0.5)
-  doc.roundedRect(15, y, pageW - 30, 14, 3, 3, 'FD')
-  doc.setFontSize(13)
+  doc.roundedRect(margin, y, pageW - margin * 2, 14, 3, 3, 'FD')
+  doc.setFontSize(14)
   doc.setFont('THSarabun', 'bold')
   doc.setTextColor(5, 150, 105)
   doc.text('สถานะ: ชำระเงินเรียบร้อยแล้ว ✓', pageW / 2, y + 9, { align: 'center' })
   doc.setTextColor(0, 0, 0)
-  y += 25
+  y += 20
 
-  // footer
+  // ─── กล่องหมายเหตุ ────────────────────────────────────────
+  doc.setFillColor(255, 251, 235)
+  doc.setDrawColor(251, 191, 36)
+  doc.setLineWidth(0.4)
+  doc.roundedRect(margin, y, pageW - margin * 2, 24, 3, 3, 'FD')
+
+  doc.setFontSize(13)
+  doc.setFont('THSarabun', 'bold')
+  doc.setTextColor(146, 64, 14)
+  doc.text('หมายเหตุ', margin + 4, y + 7)
+
+  doc.setFont('THSarabun', 'normal')
+  doc.setFontSize(12)
+  doc.text('1. เอกสารนี้ไม่ใช่ใบเสร็จรับเงิน', margin + 4, y + 14)
+  doc.text('2. โปรดนำเอกสารนี้ติดต่อขอรับใบเสร็จรับเงินฉบับจริงที่งานการเงิน วิทยาลัยเทคนิคเลย', margin + 4, y + 21)
+  doc.setTextColor(0, 0, 0)
+  y += 30
+
+  // ─── Footer ───────────────────────────────────────────────
   doc.setFontSize(10)
   doc.setFont('THSarabun', 'normal')
   doc.setTextColor(150, 150, 150)
