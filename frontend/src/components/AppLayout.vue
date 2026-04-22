@@ -71,7 +71,7 @@
           <RouterLink to="/admin/manage-users"
             class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
             :class="$route.path.startsWith('/admin/manage-users') ? 'bg-white/20 text-white' : 'text-white hover:bg-white/10'">
-            <UserGroupIcon class="w-5 h-5" /> ผู้ใช้งานระบบ
+            <ComputerDesktopIcon class="w-5 h-5" /> ผู้ใช้งานระบบ
           </RouterLink>
 
           <RouterLink to="/admin/settings"
@@ -159,6 +159,7 @@ import {
   ClipboardDocumentListIcon,
   BookOpenIcon,
   Bars3Icon,
+  ComputerDesktopIcon, 
 } from '@heroicons/vue/24/outline'
 
 const sidebarOpen = ref(false)

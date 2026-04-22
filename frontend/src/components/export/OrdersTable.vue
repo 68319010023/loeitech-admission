@@ -125,4 +125,6 @@ const openSlipModal = (row: any) => {
 const generatePDF = (row: any) => {
   emit('generate-pdf', row)
 }
+
+
 </script>
