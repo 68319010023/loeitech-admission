@@ -78,8 +78,8 @@
               Export รายชื่อผู้ชำระเงิน
             </button>
 
-            <button v-if="selectedExportType === 'orders'" @click="exportOrdersListPDF()"
-              :disabled="ocrProgress.running" class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
+           <button v-if="selectedExportType === 'orders'" @click="exportOrdersListPDF()"
+  :disabled="selectedIds.length === 0 || ocrProgress.running" class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
                      bg-gradient-to-r from-emerald-400 to-green-500 text-white shadow-md shadow-green-200
                      hover:shadow-lg hover:shadow-green-300 hover:-translate-y-0.5
                      disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
@@ -165,21 +165,21 @@
             <input v-model="studentDateSearch" type="text" placeholder="วัน/เดือน/ปี"
               class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none" />
           </div>
-           <div v-if="selectedExportType === 'payments'" class="relative">
-        <Calendar class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input v-model="paymentDateFilter" @input="formatDateInput" type="text" placeholder="วัน/เดือน/ปี"
-          class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none" />
-      </div>
-      <div v-if="selectedExportType === 'orders'" class="relative">
-        <Calendar class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input v-model="orderDateFilter" @input="formatDateInput" type="text" placeholder="วัน/เดือน/ปี"
-          class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none" />
-      </div>
+          <div v-if="selectedExportType === 'payments'" class="relative">
+            <Calendar class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input v-model="paymentDateFilter" @input="formatDateInput" type="text" placeholder="วัน/เดือน/ปี"
+              class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none" />
+          </div>
+          <div v-if="selectedExportType === 'orders'" class="relative">
+            <Calendar class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input v-model="orderDateFilter" @input="formatDateInput" type="text" placeholder="วัน/เดือน/ปี"
+              class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none" />
+          </div>
         </div>
-        
+
       </div>
 
-     
+
 
       <!-- Badge filter -->
       <div
@@ -317,7 +317,7 @@
           <span class="font-semibold text-green-600">{{ (currentPage - 1) * pageSize + 1 }}</span>
           <span class="text-gray-300 mx-0.5">—</span>
           <span class="font-semibold text-green-600">{{ Math.min(currentPage * pageSize, filteredExportData.length)
-            }}</span>
+          }}</span>
           จาก
           <span class="font-semibold text-gray-700">{{ filteredExportData.length }}</span> รายการ
         </p>
@@ -565,6 +565,31 @@ const resolveUrl = (path: string | null | undefined) => {
   return `${API_BASE}${path}${token ? `${sep}token=${encodeURIComponent(token)}` : ''}`
 }
 
+// Generate URL for enrollment certificate PDF
+const generateEnrollmentCertUrl = (studentData: any) => {
+  if (!studentData || studentData.สถานะ !== 'enrolled') return ''
+
+  // Generate a URL that can be used to download the enrollment certificate
+  // This would typically be an API endpoint that generates the PDF on demand
+  const token = localStorage.getItem('auth_token')
+  const baseUrl = API_BASE
+  const idCardNumber = studentData.เลขบัตรประชาชน || studentData.id_card_number
+
+  return `${baseUrl}/api/documents/enrollment-certificate/${idCardNumber}${token ? `?token=${encodeURIComponent(token)}` : ''}`
+}
+
+// Generate URL for enrollment form PDF  
+const generateEnrollmentFormUrl = (studentData: any) => {
+  if (!studentData) return ''
+
+  // Generate a URL that can be used to download the enrollment form
+  const token = localStorage.getItem('auth_token')
+  const baseUrl = API_BASE
+  const idCardNumber = studentData.เลขบัตรประชาชน || studentData.id_card_number
+
+  return `${baseUrl}/api/documents/enrollment-form/${idCardNumber}${token ? `?token=${encodeURIComponent(token)}` : ''}`
+}
+
 const exportItems = [
   { label: 'ประวัตินักเรียน', icon: Users, type: 'students' },
   { label: 'ค่าบำรุงการศึกษา', icon: CreditCard, type: 'payments' },
@@ -658,8 +683,8 @@ const exportPaymentsListPDF = async () => {
   y += 5
 
   const rows = selectedIds.value.length > 0
-  ? filteredExportData.value.filter(r => selectedIds.value.includes(r.ลำดับ))
-  : filteredExportData.value.filter(r => r._isPaid)
+    ? filteredExportData.value.filter(r => selectedIds.value.includes(r.ลำดับ))
+    : filteredExportData.value.filter(r => r._isPaid)
   let totalAmount = 0
   let order = 1
 
@@ -719,7 +744,7 @@ const exportPaymentsPDF = async () => {
       const row = rows[i]
       ocrProgress.value.current = i + 1
       ocrProgress.value.name = `${row.คำนำหน้า || ''}${row.ชื่อ_นามสกุล || ''}`
-       await generatePaymentReceiptPDF(row)
+      await generatePaymentReceiptPDF(row)
     }
 
   } catch (err) {
@@ -763,8 +788,8 @@ const currentData = computed(() =>
         วันที่สมัคร: new Date(a.created_at).toLocaleDateString('th-TH'),
         enrolled_at: a.enrolled_at ?? null,
         _idFrontUrl: resolveUrl(a.id_front_url),
-        _idBackUrl: a.id_back_url || '',
-        _eduFrontUrl: a.edu_front_url || '',
+        _idBackUrl: resolveUrl(a.id_back_url),
+        _eduFrontUrl: resolveUrl(a.edu_front_url),
         _isPaid: a.status === 'enrolled',
       }
     }
@@ -772,8 +797,8 @@ const currentData = computed(() =>
     if (selectedExportType.value === 'payments') {
       return {
         ...base,
-         เลขบัตรประชาชน: a.id_card_number,
-         สถานะ: a.status,
+        เลขบัตรประชาชน: a.id_card_number,
+        สถานะ: a.status,
         enrolled_at: a.enrolled_at ?? null,
         ยอดชำระ: a.payment?.total_amount ?? '-',
         วันที่ชำระ: a.payment?.paid_at
@@ -815,9 +840,9 @@ const filteredExportData = computed(() =>
     const matchCur = !selectedCurFilter.value || row.หลักสูตร.includes(selectedCurFilter.value)
     const matchStatus = selectedExportType.value === 'students'
       ? row.สถานะ === 'enrolled'
-        : selectedExportType.value === 'payments'
-    ? row.สถานะ === 'enrolled'  
-      : (!selectedStatus.value || (row.สถานะ && row.สถานะ === selectedStatus.value))
+      : selectedExportType.value === 'payments'
+        ? row.สถานะ === 'enrolled'
+        : (!selectedStatus.value || (row.สถานะ && row.สถานะ === selectedStatus.value))
 
     let matchDate = true
     if (selectedExportType.value === 'payments' && paymentDateFilter.value) {
@@ -872,9 +897,14 @@ const getStatusLabel = (status: string): string => {
   return labels[status] || status
 }
 
-watch([exportSearch, selectedBranch, selectedCurFilter, selectedStatus, paymentAmountFilter, orderDateFilter, selectedExportType], () => {
+watch([
+  exportSearch, selectedBranch, selectedCurFilter, selectedStatus,
+  paymentAmountFilter, orderDateFilter, paymentDateFilter,
+  studentDateSearch, selectedExportType
+], () => {
   currentPage.value = 1
 })
+
 
 const formatDateInput = (event: Event) => {
   const input = event.target as HTMLInputElement
@@ -1032,23 +1062,19 @@ async function buildExportData(rows: any[], isExportAll = false): Promise<object
       if (selectedExportType.value !== 'students' && !row._isPaid) continue
     }
 
-    // ดึงข้อมูลจาก DB
+    // ── 1. ดึงข้อมูลจาก DB ──────────────────────────────
     let dbData: Record<string, any> = {}
     try {
       const dbRes = await api.get(`/applications/check/${row.เลขบัตรประชาชน}`)
       const d = dbRes.data?.data
-
-
       const prevLevelMap: Record<string, string> = {
         m3: 'มัธยมศึกษาปีที่ 3',
         m6: 'มัธยมศึกษาปีที่ 6',
         pvc: 'ประกาศนียบัตรวิชาชีพ (ปวช.)',
       }
       if (d) {
-        console.log('DB full object:', JSON.stringify(d))
         dbData = {
-          วันเดือนปีเกิด: d.birth_date
-            ? new Date(d.birth_date).toLocaleDateString('th-TH') : '',
+          วันเดือนปีเกิด: d.birth_date ? new Date(d.birth_date).toLocaleDateString('th-TH') : '',
           โรงเรียนเก่า: d.prev_school || '',
           วุฒิการศึกษาเดิม: prevLevelMap[d.prev_level] || d.prev_level || '',
           สาขาวิชาเดิม: d.prev_branch || '',
@@ -1057,19 +1083,38 @@ async function buildExportData(rows: any[], isExportAll = false): Promise<object
       }
     } catch { }
 
-    // OCR เฉพาะ students เท่านั้น
-
+    // ── 2. ดึง URL เอกสารที่อัพโหลด (students เท่านั้น) ─
+    let uploadedDocUrls: Record<string, string> = {}
     let allOcr: Record<string, string> = {}
+
     if (selectedExportType.value === 'students') {
       try {
-        const res = await apiService.getApplicantDocuments(row.ลำดับ)
-        if (res.success) {
-          const docs = res.data.documents as { doc_type: string; file_url: string }[]
+        const docRes = await apiService.getApplicantDocuments(row.ลำดับ)
+        if (docRes.success) {
+          const docs = docRes.data.documents as { doc_type: string; file_url: string }[]
+
+          // URL เอกสาร
+          const docMap: Record<string, string> = {
+            id_front: 'บัตรประชาชน (หน้า)',
+            id_back: 'บัตรประชาชน (หลัง)',
+            edu_front: 'วุฒิการศึกษา (หน้า)',
+            edu_back: 'วุฒิการศึกษา (หลัง)',
+            self_house_front: 'ทะเบียนบ้าน (หน้า)',
+            self_house_back: 'ทะเบียนบ้าน (หลัง)',
+            father_house_front: 'ทะเบียนบ้านบิดา (หน้า)',
+            mother_house_front: 'ทะเบียนบ้านมารดา (หน้า)',
+          }
+          for (const doc of docs) {
+            if (docMap[doc.doc_type] && doc.file_url) {
+              uploadedDocUrls[docMap[doc.doc_type]] = resolveUrl(doc.file_url)
+            }
+          }
+
+          // OCR
           for (const doc of docs) {
             if (!doc.file_url) continue
             const url = resolveUrl(doc.file_url)
             let ocr: Record<string, string> = {}
-
             if (doc.doc_type.startsWith('id')) {
               ocr = await runOCRFromUrl(url, 'id')
             } else if (doc.doc_type.startsWith('edu')) {
@@ -1082,20 +1127,15 @@ async function buildExportData(rows: any[], isExportAll = false): Promise<object
               URL.revokeObjectURL(imgUrl)
               ocr = parseHouseRegText(text)
             }
-
-            Object.entries(ocr).forEach(([k, v]) => {
-              allOcr[`${doc.doc_type}_${k}`] = v
-            })
+            Object.entries(ocr).forEach(([k, v]) => { allOcr[`${doc.doc_type}_${k}`] = v })
           }
-
-
         }
       } catch (e) {
-        console.warn('OCR failed for', row.ชื่อ_นามสกุล, e)
+        console.warn('doc/OCR failed for', row.ชื่อ_นามสกุล, e)
       }
     }
 
-    // Push ผลลัพธ์
+    // ── 3. Push ผลลัพธ์ (ครั้งเดียว) ────────────────────
     if (selectedExportType.value === 'payments') {
       result.push({
         ลำดับ: result.length + 1,
@@ -1108,6 +1148,11 @@ async function buildExportData(rows: any[], isExportAll = false): Promise<object
         ...dbData,
       })
     } else {
+      // students
+   const enrollmentCertUrl = row.สถานะ === 'enrolled'
+  ? `${window.location.origin}/enrollment-cert/${row.เลขบัตรประชาชน}`
+  : '-'
+
       result.push({
         ลำดับ: result.length + 1,
         คำนำหน้า: row.คำนำหน้า,
@@ -1117,15 +1162,13 @@ async function buildExportData(rows: any[], isExportAll = false): Promise<object
         เลขบัตรประชาชน: row.เลขบัตรประชาชน,
         เบอร์โทร: row.เบอร์โทร,
         อีเมล: row.อีเมล,
-        // DB data
-        วันเดือนปีเกิด: dbData.วันเดือนปีเกิด
-          || formatOCRDate(allOcr['id_front_OCR_วันเกิด'] || '')
-          || '',
+        วันเดือนปีเกิด: dbData.วันเดือนปีเกิด || formatOCRDate(allOcr['id_front_OCR_วันเกิด'] || '') || '',
         โรงเรียนเก่า: dbData.โรงเรียนเก่า || '',
         วุฒิการศึกษาเดิม: dbData.วุฒิการศึกษาเดิม || '',
         สาขาวิชาเดิม: dbData.สาขาวิชาเดิม || '',
         GPA: dbData.GPA || '',
-
+        'ใบรับรองการมอบตัว': enrollmentCertUrl,
+        ...uploadedDocUrls,
       })
     }
   }
@@ -1134,6 +1177,21 @@ async function buildExportData(rows: any[], isExportAll = false): Promise<object
   return result
 }
 
+function parseEduDocText(text: string): Record<string, string> {
+  const result: Record<string, string> = {}
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+
+  // ชื่อโรงเรียน
+  const schoolMatch = lines.find(l => l.includes('โรงเรียน') || l.includes('วิทยาลัย') || l.includes('มหาวิทยาลัย'))
+  if (schoolMatch) result['OCR_สถานศึกษา'] = schoolMatch
+
+  // GPA
+  const gpaMatch = text.match(/(\d+\.\d+)/)
+  if (gpaMatch) result['OCR_GPA'] = gpaMatch[1]
+
+  result['OCR_ข้อความดิบ'] = text.replace(/\n/g, ' ').trim()
+  return result
+}
 function formatOCRDate(dateStr: string): string {
   if (!dateStr) return ''
 
@@ -1147,7 +1205,6 @@ function formatOCRDate(dateStr: string): string {
     'ก.ค.': 7, 'ส.ค.': 8, 'ก.ย.': 9, 'ต.ค.': 10, 'พ.ย.': 11, 'ธ.ค.': 12,
   }
 
-  // match เช่น "14 Jan 1980" หรือ "14 มกราคม 2523"
   const match = dateStr.match(/(\d{1,2})\s+([A-Za-zก-ฮ\.]+)\s+(\d{4})/)
   if (!match) return dateStr
 
@@ -1157,17 +1214,30 @@ function formatOCRDate(dateStr: string): string {
   let year = parseInt(match[3])
 
   if (!month) return dateStr
-
-  // ถ้าปีเป็น ค.ศ. (< 2500) ให้แปลงเป็น พ.ศ.
   if (year < 2500) year += 543
 
   return new Date(year - 543, month - 1, day)
     .toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })
 }
+
 // ─── doExport / exportSelected / exportAll ────────────────────
 async function doExport(rows: any[], isExportAll = false) {
-  const data = await buildExportData(rows, isExportAll)
-  const ws = XLSX.utils.json_to_sheet(data)
+  const data = await buildExportData(rows, isExportAll) 
+  const ws = XLSX.utils.json_to_sheet(data)               
+
+  const range = XLSX.utils.decode_range(ws['!ref'] || 'A1')
+  for (let R = range.s.r + 1; R <= range.e.r; R++) {
+    for (let C = range.s.c; C <= range.e.c; C++) {
+      const addr = XLSX.utils.encode_cell({ r: R, c: C })
+      const cell = ws[addr]
+      if (cell && typeof cell.v === 'string' && cell.v.startsWith('http') && cell.v.includes('enrollment-cert')) {
+        cell.l = { Target: cell.v }
+        cell.v = '📄 ดาวน์โหลดใบรับรอง'
+        cell.t = 's'
+      }
+    }
+  }
+
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, sheetNames[selectedExportType.value] || 'ข้อมูล')
   XLSX.writeFile(wb, fileNames[selectedExportType.value] || 'export.xlsx')
@@ -1863,10 +1933,10 @@ async function generatePaymentReceiptPDF(row: any) {
   y += 7
 
   const infoFields = [
-    { label: 'ชื่อ-สกุล',        value: `${row.คำนำหน้า || ''}${row.ชื่อ_นามสกุล || ''}` },
-    { label: 'หมายเลขประจำตัว',   value: row.เลขบัตรประชาชน || dbData.id_card_number || '-' },
-    { label: 'หลักสูตร',          value: row.หลักสูตร || '-' },
-    { label: 'สาขาวิชา',          value: row.สาขาวิชา || '-' },
+    { label: 'ชื่อ-สกุล', value: `${row.คำนำหน้า || ''}${row.ชื่อ_นามสกุล || ''}` },
+    { label: 'หมายเลขประจำตัว', value: row.เลขบัตรประชาชน || dbData.id_card_number || '-' },
+    { label: 'หลักสูตร', value: row.หลักสูตร || '-' },
+    { label: 'สาขาวิชา', value: row.สาขาวิชา || '-' },
   ]
 
   for (const field of infoFields) {
@@ -1898,10 +1968,10 @@ async function generatePaymentReceiptPDF(row: any) {
   y += 7
 
   const payFields = [
-    { label: 'ยอดที่ชำระ',    value: row.ยอดชำระ ? `${Number(row.ยอดชำระ).toLocaleString()} บาท` : '-' },
+    { label: 'ยอดที่ชำระ', value: row.ยอดชำระ ? `${Number(row.ยอดชำระ).toLocaleString()} บาท` : '-' },
     { label: 'วันที่ชำระเงิน', value: row.วันที่ชำระ || '-' },
-    { label: 'ชื่อผู้โอน',     value: dbData.slip_sender ?? '-' },
-    { label: 'ธนาคารผู้รับ',   value: dbData.slip_receiver ?? '-' },
+    { label: 'ชื่อผู้โอน', value: dbData.slip_sender ?? '-' },
+    { label: 'ธนาคารผู้รับ', value: dbData.slip_receiver ?? '-' },
   ]
 
   for (const field of payFields) {
@@ -1995,7 +2065,7 @@ async function generatePaymentReceiptPDF(row: any) {
   doc.setTextColor(150, 150, 150)
   doc.text(`พิมพ์เมื่อ: ${new Date().toLocaleString('th-TH')}`, pageW / 2, y, { align: 'center' })
 
- doc.save(`ใบแสดงการชำระเงิน-${row.คำนำหน้า || ''}${row.ชื่อ_นามสกุล || ''}.pdf`)
+  doc.save(`ใบแสดงการชำระเงิน-${row.คำนำหน้า || ''}${row.ชื่อ_นามสกุล || ''}.pdf`)
 }
 const exportOrdersListPDF = async () => {
   // กรองเฉพาะที่เลือก ถ้าไม่ได้เลือกเลยให้แจ้ง
@@ -2016,23 +2086,32 @@ const exportOrdersListPDF = async () => {
   }
 
   const pageW = 297  // landscape A4
-  const L = 14
+  const colW = {
+    no: 16,
+    name: 82,
+    cur: 28,
+    branch: 65,
+    date: 38,
+    amount: 32,
+  }
+  const totalW = Object.values(colW).reduce((a, b) => a + b, 0)
+  const L = (pageW - totalW) / 2
   let y = 15
   const f = (style: 'normal' | 'bold', size: number) => {
     doc.setFont('THSarabun', style)
     doc.setFontSize(size)
   }
-
   // ─── Logo ────────────────────────────────────────────────
   try {
     const logoRes = await fetch('/src/assets/loeitech-logo.png')
     const logoBuffer = await logoRes.arrayBuffer()
     const logoBase64 = btoa(String.fromCharCode(...new Uint8Array(logoBuffer)))
-    doc.addImage(logoBase64, 'PNG', L, y - 10, 22, 22)
-  } catch { /* ไม่มีโลโก้ก็ผ่าน */ }
+    doc.addImage(logoBase64, 'PNG', pageW / 2 - 20, y, 40, 40)
+    y += 45
+  } catch { y += 5 }
 
   // ─── Header ──────────────────────────────────────────────
-  f('bold', 20)
+  f('bold', 22)
   doc.text('ใบสรุปยอดการสั่งซื้อเครื่องแบบและอุปกรณ์', pageW / 2, y, { align: 'center' })
   y += 8
   f('normal', 14)
@@ -2059,32 +2138,23 @@ const exportOrdersListPDF = async () => {
   doc.line(L, y, pageW - L, y)
   y += 8
 
-  // ─── Column widths ────────────────────────────────────────
-  const colW = {
-    no:     14,
-    name:   72,
-    cur:    24,
-    branch: 55,
-    date:   35,
-    amount: 28,
-  }
-  const totalW = Object.values(colW).reduce((a, b) => a + b, 0)
+
 
   // ─── Header row ──────────────────────────────────────────
-  f('bold', 13)
+  f('bold', 15)
   doc.setFillColor(240, 253, 244)
-  doc.rect(L, y - 5.5, totalW, 8, 'F')
+  doc.rect(L, y - 5.5, totalW, 9, 'F')
   doc.setDrawColor(16, 185, 130)
   doc.setLineWidth(0.4)
   doc.rect(L, y - 5.5, totalW, 8)
 
   let cx = L
-  doc.text('ลำดับ',     cx + colW.no / 2,                   y, { align: 'center' }); cx += colW.no
-  doc.text('ชื่อ-นามสกุล', cx + colW.name / 2,              y, { align: 'center' }); cx += colW.name
-  doc.text('หลักสูตร',  cx + colW.cur / 2,                   y, { align: 'center' }); cx += colW.cur
-  doc.text('สาขาวิชา',  cx + colW.branch / 2,                y, { align: 'center' }); cx += colW.branch
-  doc.text('วันที่ชำระ', cx + colW.date / 2,                 y, { align: 'center' }); cx += colW.date
-  doc.text('จำนวนเงิน', cx + colW.amount / 2,                y, { align: 'center' })
+  doc.text('ลำดับ', cx + colW.no / 2, y, { align: 'center' }); cx += colW.no
+  doc.text('ชื่อ-นามสกุล', cx + colW.name / 2, y, { align: 'center' }); cx += colW.name
+  doc.text('หลักสูตร', cx + colW.cur / 2, y, { align: 'center' }); cx += colW.cur
+  doc.text('สาขาวิชา', cx + colW.branch / 2, y, { align: 'center' }); cx += colW.branch
+  doc.text('วันที่ชำระ', cx + colW.date / 2, y, { align: 'center' }); cx += colW.date
+  doc.text('จำนวนเงิน', cx + colW.amount / 2, y, { align: 'center' })
   y += 3
 
   doc.setDrawColor(200, 200, 200)
@@ -2096,7 +2166,7 @@ const exportOrdersListPDF = async () => {
   let totalAmount = 0
   let order = 1
 
-  f('normal', 13)
+   f('normal', 15)
   for (const row of rows) {
     if (y > 180) {
       doc.addPage()
@@ -2528,4 +2598,6 @@ async function generateCombinedTwoPagePDF(row: any) {
   // ════════════════════════════════════════════════════════
   doc.save(`ใบรายการ-${fullName}.pdf`)
 }
+
+
 </script>

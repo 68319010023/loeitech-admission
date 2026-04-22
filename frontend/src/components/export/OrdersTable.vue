@@ -34,15 +34,12 @@
           </td>
           <td class="px-4 py-3 text-center">
             <div class="flex items-center justify-center gap-2">
-              <button v-if="row._slipUrl" @click="openSlipModal(row)"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg text-xs font-semibold transition">
-                <Eye class="w-3.5 h-3.5" /> ดูสลิป
-              </button>
+            
               <button @click="generatePDF(row)"
                 class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 hover:bg-green-100 text-green-600 rounded-lg text-xs font-semibold transition">
                 <Download class="w-3.5 h-3.5" /> PDF
               </button>
-              <span v-if="!row._slipUrl" class="text-xs text-gray-300">-</span>
+             
             </div>
           </td>
         </tr>
@@ -89,7 +86,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Eye, ExternalLink, X, Download } from 'lucide-vue-next'
+import { Download } from 'lucide-vue-next'
 
 const props = defineProps<{
   data: any[]
