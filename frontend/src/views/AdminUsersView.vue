@@ -782,9 +782,7 @@ const currentData = computed(() =>
         หลักฐานการชำระ_ใบเสร็จ: a.payment?.slip_name ?? '-',
         _isPaid: a.status === 'paid' || a.status === 'enrolled',
         _idFrontUrl: resolveUrl(a.id_front_url),
-        _slipUrl: a.payment?.slip_name
-          ? resolveUrl(`/uploads/slips/${a.payment.slip_name}`)
-          : '',
+        _slipUrl: a.payment?.slip_url ? resolveUrl(a.payment.slip_url) : '',
       }
     }
 
@@ -799,9 +797,7 @@ const currentData = computed(() =>
         : (a.status === 'enrolled' ? '-' : 'ยังไม่ชำระ'),
       _idFrontUrl: a.id_front_url ?? '',
       _isPaid: a.status === 'paid' || a.status === 'enrolled',
-      _slipUrl: a.payment?.slip_name
-        ? resolveUrl(`/uploads/slips/${a.payment.slip_name}`)
-        : '',
+      _slipUrl: a.payment?.slip_url ? resolveUrl(a.payment.slip_url) : '',
     }
   })
 )

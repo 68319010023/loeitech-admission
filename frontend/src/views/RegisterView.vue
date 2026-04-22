@@ -103,13 +103,13 @@
             <label class="text-sm text-gray-600 mb-1 block">เลขประจำตัวประชาชน *</label>
             <input v-if="form.idType !== 'passport' && form.idType !== 'g_code' && form.idType !== 'other'"
               v-model="form.idCard" type="text" inputmode="numeric"
-              placeholder="เลขประจำตัวประชาชน 13 หลัก" maxlength="13" class="input-field" @keydown="blockNonDigit" />
+              placeholder="เลขประจำตัวประชาชน 13 หลัก" maxlength="13" class="input-field" 
+              @keydown="blockNonDigit" @input="checkDuplicateIdCard(form.idCard)" />
             <input v-else v-model="form.idCard" type="text" :placeholder="idTypePlaceholder" maxlength="20"
-              class="input-field" @input="form.idCard = form.idCard.toUpperCase()" />
+              class="input-field" @input="form.idCard = form.idCard.toUpperCase(); checkDuplicateIdCard(form.idCard)" />
             <p class="text-xs text-gray-400 mt-1">{{ idTypeHint || 'กรอกตัวเลข 13 หลัก ไม่มีขีด' }}</p>
-          
+            <p v-if="idCardError" class="text-red-500 text-sm mt-1 mb-1">{{ idCardError }}</p>
           </div>
-          <p v-if="idCardError" class="text-red-500 text-sm -mt-2 mb-1">{{ idCardError }}</p>
           <div>
             <label class="text-sm text-gray-600 mb-1 block">คำนำหน้าชื่อ *</label>
             <select v-model="form.prefix" class="input-field">
