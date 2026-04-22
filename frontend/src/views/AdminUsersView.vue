@@ -170,6 +170,11 @@
         <input v-model="paymentDateFilter" @input="formatDateInput" type="text" placeholder="วัน/เดือน/ปี"
           class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none" />
       </div>
+      <div v-if="selectedExportType === 'orders'" class="relative">
+        <Calendar class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <input v-model="orderDateFilter" @input="formatDateInput" type="text" placeholder="วัน/เดือน/ปี"
+          class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none" />
+      </div>
         </div>
         
       </div>
@@ -724,20 +729,19 @@ const exportPaymentsPDF = async () => {
   }
 }
 
-// handleGeneratePDF ยังคงไว้สำหรับ OrdersTable emit เท่านั้น
+// handleGeneratePDF  still for OrdersTable emit only
 const handleGeneratePDF = async (row: any) => {
-  if (!row) return // ✅ guard เผื่อกรณี row ไม่มา
-  ocrProgress.value = { running: true, current: 1, total: 1, name: 'กำลังเริ่มสร้าง...' }
+  if (!row) return //  guard 
+  ocrProgress.value = { running: true, current: 1, total: 1, name: '...' }
   try {
     ocrProgress.value.name = `${row.คำนำหน้า || ''}${row.ชื่อ_นามสกุล || ''}`
-    await generateCombinedOrderPDF(row)
+    await generateCombinedTwoPagePDF(row)
   } catch (err) {
-    console.error('❌ Error generating combined order PDF:', err)
+    console.error(' Error generating combined order PDF:', err)
   } finally {
     ocrProgress.value.running = false
   }
 }
-
 // ─── Computed ─────────────────────────────────────────────────
 const currentData = computed(() =>
   applicants.value.map(a => {
@@ -898,6 +902,8 @@ const formatDateInput = (event: Event) => {
   if (value.length >= 5) {
     value = value.slice(0, 5) + '/' + value.slice(5, 9)
   }
+
+  input.value = value
 
   if (selectedExportType.value === 'payments') {
     paymentDateFilter.value = value
@@ -2254,18 +2260,18 @@ async function generateCombinedTwoPagePDF(row: any) {
 
   f('bold', 11)
   doc.setTextColor(80, 80, 80)
-  doc.text('หลักสูตร', pageW / 2 + 3, y + 7)
+  doc.text('หลักสูตร', pageW / 2 - 40, y + 7)
   f('normal', 13)
   doc.setTextColor(0, 0, 0)
-  doc.text(row.หลักสูตร || '-', pageW / 2 + 3, y + 14)
+  doc.text(row.หลักสูตร || '-', pageW / 2 - 40, y + 14)
 
   f('bold', 11)
   doc.setTextColor(80, 80, 80)
-  doc.text('สาขาวิชา', margin + 90, y + 7)
+  doc.text('สาขาวิชา', pageW / 2 + 20, y + 7)
   f('normal', 12)
   doc.setTextColor(0, 0, 0)
   const branchLine = doc.splitTextToSize(row.สาขาวิชา || '-', 55)
-  doc.text(branchLine[0], margin + 90, y + 14)
+  doc.text(branchLine[0], pageW / 2 + 20, y + 14)
   y += 28
 
   // ตารางรายการสั่งซื้อ
