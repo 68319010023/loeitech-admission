@@ -87,15 +87,7 @@
             </div>
           </div>
           <!-- เลขบัตรประจำตัวประชาชน — แสดงเสมอ (OCR fills this) -->
-          <div class="col-span-2">
-            <label class="text-sm text-gray-600 mb-1 block">เลขประจำตัวประชาชน *</label>
-            <input v-if="form.idType !== 'passport' && form.idType !== 'g_code' && form.idType !== 'other'"
-              v-model="form.idCard" type="text" inputmode="numeric"
-              placeholder="เลขประจำตัวประชาชน 13 หลัก" maxlength="13" class="input-field" @keydown="blockNonDigit" />
-            <input v-else v-model="form.idCard" type="text" :placeholder="idTypePlaceholder" maxlength="20"
-              class="input-field" @input="form.idCard = form.idCard.toUpperCase()" />
-            <p class="text-xs text-gray-400 mt-1">{{ idTypeHint || 'กรอกตัวเลข 13 หลัก ไม่มีขีด' }}</p>
-          </div>
+
           <div class="col-span-2">
             <label class="text-sm text-gray-600 mb-1 block">ประเภทเอกสารแสดงตน *</label>
             <select v-model="form.idType" class="input-field" @change="form.idCard = ''">
@@ -105,6 +97,17 @@
               <option value="g_code">G-Code (บุคคลไม่มีสัญชาติไทย)</option>
               <option value="other">เอกสารราชการอื่น ๆ</option>
             </select>
+          </div>
+
+          <div class="col-span-2">
+            <label class="text-sm text-gray-600 mb-1 block">เลขประจำตัวประชาชน *</label>
+            <input v-if="form.idType !== 'passport' && form.idType !== 'g_code' && form.idType !== 'other'"
+              v-model="form.idCard" type="text" inputmode="numeric"
+              placeholder="เลขประจำตัวประชาชน 13 หลัก" maxlength="13" class="input-field" @keydown="blockNonDigit" />
+            <input v-else v-model="form.idCard" type="text" :placeholder="idTypePlaceholder" maxlength="20"
+              class="input-field" @input="form.idCard = form.idCard.toUpperCase()" />
+            <p class="text-xs text-gray-400 mt-1">{{ idTypeHint || 'กรอกตัวเลข 13 หลัก ไม่มีขีด' }}</p>
+          
           </div>
           <p v-if="idCardError" class="text-red-500 text-sm -mt-2 mb-1">{{ idCardError }}</p>
           <div>

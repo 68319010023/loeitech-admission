@@ -335,9 +335,9 @@
     <!-- View Image Modal -->
     <Teleport to="body">
       <transition name="modal">
-        <div v-if="viewingImage" class="fixed inset-0 z-[9999] flex items-center justify-center px-4">
+        <div v-if="viewingImage" class="fixed inset-0 z-[99999] flex items-center justify-center px-4">
           <div class="fixed inset-0 bg-black/70" @click="viewingImage = ''"></div>
-          <div class="relative z-[10000] w-full max-w-md">
+          <div class="relative z-[100000] w-full max-w-md">
 
             <!-- ปุ่มปิด -->
             <button @click="viewingImage = ''"
@@ -403,7 +403,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import { apiService } from '@/utils/api'
 
@@ -445,19 +445,21 @@ const fileInputRef = ref<HTMLInputElement | null>(null)
 
 const sizeNumbers = ref<Record<string, string>>({ S: '', M: '', L: '', XL: '' })
 const originalImgUrl = ref<string>('')
+const originalImagePath = ref<string>('')
 const showAddModal = ref(false)
 const showEditModal = ref(false)
 const showDeleteModal = ref(false)
 const deletingExpense = ref<ExpenseDetail | null>(null)
 const showSizeSection = ref(false)
+const imageExplicitlyCleared = ref(false)
 
 const formData = ref({
   exp_id: 0,
   exp_name: '',
   exp_detail: '',
   exp_cost: 0,
-  exp_img: '',
-  cur_id: 0 as number | '',
+  exp_img: '' as string | null,
+  cur_id: 0,
   payment_type: '',
   exp_sizes: [] as string[]
 })
@@ -482,8 +484,9 @@ const triggerFileInput = () => fileInputRef.value?.click()
 
 const clearImage = () => {
   imagePreview.value = ''
-  originalImgUrl.value = ''
   formData.value.exp_img = ''
+  imageExplicitlyCleared.value = true
+  originalImgUrl.value = ''  // ล้างเพื่อซ่อนรูปใน UI
   if (fileInputRef.value) fileInputRef.value.value = ''
 }
 
@@ -491,15 +494,18 @@ const clearImage = () => {
 const getImageUrl = (path: string) => {
   if (!path) return ''
   if (path.startsWith('http') || path.startsWith('data:')) return path
-
-  const base = (import.meta.env.VITE_API_URL || 'http://localhost:3001/api').replace('/api', '')
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
+  const base = apiUrl.replace(/\/api$/, '')
   return `${base}${path}`
 }
 
 const imageLoading = ref(false)
 
 const viewImage = (imageUrl: string) => {
+  console.log('imageUrl ที่รับมา:', imageUrl)
   const url = getImageUrl(imageUrl)
+  console.log('url หลัง getImageUrl:', url)
+  console.log('VITE_API_URL:', import.meta.env.VITE_API_URL)
   imageLoading.value = true
   viewingImage.value = url
 }
@@ -573,17 +579,32 @@ const fetchCurriculums = async () => {
 const handleSubmit = async () => {
   isSubmitting.value = true
   try {
+    // Prepare data for submission
+    const submitData: any = { ...formData.value }
+    
+    // Check image status
+    const hasNewImage = Boolean(imagePreview.value && imagePreview.value.trim() !== '')
+    
+    if (hasNewImage) {
+  submitData.exp_img = imagePreview.value
+} else if (imageExplicitlyCleared.value) {
+  submitData.exp_img = ''
+} else {
+  delete submitData.exp_img
+}
+    
     if (showAddModal.value) {
-      await apiService.createExpenseDetail(formData.value)
+      await apiService.createExpenseDetail(submitData)
       showToast('success', 'เพิ่มรายการสำเร็จ', 'ข้อมูลถูกบันทึกเรียบร้อยแล้ว')
     } else {
-      await apiService.updateExpenseDetail(formData.value.exp_id, formData.value)
+      await apiService.updateExpenseDetail(formData.value.exp_id, submitData)
       showToast('success', 'แก้ไขรายการสำเร็จ', 'ข้อมูลถูกอัปเดตเรียบร้อยแล้ว')
     }
     await fetchExpenses()
     emit('refresh')
     closeModal()
   } catch (error: any) {
+    console.error('Submit error:', error)
     showToast('error', 'บันทึกไม่สำเร็จ', error?.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่')
   } finally {
     isSubmitting.value = false
@@ -591,21 +612,32 @@ const handleSubmit = async () => {
 }
 
 const editExpense = (expense: ExpenseDetail) => {
+  // Get curriculum ID from the nested curriculum object
+  const curId = expense.curriculum ? Number(expense.curriculum.cur_id) : 0
+  
   formData.value = {
     exp_id: expense.exp_id,
     exp_name: expense.exp_name,
     exp_detail: expense.exp_detail,
     exp_img: '',
-    cur_id: expense.cur_id,
+    cur_id: curId,
     exp_cost: expense.exp_cost,
     payment_type: expense.payment_type || '',
     exp_sizes: expense.exp_sizes ? [...expense.exp_sizes] : []
   }
+  
   originalImgUrl.value = expense.exp_img || ''
+  originalImagePath.value = expense.exp_img || ''
+  
   imagePreview.value = ''
   sizeNumbers.value = { S: '', M: '', L: '', XL: '' }
   showSizeSection.value = expense.exp_sizes ? expense.exp_sizes.length > 0 : false
-  showEditModal.value = true
+  imageExplicitlyCleared.value = false
+  
+  // Use nextTick to ensure DOM updates
+  nextTick(() => {
+    showEditModal.value = true
+  })
 }
 
 const closeModal = () => {
@@ -615,6 +647,7 @@ const closeModal = () => {
   imagePreview.value = ''
   originalImgUrl.value = ''
   sizeNumbers.value = { S: '', M: '', L: '', XL: '' }
+  imageExplicitlyCleared.value = false
   if (fileInputRef.value) fileInputRef.value.value = ''
   formData.value = {
     exp_id: 0,
@@ -622,7 +655,7 @@ const closeModal = () => {
     exp_detail: '',
     exp_cost: 0,
     exp_img: '',
-    cur_id: '',
+    cur_id: 0,
     payment_type: '',
     exp_sizes: []
   }
