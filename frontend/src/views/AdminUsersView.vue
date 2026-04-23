@@ -78,8 +78,8 @@
               Export รายชื่อผู้ชำระเงิน
             </button>
 
-           <button v-if="selectedExportType === 'orders'" @click="exportOrdersListPDF()"
-  :disabled="selectedIds.length === 0 || ocrProgress.running" class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
+            <button v-if="selectedExportType === 'orders'" @click="exportOrdersListPDF()"
+              :disabled="selectedIds.length === 0 || ocrProgress.running" class="group flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
                      bg-gradient-to-r from-emerald-400 to-green-500 text-white shadow-md shadow-green-200
                      hover:shadow-lg hover:shadow-green-300 hover:-translate-y-0.5
                      disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
@@ -485,6 +485,197 @@
         </div>
       </div>
     </Teleport>
+    <!-- Doc Modal -->
+    <Teleport to="body">
+      <div v-if="docModal.open" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+        @click.self="docModal.open = false">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden flex flex-col"
+          style="max-height: 90vh">
+
+          <!-- Header -->
+          <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                <FileText class="w-5 h-5 text-emerald-600" />
+              </div>
+              <div>
+                <p class="font-bold text-gray-800 text-base">{{ docModal.name }}</p>
+                <span :class="[
+                  'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold mt-0.5',
+                  docModal.status === 'enrolled' ? 'bg-green-50 text-green-700' :
+                    docModal.status === 'paid' ? 'bg-blue-50 text-blue-700' :
+                      docModal.status === 'pending_approve' ? 'bg-yellow-50 text-yellow-700' :
+                        'bg-gray-50 text-gray-500'
+                ]">
+                  {{
+                    docModal.status === 'enrolled' ? '✓ มอบตัวแล้ว' :
+                      docModal.status === 'paid' ? '✅ พร้อมมอบตัว' :
+                        docModal.status === 'pending_approve' ? '⏳ รอตรวจสอบ' : '📋 สมัครใหม่'
+                  }}
+                </span>
+              </div>
+            </div>
+            <button @click="docModal.open = false" class="p-2 hover:bg-gray-100 rounded-lg transition">
+              <X class="w-5 h-5 text-gray-500" />
+            </button>
+          </div>
+
+          <!-- Body -->
+          <div class="overflow-y-auto flex-1 px-5 py-4 space-y-5">
+
+            <!-- ═══ SlipOK Status ═══ -->
+            <div>
+              <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">สถานะการชำระเงิน</p>
+
+              <!-- ✅ ผ่าน -->
+              <div v-if="docModal.slipApproved === true"
+                class="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                <div class="w-9 h-9 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-sm font-semibold text-emerald-700">SlipOK ตรวจสอบผ่าน</p>
+                  <p class="text-xs text-emerald-500 mt-0.5">ยืนยันการชำระเงินเรียบร้อยแล้ว</p>
+                </div>
+                <div class="ml-auto w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+              </div>
+
+              <!-- ❌ ไม่ผ่าน -->
+              <div v-else-if="docModal.slipApproved === false"
+                class="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-4">
+                <div class="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-sm font-semibold text-red-700">SlipOK ตรวจสอบไม่ผ่าน</p>
+                  <p class="text-xs text-red-500 mt-0.5">{{ docModal.slipErrorMessage || 'กรุณาตรวจสอบสลิปด้วยตนเอง' }}
+                  </p>
+                </div>
+              </div>
+
+              <!-- ไม่มีข้อมูล -->
+              <div v-else class="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl p-4">
+                <div class="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                  <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <p class="text-sm text-gray-500">ยังไม่มีข้อมูลการตรวจสอบสลิป</p>
+              </div>
+            </div>
+
+            <!-- ═══ รูปสลิป ═══ -->
+            <div v-if="docModal.documents.find(d => d.doc_type === 'payment_slip')">
+              <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">หลักฐานการชำระเงิน</p>
+              <div class="border border-gray-200 rounded-xl overflow-hidden bg-gray-50 flex items-center justify-center"
+                style="min-height: 200px; max-height: 360px;">
+                <div v-if="docModal.imgLoading" class="flex flex-col items-center gap-2 text-gray-400 py-10">
+                  <div class="w-6 h-6 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
+                  <span class="text-xs">กำลังโหลด...</span>
+                </div>
+                <div v-else-if="docModal.imgError" class="text-gray-400 text-sm py-10">โหลดรูปไม่สำเร็จ</div>
+                <img v-else-if="slipBlobUrl" :src="slipBlobUrl" class="max-w-full max-h-80 object-contain p-2" />
+              </div>
+            </div>
+
+            <!-- ═══ เอกสารมอบตัว ═══ -->
+            <div
+              v-if="docModal.documents.filter(d => d.doc_type !== 'payment_slip' && !['id_front', 'id_back', 'edu_front', 'edu_back', 'letter_front', 'letter_back'].includes(d.doc_type)).length > 0">
+              <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">เอกสารมอบตัว</p>
+              <div class="grid grid-cols-2 gap-3">
+                <div
+                  v-for="doc in docModal.documents.filter(d => !['id_front', 'id_back', 'edu_front', 'edu_back', 'letter_front', 'letter_back', 'payment_slip'].includes(d.doc_type))"
+                  :key="doc.doc_type" class="border border-gray-200 rounded-xl overflow-hidden bg-gray-50">
+                  <div class="px-3 py-2 bg-gray-100 border-b border-gray-200 flex items-center justify-between">
+                    <span class="text-xs font-semibold text-gray-600">
+                      {{
+                        doc.doc_type === 'self_house_front' ? 'ทะเบียนบ้านตนเอง (หน้าแรก)' :
+                          doc.doc_type === 'self_house_back' ? 'ทะเบียนบ้านตนเอง (รายละเอียด)' :
+                            doc.doc_type === 'father_house_front' ? 'ทะเบียนบ้านบิดา (หน้าแรก)' :
+                              doc.doc_type === 'father_house_back' ? 'ทะเบียนบ้านบิดา (รายละเอียด)' :
+                                doc.doc_type === 'mother_house_front' ? 'ทะเบียนบ้านมารดา (หน้าแรก)' :
+                                  doc.doc_type === 'mother_house_back' ? 'ทะเบียนบ้านมารดา (รายละเอียด)' :
+                                    doc.doc_type
+                      }}
+                    </span>
+                    <div class="w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                      <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  </div>
+                  <img :src="resolveUrl(doc.file_url)" class="w-full h-32 object-cover"
+                    @error="(e) => (e.target as HTMLImageElement).src = ''" />
+                </div>
+              </div>
+            </div>
+
+            <!-- ═══ เอกสารอื่นๆ (id, edu) ═══ -->
+            <div
+              v-if="docModal.documents.filter(d => ['id_front', 'id_back', 'edu_front', 'edu_back', 'letter_front', 'letter_back'].includes(d.doc_type)).length > 0">
+              <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">เอกสารการสมัคร</p>
+              <div class="flex gap-2 flex-wrap mb-3">
+                <button
+                  v-for="doc in docModal.documents.filter(d => ['id_front', 'id_back', 'edu_front', 'edu_back', 'letter_front', 'letter_back'].includes(d.doc_type))"
+                  :key="doc.doc_type" @click="docModal.activeTab = doc.doc_type" :class="[
+                    'px-3 py-1.5 rounded-lg text-xs font-semibold border transition',
+                    docModal.activeTab === doc.doc_type
+                      ? 'bg-emerald-500 text-white border-emerald-500'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-emerald-400'
+                  ]">
+                  {{
+                    doc.doc_type === 'id_front' ? 'บัตรประชาชน (หน้า)' :
+                      doc.doc_type === 'id_back' ? 'บัตรประชาชน (หลัง)' :
+                        doc.doc_type === 'edu_front' ? 'วุฒิการศึกษา (หน้า)' :
+                          doc.doc_type === 'edu_back' ? 'วุฒิการศึกษา (หลัง)' :
+                            doc.doc_type === 'letter_front' ? 'จดหมาย (หน้า)' :
+                              doc.doc_type === 'letter_back' ? 'จดหมาย (หลัง)' :
+                                doc.doc_type
+                  }}
+                </button>
+              </div>
+              <div class="border border-gray-200 rounded-xl overflow-hidden bg-gray-50 flex items-center justify-center"
+                style="min-height: 200px; max-height: 320px;">
+                <div v-if="docModal.imgLoading" class="flex flex-col items-center gap-2 text-gray-400 py-10">
+                  <div class="w-6 h-6 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
+                  <span class="text-xs">กำลังโหลด...</span>
+                </div>
+                <div v-else-if="docModal.imgError" class="text-gray-400 text-sm py-10">โหลดรูปไม่สำเร็จ</div>
+                <img v-else-if="blobUrl" :src="blobUrl" class="max-w-full max-h-72 object-contain p-2" />
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Footer -->
+          <div class="flex items-center justify-between px-5 py-3 border-t border-gray-100 bg-gray-50 flex-shrink-0">
+            <p class="text-xs text-gray-400">เอกสารทั้งหมด {{ docModal.documents.length }} รายการ</p>
+            <div class="flex gap-2">
+              <button @click="docModal.open = false"
+                class="px-4 py-2 text-sm text-gray-500 hover:bg-gray-200 rounded-xl transition font-semibold">
+                ปิด
+              </button>
+              <button v-if="docModal.status === 'pending_approve' || docModal.status === 'paid'"
+                @click="downloadDocModalPDF" :disabled="ocrProgress.running"
+                class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl text-sm font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed">
+                <Download class="w-4 h-4" /> ดาวน์โหลดเอกสาร
+              </button>
+
+              <button v-if="docModal.status === 'enrolled'" @click="printEnrollmentCert"
+                class="inline-flex items-center gap-1.5 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl text-sm font-semibold transition">
+                <BookCheck class="w-4 h-4" /> เอกสารมอบตัว
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </Teleport>
 
   </div><!-- ✅ ปิด root div -->
 </template>
@@ -538,6 +729,8 @@ const prevLevelLabel = (level: string) => {
 }
 
 const openInfoModal = async (row: any) => {
+  console.log('row data:', row)  // ← เพิ่มบรรทัดนี้
+  console.log('id card:', row.เลขบัตรประชาชน)
   infoModal.value = {
     open: true,
     name: `${row.คำนำหน้า}${row.ชื่อ_นามสกุล}`,
@@ -563,31 +756,6 @@ const resolveUrl = (path: string | null | undefined) => {
   const token = localStorage.getItem('auth_token')
   const sep = path.includes('?') ? '&' : '?'
   return `${API_BASE}${path}${token ? `${sep}token=${encodeURIComponent(token)}` : ''}`
-}
-
-// Generate URL for enrollment certificate PDF
-const generateEnrollmentCertUrl = (studentData: any) => {
-  if (!studentData || studentData.สถานะ !== 'enrolled') return ''
-
-  // Generate a URL that can be used to download the enrollment certificate
-  // This would typically be an API endpoint that generates the PDF on demand
-  const token = localStorage.getItem('auth_token')
-  const baseUrl = API_BASE
-  const idCardNumber = studentData.เลขบัตรประชาชน || studentData.id_card_number
-
-  return `${baseUrl}/api/documents/enrollment-certificate/${idCardNumber}${token ? `?token=${encodeURIComponent(token)}` : ''}`
-}
-
-// Generate URL for enrollment form PDF  
-const generateEnrollmentFormUrl = (studentData: any) => {
-  if (!studentData) return ''
-
-  // Generate a URL that can be used to download the enrollment form
-  const token = localStorage.getItem('auth_token')
-  const baseUrl = API_BASE
-  const idCardNumber = studentData.เลขบัตรประชาชน || studentData.id_card_number
-
-  return `${baseUrl}/api/documents/enrollment-form/${idCardNumber}${token ? `?token=${encodeURIComponent(token)}` : ''}`
 }
 
 const exportItems = [
@@ -650,6 +818,17 @@ const exportPaymentsListPDF = async () => {
   const pageW = 210
   const L = 14
   let y = 15
+
+  try {
+    const logoRes = await fetch('/src/assets/loeitech-logo.png')
+    const logoBuffer = await logoRes.arrayBuffer()
+    const logoBase64 = btoa(String.fromCharCode(...new Uint8Array(logoBuffer)))
+    doc.addImage(logoBase64, 'PNG', pageW / 2 - 20, y, 40, 40)
+    y += 45
+  } catch (e) {
+    console.error('Failed to load logo:', e)
+    y += 5
+  }
   const f = (style: 'normal' | 'bold', size: number) => { doc.setFont('THSarabun', style); doc.setFontSize(size) }
 
   f('bold', 18)
@@ -950,6 +1129,7 @@ const normalizeDateForSearch = (dateStr: string) => {
   return dateStr
 }
 
+
 // ─── OCR ─────────────────────────────────────────────────────
 async function runOCRFromUrl(imageUrl: string, mode: 'id' | 'edu' = 'id'): Promise<Record<string, string>> {
   if (!imageUrl) return {}
@@ -1149,9 +1329,9 @@ async function buildExportData(rows: any[], isExportAll = false): Promise<object
       })
     } else {
       // students
-   const enrollmentCertUrl = row.สถานะ === 'enrolled'
-  ? `${window.location.origin}/enrollment-cert/${row.เลขบัตรประชาชน}`
-  : '-'
+      const enrollmentCertUrl = row.สถานะ === 'enrolled'
+        ? `${window.location.origin}/enrollment-cert/${row.เลขบัตรประชาชน}`
+        : '-'
 
       result.push({
         ลำดับ: result.length + 1,
@@ -1222,8 +1402,8 @@ function formatOCRDate(dateStr: string): string {
 
 // ─── doExport / exportSelected / exportAll ────────────────────
 async function doExport(rows: any[], isExportAll = false) {
-  const data = await buildExportData(rows, isExportAll) 
-  const ws = XLSX.utils.json_to_sheet(data)               
+  const data = await buildExportData(rows, isExportAll)
+  const ws = XLSX.utils.json_to_sheet(data)
 
   const range = XLSX.utils.decode_range(ws['!ref'] || 'A1')
   for (let R = range.s.r + 1; R <= range.e.r; R++) {
@@ -1340,6 +1520,7 @@ const docModal = ref({
   appId: '',
   status: '',
   slipApproved: null as boolean | null,
+  slipErrorMessage: '' as string,
   documents: [] as { doc_type: string; file_url: string }[],
   activeTab: '' as string,
   imgError: false,
@@ -1348,7 +1529,27 @@ const docModal = ref({
 })
 
 const blobUrl = ref<string>('')
+// เพิ่มบรรทัดนี้ใกล้กับ blobUrl
+const slipBlobUrl = ref<string>('')
 
+
+watch(
+  () => docModal.value.documents,
+  async (docs) => {
+    slipBlobUrl.value = ''
+    const slipDoc = docs.find(d => d.doc_type === 'payment_slip')
+    if (!slipDoc?.file_url) return
+    try {
+      const res = await fetch(resolveUrl(slipDoc.file_url))
+      if (!res.ok) throw new Error('fetch failed')
+      const blob = await res.blob()
+      slipBlobUrl.value = URL.createObjectURL(blob)
+    } catch {
+      slipBlobUrl.value = ''
+    }
+  },
+  { deep: true }
+)
 const DOC_FILTER: Record<string, string[]> = {
   pending_payment: ['payment_slip'],
   pending_approve: [
@@ -1542,6 +1743,7 @@ const openDocModal = async (row: any) => {
 
       if (typeof res.data.slip_approved === 'boolean') {
         docModal.value.slipApproved = res.data.slip_approved
+        docModal.value.slipErrorMessage = res.data.slip_error_message || ''
       }
 
       if (!row._showAll && row.สถานะ === 'pending_payment') {
@@ -1551,8 +1753,11 @@ const openDocModal = async (row: any) => {
       } else if (!row._showAll && row.สถานะ === 'enrolled') {
         docModal.value.activeTab = '__enrollment_cert__'
       } else {
-        docModal.value.activeTab = docModal.value.documents[0]?.doc_type || ''
+        docModal.value.activeTab = docModal.value.documents.find(
+          d => d.doc_type === 'payment_slip'
+        )?.doc_type || docModal.value.documents[0]?.doc_type || ''
       }
+
     }
   } catch (e) {
     console.error('โหลดเอกสารไม่สำเร็จ', e)
@@ -1768,104 +1973,7 @@ async function generateStudentPDF(studentData: any) {
   }
 }
 
-async function generatePaymentPDF(paymentData: any) {
-  try {
-    const fontBase64 = await loadThaiFont()
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-    if (fontBase64) {
-      doc.addFileToVFS('THSarabunNew.ttf', fontBase64)
-      doc.addFont('THSarabunNew.ttf', 'THSarabun', 'normal')
-      doc.addFont('THSarabunNew.ttf', 'THSarabun', 'bold')
-    }
-    const pageW = 210
-    const L = 15
-    const R = 195
-    let y = 0
-    const f = (style: 'normal' | 'bold', size: number) => { doc.setFont('THSarabun', style); doc.setFontSize(size) }
-    const put = (text: string | number | undefined, x: number, y: number) => {
-      if (!text && text !== 0) return
-      f('bold', 14); doc.text(String(text), x, y); f('normal', 14)
-    }
 
-    y = 16
-    f('bold', 18)
-    doc.text('วิทยาลัยเทคนิคเลย', pageW / 2, y, { align: 'center' })
-    y += 8
-    f('bold', 16)
-    doc.text('ใบเสร็จรับเงินค่าบำรุงการศึกษา', pageW / 2, y, { align: 'center' })
-    y += 10
-
-    f('normal', 14)
-    doc.text('เลขที่ใบเสร็จ', L, y)
-    doc.line(L + 25, y, L + 60, y)
-    doc.text('วันที่', L + 70, y)
-    doc.line(L + 85, y, L + 120, y)
-    y += 8
-
-    f('bold', 14)
-    doc.text('ข้อมูลนักเรียน', L, y)
-    y += 7
-
-    f('normal', 14)
-    doc.text('ชื่อ-สกุล', L, y)
-    doc.line(L + 20, y, L + 90, y)
-    put(`${paymentData.คำนำหน้า || ''}${paymentData.ชื่อ_นามสกุล || ''}`, L + 21, y)
-    y += 7
-
-    doc.text('รหัสนักเรียน', L, y)
-    doc.line(L + 20, y, L + 40, y)
-    put(paymentData.ลำดับ, L + 21, y)
-    doc.text('หลักสูตร', L + 50, y)
-    doc.line(L + 65, y, L + 90, y)
-    put(paymentData.หลักสูตร, L + 66, y)
-    doc.text('สาขาวิชา', L + 100, y)
-    doc.line(L + 115, y, R, y)
-    put(paymentData.สาขาวิชา, L + 116, y)
-    y += 10
-
-    f('bold', 14)
-    doc.text('รายการค่าบำรุงการศึกษา', L, y)
-    y += 8
-
-    f('bold', 12)
-    doc.text('ลำดับ', L, y)
-    doc.text('รายการ', L + 15, y)
-    doc.text('จำนวนเงิน', L + 100, y)
-    y += 6
-    doc.line(L, y, R, y)
-    y += 2
-
-    f('normal', 12)
-    doc.text('1', L, y)
-    doc.text('ค่าบำรุงการศึกษา', L + 15, y)
-    put(paymentData.ยอดชำระ, L + 100, y)
-    y += 8
-
-    doc.line(L, y, R, y)
-    y += 6
-
-    f('bold', 14)
-    doc.text('รวมทั้งสิ้น', L + 70, y)
-    put(paymentData.ยอดชำระ, L + 100, y)
-    y += 10
-
-    f('normal', 14)
-    doc.text('วันที่ชำระเงิน', L, y)
-    put(paymentData.วันที่ชำระ, L + 30, y)
-    y += 8
-    doc.text('หลักฐานการชำระ', L, y)
-    put(paymentData.หลักฐานการชำระ_ใบเสร็จ, L + 30, y)
-    y += 15
-
-    f('normal', 12)
-    doc.text('..................................................', pageW / 2, y, { align: 'center' })
-    doc.text('ผู้รับเงิน', pageW / 2, y + 5, { align: 'center' })
-
-    doc.save(`ใบเสร็จค่าบำรุง_${paymentData.ชื่อ_นามสกุล || 'payment'}.pdf`)
-  } catch (err) {
-    console.error('Payment PDF Error:', err)
-  }
-}
 
 async function generatePaymentReceiptPDF(row: any) {
   const fontBase64 = await loadThaiFont()
@@ -2166,7 +2274,7 @@ const exportOrdersListPDF = async () => {
   let totalAmount = 0
   let order = 1
 
-   f('normal', 15)
+  f('normal', 15)
   for (const row of rows) {
     if (y > 180) {
       doc.addPage()
@@ -2599,5 +2707,251 @@ async function generateCombinedTwoPagePDF(row: any) {
   doc.save(`ใบรายการ-${fullName}.pdf`)
 }
 
+const downloadDocModalPDF = async () => {
+  const applicant = applicants.value.find(a => a.app_id === docModal.value.appId)
+  if (!applicant) {
+    alert('ไม่พบข้อมูลผู้สมัคร')
+    return
+  }
 
+  ocrProgress.value = {
+    running: true, current: 1, total: 1,
+    name: `${applicant.prefix}${applicant.full_name}`
+  }
+
+  try {
+    const fontBase64 = await loadThaiFont()
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    doc.addFileToVFS('THSarabunNew.ttf', fontBase64)
+    doc.addFont('THSarabunNew.ttf', 'THSarabun', 'normal')
+    doc.addFont('THSarabunNew.ttf', 'THSarabun', 'bold')
+
+    const pageW = 210
+    const margin = 20
+    const contentW = pageW - margin * 2
+    const now = new Date().toLocaleString('th-TH', { dateStyle: 'full', timeStyle: 'short' } as any)
+    const fullName = `${applicant.prefix}${applicant.full_name}`
+    const curName = applicant.curriculum?.cur_shortname || '-'
+    const divName = applicant.division?.div_name || '-'
+    const totalAmount = Number(applicant.payment?.total_amount) || 0
+
+    // ดึง order items
+    let fetchedOrderItems: any[] = []
+    try {
+      const orderRes = await api.get(`/applications/${applicant.app_id}/orders`)
+      fetchedOrderItems = orderRes.data?.data ?? []
+    } catch { /* ผ่าน */ }
+
+    const setFont = (style: 'normal' | 'bold', size: number, color = '#111827') => {
+      doc.setFont('THSarabun', style)
+      doc.setFontSize(size)
+      const hex = color.replace('#', '')
+      doc.setTextColor(
+        parseInt(hex.substring(0, 2), 16),
+        parseInt(hex.substring(2, 4), 16),
+        parseInt(hex.substring(4, 6), 16)
+      )
+    }
+
+    // ── HEADER ──────────────────────────────────────────
+    doc.setFillColor(5, 150, 105)
+    doc.rect(0, 0, pageW, 32, 'F')
+    setFont('bold', 18, '#ffffff')
+    doc.text('วิทยาลัยเทคนิคเลย', pageW / 2, 13, { align: 'center' })
+    setFont('normal', 12, '#d1fae5')
+    doc.text('ระบบรับสมัครนักเรียนนักศึกษาออนไลน์', pageW / 2, 22, { align: 'center' })
+
+    doc.setFillColor(240, 253, 244)
+    doc.rect(0, 32, pageW, 14, 'F')
+    doc.setDrawColor(5, 150, 105)
+    doc.setLineWidth(0.5)
+    doc.line(0, 32, pageW, 32)
+    doc.line(0, 46, pageW, 46)
+    setFont('bold', 16, '#065f46')
+    doc.text('เอกสารการสมัครนักเรียนนักศึกษา', pageW / 2, 42, { align: 'center' })
+
+    // ── ส่วนที่ 1: ข้อมูลผู้สมัคร ──────────────────────
+    let y = 54
+    const col1 = margin + 5
+    const col2 = margin + contentW / 2 + 5
+    const labelColor = '#6b7280'
+    const valueColor = '#111827'
+
+    doc.setFillColor(5, 150, 105)
+    doc.roundedRect(margin, y, contentW, 9, 2, 2, 'F')
+    setFont('bold', 13, '#ffffff')
+    doc.text('ส่วนที่ 1  ข้อมูลผู้สมัคร', margin + 4, y + 6.5)
+    y += 14
+
+    // กล่องข้อมูลนักเรียน
+    doc.setFillColor(248, 250, 252)
+    doc.setDrawColor(209, 213, 219)
+    doc.setLineWidth(0.3)
+    doc.roundedRect(margin, y, contentW, 42, 3, 3, 'FD')
+
+    setFont('normal', 10, labelColor); doc.text('ชื่อ-นามสกุล', col1, y + 8)
+    setFont('bold', 13, valueColor); doc.text(fullName, col1, y + 16)
+
+    setFont('normal', 10, labelColor); doc.text('วันที่สมัคร', col2, y + 8)
+    setFont('bold', 13, valueColor)
+    doc.text(new Date(applicant.created_at).toLocaleDateString('th-TH', { dateStyle: 'long' } as any), col2, y + 16)
+
+    doc.setDrawColor(229, 231, 235)
+    doc.setLineWidth(0.2)
+    doc.line(margin + 4, y + 21, margin + contentW - 4, y + 21)
+
+    setFont('normal', 10, labelColor); doc.text('หลักสูตร', col1, y + 28)
+    setFont('bold', 13, valueColor); doc.text(curName, col1, y + 36)
+
+    setFont('normal', 10, labelColor); doc.text('สาขาวิชา', col2, y + 28)
+    setFont('bold', 13, valueColor); doc.text(divName, col2, y + 36)
+    y += 47
+
+    // กล่องยอดชำระ
+    doc.setFillColor(236, 253, 245)
+    doc.setDrawColor(16, 185, 129)
+    doc.setLineWidth(0.4)
+    doc.roundedRect(margin, y, contentW, 14, 3, 3, 'FD')
+    setFont('normal', 11, '#065f46')
+    doc.text('ยอดชำระเงิน', col1, y + 9.5)
+    setFont('bold', 14, '#065f46')
+    doc.text(`${totalAmount.toLocaleString()} บาท`, margin + contentW - 5, y + 9.5, { align: 'right' })
+    y += 19
+
+    // สถานะ
+    const statusLabel =
+      docModal.value.status === 'enrolled' ? 'มอบตัวเสร็จสมบูรณ์' :
+      docModal.value.status === 'paid' ? 'พร้อมมอบตัว' :
+      docModal.value.status === 'pending_approve' ? 'รอตรวจสอบ' : 'สมัครใหม่'
+
+    doc.setFillColor(5, 150, 105)
+    doc.circle(col1 + 2.5, y + 4, 2.5, 'F')
+    setFont('bold', 12, '#065f46')
+    doc.text(`สถานะ: ${statusLabel}`, col1 + 8, y + 6)
+    y += 14
+
+    // เส้นประแบ่ง
+    doc.setDrawColor(209, 213, 219)
+    doc.setLineWidth(0.3)
+    doc.setLineDashPattern([2, 2], 0)
+    doc.line(margin, y, margin + contentW, y)
+    doc.setLineDashPattern([], 0)
+    y += 8
+
+    // ── ส่วนที่ 2: ใบสั่งซื้อเครื่องแบบ ────────────────
+    doc.setFillColor(37, 99, 235)
+    doc.roundedRect(margin, y, contentW, 9, 2, 2, 'F')
+    setFont('bold', 13, '#ffffff')
+    doc.text('ส่วนที่ 2  ใบสั่งซื้อเครื่องแบบนักเรียน', margin + 4, y + 6.5)
+    y += 14
+
+    // แถบข้อมูลนักเรียน
+    doc.setFillColor(239, 246, 255)
+    doc.setDrawColor(147, 197, 253)
+    doc.setLineWidth(0.3)
+    doc.roundedRect(margin, y, contentW, 12, 2, 2, 'FD')
+    setFont('normal', 10, '#1e40af')
+    doc.text(
+      `ชื่อ: ${fullName}   |   หลักสูตร: ${curName}   |   สาขา: ${divName}`,
+      margin + 4, y + 8
+    )
+    y += 17
+
+    // ── ตารางเครื่องแบบ ─────────────────────────────────
+    const headers = ['ลำดับ', 'รายการเครื่องแบบ', 'ขนาด', 'จำนวน', 'ราคา/หน่วย', 'รวม']
+    const colWidths = [12, 58, 20, 18, 22, 22]
+    const tableRowH = 9
+
+    const uniformItems = fetchedOrderItems.map((item: any) => ({
+      name: item.item_name ?? '',
+      size: item.size ?? '-',
+      qty: String(item.quantity ?? ''),
+      price: String(item.unit_price ?? ''),
+      total: String(item.total_price ?? ''),
+    }))
+
+    const totalRows = uniformItems.length || 8
+
+    // หัวตาราง
+    doc.setFillColor(37, 99, 235)
+    doc.rect(margin, y, contentW, tableRowH, 'F')
+    setFont('bold', 11, '#ffffff')
+    let cx = margin
+    headers.forEach((h, i) => {
+      doc.text(h, cx + colWidths[i] / 2, y + 6.5, { align: 'center' })
+      cx += colWidths[i]
+    })
+    y += tableRowH
+
+    // แถวข้อมูล
+    for (let r = 0; r < totalRows; r++) {
+      const isEven = r % 2 === 0
+      doc.setFillColor(isEven ? 255 : 245, isEven ? 255 : 249, isEven ? 255 : 255)
+      doc.rect(margin, y, contentW, tableRowH, 'F')
+      doc.setDrawColor(209, 213, 219)
+      doc.setLineWidth(0.2)
+      doc.rect(margin, y, contentW, tableRowH, 'S')
+
+      cx = margin
+      const item = uniformItems[r] ?? { name: '', size: '', qty: '', price: '', total: '' }
+      colWidths.forEach((w, i) => {
+        if (i > 0) doc.line(cx, y, cx, y + tableRowH)
+        setFont('normal', 11, '#374151')
+        if (i === 0) doc.text(`${r + 1}`, cx + w / 2, y + 6.2, { align: 'center' })
+        else if (i === 1) doc.text(item.name, cx + 2, y + 6.2)
+        else if (i === 2) doc.text(item.size, cx + w / 2, y + 6.2, { align: 'center' })
+        else if (i === 3) doc.text(item.qty, cx + w / 2, y + 6.2, { align: 'center' })
+        else if (i === 4) doc.text(item.price, cx + w - 2, y + 6.2, { align: 'right' })
+        else if (i === 5) doc.text(item.total, cx + w - 2, y + 6.2, { align: 'right' })
+        cx += w
+      })
+      y += tableRowH
+    }
+
+    // แถวรวมทั้งสิ้น
+    doc.setFillColor(239, 246, 255)
+    doc.rect(margin, y, contentW, tableRowH, 'F')
+    doc.setDrawColor(147, 197, 253)
+    doc.rect(margin, y, contentW, tableRowH, 'S')
+    const lastColX = margin + colWidths.slice(0, 5).reduce((a, b) => a + b, 0)
+    const grandTotal = uniformItems.reduce((sum, item) => sum + (Number(item.total) || 0), 0)
+    setFont('bold', 12, '#1e40af')
+    doc.text('รวมทั้งสิ้น', lastColX - 3, y + 6.2, { align: 'right' })
+    doc.text(grandTotal.toLocaleString(), margin + contentW - 2, y + 6.2, { align: 'right' })
+    y += tableRowH + 10
+
+    // ── ลายเซ็น ─────────────────────────────────────────
+    const sigW = (contentW - 10) / 2
+    const drawSig = (x: number, label: string) => {
+      doc.setDrawColor(156, 163, 175)
+      doc.setLineWidth(0.3)
+      doc.line(x + 10, y + 16, x + sigW - 10, y + 16)
+      setFont('normal', 11, '#374151')
+      doc.text(label, x + sigW / 2, y + 22, { align: 'center' })
+      doc.text('วันที่ ......../......../..........', x + sigW / 2, y + 29, { align: 'center' })
+    }
+    drawSig(margin, 'ลายมือชื่อผู้ปกครอง')
+    drawSig(margin + sigW + 10, 'ลายมือชื่อนักเรียน')
+    y += 35
+
+    // ── FOOTER ──────────────────────────────────────────
+    doc.setFillColor(243, 244, 246)
+    doc.rect(0, 282, pageW, 15, 'F')
+    doc.setDrawColor(209, 213, 219)
+    doc.setLineWidth(0.2)
+    doc.line(0, 282, pageW, 282)
+    setFont('normal', 9, '#9ca3af')
+    doc.text(`พิมพ์เมื่อ: ${now}`, margin, 289)
+    doc.text('วิทยาลัยเทคนิคเลย — เอกสารนี้ออกโดยระบบอัตโนมัติ', pageW / 2, 289, { align: 'center' })
+    doc.text('หน้า 1/1', pageW - margin, 289, { align: 'right' })
+
+    doc.save(`เอกสารการสมัคร-${fullName}.pdf`)
+
+  } catch (err) {
+    console.error('downloadDocModalPDF error:', err)
+    alert('สร้าง PDF ไม่สำเร็จ กรุณาตรวจสอบไฟล์ font ที่ public/fonts/THSarabunNew.ttf')
+  } finally {
+    ocrProgress.value.running = false
+  }
+}
 </script>

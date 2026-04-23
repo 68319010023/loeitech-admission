@@ -54,7 +54,9 @@
         <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
           <div>
             <p class="font-bold text-gray-800 text-base">{{ docModal.name }}</p>
-            <p class="text-xs text-gray-400 mt-0.5">เอกสารที่อัพโหลด {{ docModal.documents.filter(d => !d.doc_type.startsWith('__')).length }} รายการ</p>
+            <p class="text-xs text-gray-400 mt-0.5">
+              เอกสารที่อัพโหลด {{ docModal.documents.filter(d => !d.doc_type.startsWith('__')).length }} รายการ
+            </p>
           </div>
           <button @click="docModal.open = false" class="p-2 hover:bg-gray-100 rounded-lg transition">
             <X class="w-5 h-5 text-gray-500" />
@@ -66,7 +68,8 @@
           <!-- Sidebar -->
           <div class="w-36 flex-shrink-0 border-r border-gray-100 overflow-y-auto bg-gray-50">
             <button v-for="doc in docModal.documents" :key="doc.doc_type"
-              @click="docModal.activeTab = doc.doc_type; docModal.imgError = false" :class="[
+              @click="docModal.activeTab = doc.doc_type; docModal.imgError = false"
+              :class="[
                 'w-full flex flex-col items-center gap-1.5 px-2 py-3 text-center transition border-l-2',
                 docModal.activeTab === doc.doc_type
                   ? 'text-blue-600 border-blue-500 bg-white font-semibold'
@@ -80,14 +83,13 @@
           <!-- Content -->
           <div class="flex-1 flex items-center justify-center bg-gray-50 p-4 overflow-auto">
 
-            <!-- ✅ Tab ใบรับรองการมอบตัว -->
+            <!-- Tab ใบรับรองการมอบตัว -->
             <div v-if="docModal.activeTab === '__certificate__'"
               class="flex flex-col items-center gap-4 text-center">
               <span class="text-6xl">📜</span>
               <p class="text-gray-700 font-semibold text-base">ใบรับรองการมอบตัว</p>
               <p class="text-gray-400 text-sm">กดปุ่มด้านล่างเพื่อดาวน์โหลด PDF</p>
-              <button @click="downloadCertPDF"
-                :disabled="downloading"
+              <button @click="downloadCertPDF" :disabled="downloading"
                 class="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-semibold text-sm transition disabled:opacity-50">
                 <span>⬇️</span>
                 {{ downloading ? 'กำลังสร้าง PDF...' : 'ดาวน์โหลดใบรับรอง PDF' }}
@@ -143,14 +145,19 @@ import { Eye, ExternalLink, X } from 'lucide-vue-next'
 import { apiService } from '@/utils/api'
 import jsPDF from 'jspdf'
 
+// ─── Config ───────────────────────────────────────────────────────────────────
+
 const API_BASE = (import.meta.env.VITE_API_URL as string)?.replace(/\/api$/, '') || 'http://localhost:3001'
-const resolveUrl = (path: string | null | undefined) => {
+
+const resolveUrl = (path: string | null | undefined): string => {
   if (!path) return ''
   if (path.startsWith('http')) return path
   const token = localStorage.getItem('auth_token')
   const sep = path.includes('?') ? '&' : '?'
   return `${API_BASE}${path}${token ? `${sep}token=${encodeURIComponent(token)}` : ''}`
 }
+
+// ─── Props / Emits ────────────────────────────────────────────────────────────
 
 const props = defineProps<{
   data: any[]
@@ -164,6 +171,8 @@ const emit = defineEmits<{
   'update:date-search': [val: string]
 }>()
 
+// ─── Table ────────────────────────────────────────────────────────────────────
+
 const dateSearch = ref('')
 watch(dateSearch, (val) => emit('update:date-search', val))
 
@@ -176,6 +185,8 @@ const toggleRow = (id: string) => {
   else current.splice(idx, 1)
   emit('update:selected-ids', current)
 }
+
+// ─── Modal state ──────────────────────────────────────────────────────────────
 
 const docModal = ref<{
   open: boolean
@@ -200,6 +211,8 @@ const docModal = ref<{
 const blobUrl = ref<string>('')
 const downloading = ref(false)
 
+// ─── URL helpers ──────────────────────────────────────────────────────────────
+
 const currentDocUrl = computed(() =>
   resolveUrl(docModal.value.documents.find(d => d.doc_type === docModal.value.activeTab)?.file_url)
 )
@@ -208,12 +221,14 @@ const openInNewTab = () => {
   if (currentDocUrl.value) window.open(currentDocUrl.value, '_blank')
 }
 
+// ─── Open modal ───────────────────────────────────────────────────────────────
+
 const openDocModal = async (row: any) => {
   docModal.value = {
     open: true,
     name: `${row.คำนำหน้า}${row.ชื่อ_นามสกุล}`,
     appId: row.ลำดับ,
-    rowData: row, // ✅ เก็บ row ทั้งก้อนไว้ใช้ตอน download
+    rowData: row,
     documents: [],
     activeTab: '',
     imgError: false,
@@ -227,7 +242,6 @@ const openDocModal = async (row: any) => {
       docModal.value.documents = docs.filter((d: any, i: number, self: any[]) =>
         i === self.findIndex((t: any) => t.doc_type === d.doc_type)
       )
-      // ✅ เพิ่ม tab ใบรับรอง
       docModal.value.documents.push({ doc_type: '__certificate__', file_url: '' })
       docModal.value.activeTab = docModal.value.documents[0]?.doc_type || ''
     }
@@ -236,53 +250,61 @@ const openDocModal = async (row: any) => {
   }
 }
 
-const docTypeIcon = (type: string): string => {
-  const icons: Record<string, string> = {
-    'id_front': '🪪', 'id_back': '🪪',
-    'edu_front': '📄', 'edu_back': '📄',
-    'letter_front': '📋', 'letter_back': '📋',
-    'certificate_front': '📋', 'certificate_back': '📋',
-    'student_card_front': '🎓', 'student_card_back': '🎓',
-    'studentcard_front': '🎓', 'studentcard_back': '🎓',
-    'self_house_front': '🏠', 'self_house_back': '🏠',
-    'father_house_front': '👨', 'father_house_back': '👨',
-    'mother_house_front': '👩', 'mother_house_back': '👩',
-    'payment_slip': '💸',
-    '__certificate__': '📜',
-  }
-  return icons[type] || '📎'
-}
+// ─── Icon / Label maps ────────────────────────────────────────────────────────
 
-const docTypeShortLabel = (type: string): string => {
-  const labels: Record<string, string> = {
-    'id_front': 'บัตรหน้า', 'id_back': 'บัตรหลัง',
-    'edu_front': 'วุฒิการศึกษา', 'edu_back': 'วุฒิการศึกษาหลัง',
-    'letter_front': 'หนังสือรับรอง', 'letter_back': 'หนังสือรับรองหลัง',
-    'certificate_front': 'ใบรับรอง', 'certificate_back': 'ใบรับรองหลัง',
-    'student_card_front': 'บัตรนักเรียน', 'student_card_back': 'บัตรนักเรียนหลัง',
-    'studentcard_front': 'บัตรนักเรียน', 'studentcard_back': 'บัตรนักเรียนหลัง',
-    'self_house_front': 'สำเนาทะเบียนบ้าน (หน้า)', 'self_house_back': 'สำเนาทะเบียนบ้าน (หลัง)',
-    'father_house_front': 'สำเนาทะเบียนบ้านของบิดา (หน้า)', 'father_house_back': 'สำเนาทะเบียนบ้านของบิดา (หลัง)',
-    'mother_house_front': 'สำเนาทะเบียนบ้านของมารดา (หน้า)', 'mother_house_back': 'สำเนาทะเบียนบ้านของมารดา (หลัง)',
-    'payment_slip': 'สลิปโอนเงิน',
-    '__certificate__': 'ใบรับรองมอบตัว',
-  }
-  return labels[type] || type
-}
+const docTypeIcon = (type: string): string => ({
+  id_front: '🪪', id_back: '🪪',
+  edu_front: '📄', edu_back: '📄',
+  letter_front: '📋', letter_back: '📋',
+  certificate_front: '📋', certificate_back: '📋',
+  student_card_front: '🎓', student_card_back: '🎓',
+  studentcard_front: '🎓', studentcard_back: '🎓',
+  self_house_front: '🏠', self_house_back: '🏠',
+  father_house_front: '👨', father_house_back: '👨',
+  mother_house_front: '👩', mother_house_back: '👩',
+  payment_slip: '💸',
+  __certificate__: '📜',
+} as Record<string, string>)[type] ?? '📎'
+
+const docTypeShortLabel = (type: string): string => ({
+  id_front: 'บัตรหน้า', id_back: 'บัตรหลัง',
+  edu_front: 'วุฒิการศึกษา', edu_back: 'วุฒิการศึกษาหลัง',
+  letter_front: 'หนังสือรับรอง', letter_back: 'หนังสือรับรองหลัง',
+  certificate_front: 'ใบรับรอง', certificate_back: 'ใบรับรองหลัง',
+  student_card_front: 'บัตรนักเรียน', student_card_back: 'บัตรนักเรียนหลัง',
+  studentcard_front: 'บัตรนักเรียน', studentcard_back: 'บัตรนักเรียนหลัง',
+  self_house_front: 'สำเนาทะเบียนบ้าน (หน้า)', self_house_back: 'สำเนาทะเบียนบ้าน (หลัง)',
+  father_house_front: 'สำเนาทะเบียนบ้านของบิดา (หน้า)', father_house_back: 'สำเนาทะเบียนบ้านของบิดา (หลัง)',
+  mother_house_front: 'สำเนาทะเบียนบ้านของมารดา (หน้า)', mother_house_back: 'สำเนาทะเบียนบ้านของมารดา (หลัง)',
+  payment_slip: 'สลิปโอนเงิน',
+  __certificate__: 'ใบรับรองมอบตัว',
+} as Record<string, string>)[type] ?? type
+
+// ─── Watch: โหลดรูปเมื่อเปลี่ยน tab ─────────────────────────────────────────
 
 watch(
   () => [docModal.value.activeTab, docModal.value.documents] as const,
   async ([tab]) => {
-    blobUrl.value = ''
+    // Revoke blob เก่าก่อนเสมอ
+    if (blobUrl.value) {
+      URL.revokeObjectURL(blobUrl.value)
+      blobUrl.value = ''
+    }
+
     if (!tab || tab.startsWith('__')) return
+
     const url = resolveUrl(
       docModal.value.documents.find(d => d.doc_type === tab)?.file_url
     )
     if (!url) return
+
     docModal.value.imgLoading = true
     docModal.value.imgError = false
+
     try {
-      const res = await fetch(url)
+      // Cache busting — บังคับ fetch ใหม่ทุกครั้ง
+      const sep = url.includes('?') ? '&' : '?'
+      const res = await fetch(`${url}${sep}_t=${Date.now()}`)
       if (!res.ok) throw new Error('fetch failed')
       const blob = await res.blob()
       blobUrl.value = URL.createObjectURL(blob)
@@ -295,7 +317,8 @@ watch(
   { immediate: true, deep: true }
 )
 
-// ✅ Load font สำหรับ PDF
+// ─── Load font สำหรับ PDF ─────────────────────────────────────────────────────
+
 async function loadFont(): Promise<string> {
   const res = await fetch('/fonts/THSarabunNew.ttf')
   const buffer = await res.arrayBuffer()
@@ -305,14 +328,14 @@ async function loadFont(): Promise<string> {
   return btoa(binary)
 }
 
-// ✅ Download PDF ใบรับรองการมอบตัว
+// ─── Download PDF ใบรับรองการมอบตัว ──────────────────────────────────────────
+
 async function downloadCertPDF() {
   if (!docModal.value.rowData) return
   downloading.value = true
 
   try {
     const row = docModal.value.rowData
-    // map field จาก row ของตาราง → ตรงกับ field ที่ใช้ใน PDF
     const d = {
       prefix: row.คำนำหน้า,
       full_name: row.ชื่อ_นามสกุล,

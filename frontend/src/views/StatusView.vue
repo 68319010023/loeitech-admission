@@ -1,7 +1,7 @@
 <template>
   <div class="max-w-4xl mx-auto">
     <div class="bg-white rounded-2xl shadow-sm p-8">
-      
+
       <!-- Document List -->
       <div class="mb-8">
         <h2 class="text-lg font-semibold text-gray-700 flex items-center gap-2 mb-6">
@@ -32,7 +32,8 @@
             </div>
             <div class="flex-1">
               <h3 class="text-lg font-semibold text-gray-800 mb-1">สลิปการโอนชำระค่าบำรุงการศึกษาและเครื่องแบบ</h3>
-              <p class="text-gray-600 text-sm">กรุณาเตรียมสลิปการโอนเงินที่แสดงการชำระค่าบำรุงการศึกษาและค่าเครื่องแบบให้เรียบร้อย</p>
+              <p class="text-gray-600 text-sm">
+                กรุณาเตรียมสลิปการโอนเงินที่แสดงการชำระค่าบำรุงการศึกษาและค่าเครื่องแบบให้เรียบร้อย</p>
             </div>
           </div>
         </div>
@@ -50,12 +51,9 @@
             <label for="idType" class="block text-sm font-medium text-gray-700 mb-2">
               ประเภทเอกสารยืนยันตัวตน *
             </label>
-            <select 
-              id="idType"
-              v-model="selectedIdType"
+            <select id="idType" v-model="selectedIdType"
               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors duration-200 mb-4"
-              @change="resetValidation"
-            >
+              @change="resetValidation">
               <option value="">เลือกประเภทเอกสาร</option>
               <option value="thai_id">บัตรประจำตัวประชาชนไทย</option>
               <option value="alien_id">บัตรประจำตัวคนต่างด้าว</option>
@@ -64,35 +62,25 @@
               <option value="other">เอกสารราชการอื่น ๆ</option>
             </select>
           </div>
-          
-          <div>
+
+          <div v-if="selectedIdType">
             <label for="idCard" class="block text-sm font-medium text-gray-700 mb-2">
               {{ idTypeLabel }} *
             </label>
-            <input 
-              type="text" 
-              id="idCard"
-              :maxlength="maxLength"
-              :pattern="inputPattern"
-              :inputmode="inputMode"
+            <input type="text" id="idCard" :maxlength="maxLength" :pattern="inputPattern" :inputmode="inputMode"
               :placeholder="idTypePlaceholder"
               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors duration-200"
-              @input="validateIdCard"
-              :disabled="!selectedIdType"
-            />
+              @input="validateIdCard" />
             <p class="mt-1 text-xs text-gray-500">{{ idTypeHint }}</p>
             <p v-if="errorMessage" class="mt-2 text-sm text-red-600">{{ errorMessage }}</p>
           </div>
 
           <div class="flex justify-center mt-6">
-            <button 
-              v-if="!applicantInfo"
-              @click="checkApplicant"
-              :disabled="!isValidIdCard || isLoading"
-              class="px-8 py-3 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105"
-            >
+            <button v-if="!applicantInfo" @click="checkApplicant" :disabled="!isValidIdCard || isLoading"
+              class="px-8 py-3 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105">
               <span v-if="isLoading" class="flex items-center gap-2">
-                <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
+                  viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
                 </svg>
@@ -116,11 +104,13 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div v-if="applicantInfo.prefix || applicantInfo.full_name || applicantInfo.name">
                 <p class="text-xs text-gray-400">ชื่อ-นามสกุล</p>
-                <p class="font-medium">{{ applicantInfo.prefix }} {{ applicantInfo.full_name || applicantInfo.name }}</p>
+                <p class="font-medium">{{ applicantInfo.prefix }} {{ applicantInfo.full_name || applicantInfo.name }}
+                </p>
               </div>
               <div v-if="applicantInfo.id_card_number || applicantInfo.id_card || applicantInfo.idCard">
                 <p class="text-xs text-gray-400">เลขบัตรประชาชน</p>
-                <p class="font-medium">{{ applicantInfo.id_card_number || applicantInfo.id_card || applicantInfo.idCard }}</p>
+                <p class="font-medium">{{ applicantInfo.id_card_number || applicantInfo.id_card || applicantInfo.idCard
+                  }}</p>
               </div>
               <div v-if="applicantInfo.phone">
                 <p class="text-xs text-gray-400">เบอร์โทรศัพท์</p>
@@ -136,7 +126,7 @@
               </div>
             </div>
           </div>
-          
+
           <!--  7.  8.  9.  -->
           <div v-if="applicantInfo.cur_name || applicantInfo.div_name" class="bg-emerald-50 rounded-xl p-4">
             <p class="font-medium text-gray-700 mb-3">ข้อมูลการศึกษา</p>
@@ -151,9 +141,11 @@
               </div>
             </div>
           </div>
-          
+
           <!--  10.  11.  12.  13.  -->
-          <div v-if="applicantInfo.prev_school || applicantInfo.prev_level || applicantInfo.prev_year || applicantInfo.gpa" class="bg-blue-50 rounded-xl p-4">
+          <div
+            v-if="applicantInfo.prev_school || applicantInfo.prev_level || applicantInfo.prev_year || applicantInfo.gpa"
+            class="bg-blue-50 rounded-xl p-4">
             <p class="font-medium text-gray-700 mb-3">ข้อมูลการศึกษาก่อนหน้า</p>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div v-if="applicantInfo.prev_school">
@@ -162,7 +154,7 @@
               </div>
               <div v-if="applicantInfo.prev_level">
                 <p class="text-xs text-gray-400">ระดับการศึกษาเดิม</p>
-                <p class="font-medium">{{ applicantInfo.prev_level }}</p>
+                <p class="font-medium">{{ prevLevelLabel(applicantInfo.prev_level) }}</p>
               </div>
               <div v-if="applicantInfo.prev_year">
                 <p class="text-xs text-gray-400">ปีการศึกษาเดิม</p>
@@ -174,9 +166,10 @@
               </div>
             </div>
           </div>
-          
+
           <!--  14.  -->
-          <div v-if="applicantInfo.total_amount || applicantInfo.due_date || applicantInfo.paid_at" class="bg-orange-50 rounded-xl p-4">
+          <div v-if="applicantInfo.total_amount || applicantInfo.due_date || applicantInfo.paid_at"
+            class="bg-orange-50 rounded-xl p-4">
             <p class="font-medium text-gray-700 mb-3">ข้อมูลการชำระเงิน</p>
             <div class="space-y-3">
               <div class="flex items-center justify-between">
@@ -196,13 +189,11 @@
             </div>
           </div>
         </div>
-        
+
         <!-- Proceed Button -->
         <div class="flex justify-center mt-6">
-          <button 
-            @click="handleSubmit"
-            class="px-8 py-3 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition-all duration-200 transform hover:scale-105"
-          >
+          <button @click="handleSubmit"
+            class="px-8 py-3 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition-all duration-200 transform hover:scale-105">
             ดำเนินการต่อ
           </button>
         </div>
@@ -227,6 +218,15 @@ const errorMessage = ref('')
 const isValidIdCard = ref(false)
 const isLoading = ref(false)
 const applicantInfo = ref<any>(null)
+
+const prevLevelLabel = (level: string) => {
+  const map: Record<string, string> = {
+    m3: 'มัธยมศึกษาตอนต้น (ม.3)',
+    m6: 'มัธยมศึกษาตอนปลาย (ม.6)',
+    pvc: 'ประกาศนียบัตรวิชาชีพ (ปวช.)',
+  }
+  return map[level] || level
+}
 
 // Computed properties for different ID types
 const idTypeLabel = computed(() => {
@@ -293,7 +293,7 @@ const resetValidation = () => {
 
 const validateIdCard = (event: Event) => {
   const value = (event.target as HTMLInputElement).value
-  
+
   // Format input based on ID type
   if (selectedIdType.value === 'thai_id') {
     if (!/^\d*$/.test(value)) {
@@ -303,16 +303,16 @@ const validateIdCard = (event: Event) => {
   } else if (selectedIdType.value === 'passport') {
     (event.target as HTMLInputElement).value = value.toUpperCase()
   }
-  
+
   idCard.value = value
-  
+
   if (value.length === 0) {
     errorMessage.value = ''
     isValidIdCard.value = false
   } else {
     let minLength = 1
     let errorMsg = ''
-    
+
     switch (selectedIdType.value) {
       case 'thai_id':
         minLength = 13
@@ -348,7 +348,7 @@ const validateIdCard = (event: Event) => {
         minLength = 1
         errorMsg = 'กรุณาเลือกประเภทเอกสารก่อน'
     }
-    
+
     if (errorMsg) {
       errorMessage.value = errorMsg
       isValidIdCard.value = false

@@ -39,73 +39,104 @@ export const verifySlip = async (req: Request, res: Response) => {
     const formData = new FormData()
     formData.append('files', fs.createReadStream(file.path), file.originalname)
 
-    const slipokRes = await axios.post(
-      `https://api.slipok.com/api/line/apikey/${process.env.SLIPOK_BRANCH_ID}`,
-      formData,
-      {
-        headers: {
-          ...formData.getHeaders(),
-          'x-authorization': process.env.SLIPOK_API_KEY,
-        },
-      }
-    )
+    let slipokData: any = null
+    let slipokError: string = ''
 
-    const data = slipokRes.data  // ✅ ไม่ลบไฟล์ก่อน
-
-    if (!data.success) {
-      if (fs.existsSync(file.path)) fs.unlinkSync(file.path) // ❌ ไม่ผ่าน ค่อยลบ
-      return sendSuccess(res, {
-        valid: false,
-        message: data.message ?? 'สลิปไม่ถูกต้อง',
-      })
+    try {
+      const slipokRes = await axios.post(
+        `https://api.slipok.com/api/line/apikey/${process.env.SLIPOK_BRANCH_ID}`,
+        formData,
+        {
+          headers: {
+            ...formData.getHeaders(),
+            'x-authorization': process.env.SLIPOK_API_KEY,
+          },
+        }
+      )
+      slipokData = slipokRes.data
+    } catch (err: any) {
+      slipokError = err.response?.data?.message ?? 'ไม่สามารถติดต่อ SlipOK ได้'
     }
 
-    const slipAmount = Number(data.data.amount)
+    // ❌ SlipOK ติดต่อไม่ได้ หรือ API error
+    if (!slipokData || !slipokData.success) {
+      const errMsg = slipokData?.message ?? slipokError ?? 'สลิปไม่ถูกต้อง'
+
+      // ✅ save slip_approved = false + error message
+      await pool.query(`
+        UPDATE payments
+        SET 
+          slip_path          = $1,
+          slip_name          = $2,
+          paid_at            = NOW(),
+          slip_approved      = false,
+          slip_error_message = $3
+        WHERE app_id = $4
+      `, [file.path, file.originalname, errMsg, app_id])
+
+      if (fs.existsSync(file.path)) fs.unlinkSync(file.path)
+      return sendSuccess(res, { valid: false, message: errMsg })
+    }
+
+    const slipAmount = Number(slipokData.data.amount)
     const requiredAmount = Number(total_amount)
 
+    // ❌ ยอดไม่ครบ
     if (slipAmount < requiredAmount) {
-      if (fs.existsSync(file.path)) fs.unlinkSync(file.path) // ❌ ไม่ผ่าน ค่อยลบ
-      return sendSuccess(res, {
-        valid: false,
-        message: `ยอดโอนไม่ครบ โอนมา ${slipAmount.toLocaleString()} บาท แต่ต้องชำระ ${requiredAmount.toLocaleString()} บาท`,
-      })
+      const errMsg = `ยอดโอนไม่ครบ โอนมา ${slipAmount.toLocaleString()} บาท แต่ต้องชำระ ${requiredAmount.toLocaleString()} บาท`
+
+      // ✅ save slip_approved = false + error message
+      await pool.query(`
+        UPDATE payments
+        SET 
+          slip_path          = $1,
+          slip_name          = $2,
+          paid_at            = NOW(),
+          slip_approved      = false,
+          slip_error_message = $3
+        WHERE app_id = $4
+      `, [file.path, file.originalname, errMsg, app_id])
+
+      if (fs.existsSync(file.path)) fs.unlinkSync(file.path)
+      return sendSuccess(res, { valid: false, message: errMsg })
     }
 
-    // ✅ สลิปผ่าน → save slip_path ด้วย
-   await pool.query(`
-  UPDATE applicants
-  SET status = 'pending_approve', paid_at = NOW()
-  WHERE app_id = $1
-`, [app_id])
+    // ✅ สลิปผ่าน — save slip_approved = true
+    await pool.query(`
+      UPDATE applicants
+      SET status = 'pending_approve', paid_at = NOW()
+      WHERE app_id = $1
+    `, [app_id])
 
     await pool.query(`
       UPDATE payments
       SET 
-        slip_path     = $1,
-        slip_name     = $2,
-        paid_at       = NOW(),
-        slip_sender   = $3,
-        slip_receiver = $4
+        slip_path          = $1,
+        slip_name          = $2,
+        paid_at            = NOW(),
+        slip_sender        = $3,
+        slip_receiver      = $4,
+        slip_approved      = true,
+        slip_error_message = ''
       WHERE app_id = $5
     `, [
       file.path,
       file.originalname,
-      data.data.sender?.displayName ?? '-',
-      data.data.receiver?.displayName ?? '-',
+      slipokData.data.sender?.displayName ?? '-',
+      slipokData.data.receiver?.displayName ?? '-',
       app_id
     ])
 
     return sendSuccess(res, {
       valid: true,
       amount: slipAmount,
-      date: data.data.transDate,
-      sender: data.data.sender?.displayName ?? '-',
-      receiver: data.data.receiver?.displayName ?? '-',
+      date: slipokData.data.transDate,
+      sender: slipokData.data.sender?.displayName ?? '-',
+      receiver: slipokData.data.receiver?.displayName ?? '-',
     })
 
   } catch (err: any) {
     if (req.file?.path && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path)
-
     const slipokError = err.response?.data
     if (slipokError?.code) {
       return sendSuccess(res, {
@@ -113,7 +144,6 @@ export const verifySlip = async (req: Request, res: Response) => {
         message: slipokError.message ?? 'สลิปไม่ถูกต้อง',
       })
     }
-
     sendError(res, 'ตรวจสอบสลิปไม่สำเร็จ', 500, err)
   }
 }
@@ -143,9 +173,9 @@ export const confirmEnrollment = async (req: Request, res: Response) => {
 
     const { app_id, status } = applicant.rows[0]
 
-    // ✅ ต้องเป็น paid หรือ enrolled เท่านั้น (enrolled = มอบตัวซ้ำได้ แค่ upsert)
-if (status === 'pending_payment') {
-  return sendError(res, 'กรุณารอ admin ยืนยันการชำระเงินก่อน', 400)
+   
+if (status === 'enrolled' || status === 'paid') {
+  return sendError(res, 'มอบตัวเรียบร้อยแล้ว ไม่สามารถแก้ไขได้', 400)
 }
 
 await client.query(`

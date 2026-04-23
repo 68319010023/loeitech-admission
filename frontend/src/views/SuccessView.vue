@@ -226,7 +226,24 @@
             <button @click="handleNextClick" :disabled="isVerifyingSlip"
               class="px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium">ถัดไป</button>
           </div>
+                  <!-- ⚠️ SlipOK -->
+<div v-if="slipVerifyResult && !slipVerifyResult.valid && !isVerifyingSlip"
+  class="mt-4 flex items-center gap-3 bg-amber-50 border border-amber-200 p-4 rounded-xl">
+  <div class="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+    <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+    </svg>
+  </div>
+  <div>
+    <p class="text-sm font-semibold text-amber-700">SlipOK ตรวจสอบไม่สำเร็จ</p>
+    <p class="text-xs text-amber-500 mt-0.5">{{ slipVerifyResult.message }} — Admin จะตรวจสอบสลิปของท่านอีกครั้ง กดถัดไปเพื่อดำเนินการต่อได้</p>
+  </div>
+</div>
+
         </div>
+
+
         <!-- Step 3: Confirmation -->
         <div v-if="currentStep === 2" class="mb-8">
           <div class="text-center mb-6">
@@ -405,25 +422,103 @@
         </div>
 
         <!-- Step 4: Success -->
+
         <div v-if="currentStep === 3" class="mb-8">
           <div class="text-center py-8">
+
+            <!-- ไอคอน -->
             <div class="relative w-24 h-24 mx-auto mb-6">
-              <div class="absolute inset-0 bg-emerald-100 rounded-full animate-ping opacity-30"></div>
-              <div class="relative w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg">
+              <div class="absolute inset-0 rounded-full animate-ping opacity-20"
+                :class="userData.status === 'enrolled' ? 'bg-emerald-400' : 'bg-amber-400'"></div>
+              <div class="relative w-24 h-24 rounded-full flex items-center justify-center shadow-lg"
+                :class="userData.status === 'enrolled' ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' : 'bg-gradient-to-br from-amber-400 to-amber-600'">
                 <CheckBadgeIcon class="w-12 h-12 text-white" />
               </div>
             </div>
-            <h2 class="text-2xl font-bold text-gray-800 mb-2">ระบบบันทึกการมอบตัวแล้ว</h2>
-            <p class="text-gray-500 mb-2">ขอบคุณที่ดำเนินการมอบตัวเรียบร้อยแล้ว</p>
-            <p class="text-sm text-amber-600 font-medium mb-8">กรุณารอเจ้าหน้าที่ตรวจสอบข้อมูล 1-3 วันทำการ</p>
 
-            <!-- แสดงปุ่มดาวน์โหลด PDF เฉพาะเมื่อ admin ยืนยันแล้ว -->
-<template v-if="userData.status === 'enrolled'">
-  <div class="flex flex-col sm:flex-row justify-center gap-3 mt-6">
-    <button @click="downloadPDFs"
-      class="px-6 py-3 border border-emerald-500 text-emerald-600 rounded-lg hover:bg-emerald-50 transition-colors font-medium flex items-center justify-center gap-2">
-      <ArrowDownTrayIcon class="w-4 h-4" />
-      ดาวน์โหลดเอกสาร PDF
+            <!-- enrolled -->
+            <template v-if="userData.status === 'enrolled'">
+              <div
+                class="inline-flex items-center gap-2 bg-emerald-100 text-emerald-700 text-xs font-semibold px-3 py-1 rounded-full mb-3">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse inline-block"></span>
+                ได้รับการยืนยันแล้ว
+              </div>
+              <h2 class="text-2xl font-bold text-gray-800 mb-2">คุณได้รับการมอบตัวแล้ว 🎉</h2>
+              <p class="text-gray-500 mb-8">ยินดีด้วย! การมอบตัวของคุณได้รับการยืนยันเรียบร้อยแล้ว</p>
+
+              <!-- การ์ดข้อมูล -->
+              <div
+                class="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-5 max-w-md mx-auto mb-8 text-left">
+                <div class="space-y-3">
+                  <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-500">ชื่อ-สกุล</span>
+                    <span class="text-sm font-semibold text-gray-800">{{ userData.prefix }}{{ userData.fullName
+                      }}</span>
+                  </div>
+                  <div class="border-t border-emerald-100"></div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-500">หลักสูตร</span>
+                    <span class="text-sm font-semibold text-gray-800">{{ userData.curName }}</span>
+                  </div>
+                  <div class="border-t border-emerald-100"></div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-500">สาขาวิชา</span>
+                    <span class="text-sm font-semibold text-gray-800">{{ userData.divName }}</span>
+                  </div>
+                  <div class="border-t border-emerald-100"></div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-500">ยอดชำระ</span>
+                    <span class="text-sm font-bold text-emerald-600">{{ userData.totalAmount.toLocaleString() }}
+                      บาท</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex flex-col sm:flex-row justify-center gap-3">
+                <button @click="downloadPDFs"
+                  class="px-6 py-3 border-2 border-emerald-500 text-emerald-600 rounded-xl hover:bg-emerald-50 transition-colors font-medium flex items-center justify-center gap-2">
+                  <ArrowDownTrayIcon class="w-4 h-4" />
+                  ดาวน์โหลดเอกสาร PDF
+                </button>
+                <button @click="router.push('/check-status')"
+                  class="px-6 py-3  bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-all font-medium shadow-md">
+                  กลับหน้าหลัก
+                </button>
+              </div>
+            </template>
+
+            <!-- pending / อื่นๆ -->
+            <template v-else>
+              <div
+                class="inline-flex items-center gap-2 bg-amber-100 text-amber-700 text-xs font-semibold px-3 py-1 rounded-full mb-3">
+                <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse inline-block"></span>
+                รอการตรวจสอบ
+              </div>
+              <h2 class="text-2xl font-bold text-gray-800 mb-2">ระบบบันทึกการมอบตัวแล้ว</h2>
+              <p class="text-gray-500 mb-2">ขอบคุณที่ดำเนินการมอบตัวเรียบร้อยแล้ว</p>
+              <p class="text-sm text-amber-600 font-medium mb-8">กรุณารอเจ้าหน้าที่ตรวจสอบข้อมูล 1-3 วันทำการ</p>
+
+              <div
+                class="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-5 max-w-md mx-auto mb-8 text-left">
+                <div class="flex items-start gap-3">
+                  <div class="w-9 h-9 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-sm font-semibold text-amber-700 mb-1">สถานะ: รอตรวจสอบ</p>
+                    <p class="text-xs text-amber-600 leading-relaxed">
+                      เจ้าหน้าที่จะตรวจสอบเอกสารและหลักฐานการชำระเงินของท่าน ภายใน 1-3 วันทำการ
+                      เมื่อได้รับการยืนยันแล้วท่านจะสามารถดาวน์โหลดเอกสารได้</p>
+                  </div>
+                </div>
+              </div>
+               <div class="flex flex-col sm:flex-row justify-center gap-3">
+    <button @click="currentStep = 0; userData.status = ''"
+      class="px-6 py-3  border-2 border-emerald-500 text-emerald-600 rounded-xl hover:bg-emerald-50 transition-colors font-medium">
+      ย้อนกลับแก้ไขข้อมูล
     </button>
     <button @click="router.push('/check-status')"
       class="px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors font-medium">
@@ -432,26 +527,9 @@
   </div>
 </template>
 
-<template v-else>
-  <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 max-w-md mx-auto mb-6 text-left">
-    <div class="flex items-start gap-3">
-      <svg class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-      <div>
-        <p class="text-sm font-semibold text-amber-700 mb-1">สถานะ: รอตรวจสอบ</p>
-        <p class="text-xs text-amber-600">เจ้าหน้าที่จะตรวจสอบเอกสารและหลักฐานการชำระเงินของท่าน ภายใน 1-3 วันทำการ เมื่อได้รับการยืนยันแล้วท่านจะสามารถดาวน์โหลดเอกสารได้</p>
-      </div>
-    </div>
-  </div>
-  <button @click="router.push('/check-status')"
-    class="px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors font-medium">
-    กลับหน้าหลัก
-  </button>
-</template>
-         </div>
-        </div> 
-       
+          </div>
+        </div>
+
 
 
       </template>
@@ -548,6 +626,7 @@ onMounted(async () => {
   try {
     const res = await api.get(`/applications/check/${idCard}`)
     const data = res.data?.data
+    console.log('data:', data) 
 
     userData.value = {
       fullName: data.full_name,
@@ -569,29 +648,40 @@ onMounted(async () => {
     }
 
     // โหลดรูปเดิมที่เคยอัปโหลดไว้
-    if (data.self_front_url) selfHouseRegistration.frontPreview = data.self_front_url
-    if (data.self_back_url) selfHouseRegistration.backPreview = data.self_back_url
-    if (data.father_front_url) fatherHouseRegistration.frontPreview = data.father_front_url
-    if (data.father_back_url) fatherHouseRegistration.backPreview = data.father_back_url
-    if (data.mother_front_url) motherHouseRegistration.frontPreview = data.mother_front_url
-    if (data.mother_back_url) motherHouseRegistration.backPreview = data.mother_back_url
 
-    if (data.payment_slip_url) {
-      paymentSlip.frontPreview = data.payment_slip_url
-      slipVerifyResult.value = { valid: true }
-    }
 
-if (data.status === 'pending_approve' || data.status === 'enrolled') {
-  currentStep.value = 3
-} else if (data.status === 'paid') {
-  currentStep.value = 2  
+const toUrl = (path: string) => {
+  if (!path) return ''
+  const cleanPath = path.replace(/\\/g, '/').replace(/^\//, '')
+  return `http://localhost:3001/${cleanPath}`
 }
+  
+
+if (data.self_front_url) selfHouseRegistration.frontPreview = toUrl(data.self_front_url)
+if (data.self_back_url) selfHouseRegistration.backPreview = toUrl(data.self_back_url)
+if (data.father_front_url) fatherHouseRegistration.frontPreview = toUrl(data.father_front_url)
+if (data.father_back_url) fatherHouseRegistration.backPreview = toUrl(data.father_back_url)
+if (data.mother_front_url) motherHouseRegistration.frontPreview = toUrl(data.mother_front_url)
+if (data.mother_back_url) motherHouseRegistration.backPreview = toUrl(data.mother_back_url)
+if (data.payment_slip_url) {
+  paymentSlip.frontPreview = toUrl(data.payment_slip_url)
+}
+
+    if (data.status === 'enrolled') {
+  currentStep.value = 3
+} else if (data.status === 'pending_approve') {
+  currentStep.value = 3  // รอ admin อยู่ก็ไป step สุดท้ายได้ แต่ไม่ต้องบล็อกการแก้
+} else if (data.status === 'paid') {
+  currentStep.value = 2
+}
+
   } catch {
     showToast('error', 'โหลดข้อมูลไม่สำเร็จ', 'ไม่สามารถดึงข้อมูลได้ กรุณาลองใหม่')
     setTimeout(() => router.push('/check-status'), 2000)
   } finally {
     isLoadingData.value = false
   }
+ 
 })
 
 // ตรวจสอบว่าเอกสารครบก่อนไป step ถัดไป
@@ -600,10 +690,8 @@ const isAllDocumentsUploaded = computed(() => {
     return !!(selfHouseRegistration.frontPreview && selfHouseRegistration.backPreview)
   }
   if (currentStep.value === 1) {
-    // มีสลิปเดิม (ไม่ได้อัปใหม่) หรือ อัปใหม่แล้วผ่าน
-    const hasExistingSlip = !!(paymentSlip.frontPreview && !paymentSlip.front)
-    const hasNewVerifiedSlip = !!(paymentSlip.frontPreview && slipVerifyResult.value?.valid === true)
-    return hasExistingSlip || hasNewVerifiedSlip
+
+ return !!paymentSlip.frontPreview
   }
   return true
 })
@@ -646,14 +734,11 @@ const handleSlipUpload = async (event: Event) => {
     const result: SlipVerifyResult = res.data.data
     slipVerifyResult.value = result
 
-  if (result.valid) {
-  showToast('success', 'อัปโหลดสลิปสำเร็จ ✅', `ยอดโอน ${result.amount?.toLocaleString()} บาท กรุณากดถัดไปเพื่อดำเนินการต่อ`)
-} else {
-      paymentSlip.front = null
-      paymentSlip.frontPreview = ''
-      slipVerifyResult.value = null
-      showToast('error', 'สลิปไม่ถูกต้อง ❌', result.message || 'กรุณาอัปโหลดสลิปใหม่อีกครั้ง')
-    }
+    if (result.valid) {
+      showToast('success', 'อัปโหลดสลิปสำเร็จ ✅', `ยอดโอน ${result.amount?.toLocaleString()} บาท กรุณากดถัดไปเพื่อดำเนินการต่อ`)
+   } else {
+  showToast('error', 'SlipOK แจ้งว่าสลิปอาจมีปัญหา ⚠️', result.message || 'Admin จะตรวจสอบอีกครั้ง')
+}
 
   } catch {
     paymentSlip.front = null
@@ -670,18 +755,17 @@ const goBack = () => router.push('/check-status')
 const goBackStep = () => { if (currentStep.value > 0) currentStep.value-- }
 
 const handleNextClick = () => {
-  
-  if (userData.value.status === 'pending_approve' || userData.value.status === 'enrolled') {
-    showToast('error', 'ไม่สามารถแก้ไขได้', 'อยู่ระหว่างรอ admin ตรวจสอบ')
+
+    if (userData.value.status === 'enrolled' && currentStep.value === 3) {
     return
   }
 
+  if (status === 'enrolled' || status === 'paid') {
+  showToast('error', 'มอบตัวเรียบร้อยแล้ว', '')
+  return
+}
   if (!isAllDocumentsUploaded.value) {
-    if (currentStep.value === 1 && paymentSlip.frontPreview && !slipVerifyResult.value?.valid) {
-      showToast('error', 'สลิปยังไม่ผ่านการตรวจสอบ', 'กรุณารอผลการตรวจสอบหรืออัปโหลดสลิปใหม่')
-    } else {
-      showToast('error', 'อัปโหลดไม่ครบ', 'กรุณาอัปโหลดรูปภาพให้ครบทุกรายการก่อนดำเนินการต่อ')
-    }
+ showToast('error', 'กรุณาอัปโหลดสลิป', 'กรุณาอัปโหลดหลักฐานการชำระเงินก่อนดำเนินการต่อ')
     return
   }
 
@@ -707,7 +791,7 @@ const handleConfirmation = async () => {
     })
 
     // ✅ อัปเดต local status และ generate PDF เสมอ
-   userData.value.status = 'pending_approve'
+    userData.value.status = 'pending_approve'
 
 
     currentStep.value = 3

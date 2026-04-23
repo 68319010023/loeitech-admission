@@ -12,7 +12,7 @@ export const applicationService = {
 
     // ดึงค่าใช้จ่าย
     getExpenses: (cur_id?: number) =>
-        api.get('/admin/expense-detail', { params: { cur_id } }),
+        api.get('/applications/expenses', { params: { cur_id } }),
 
     // ดึงแผนรับสมัคร
     getAdmissionPlan: (prev_level?: string, ap_years?: string) =>

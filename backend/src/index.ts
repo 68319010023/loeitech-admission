@@ -47,7 +47,7 @@ app.use('/api/applications', applicationRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/enrollments', enrollmentRoutes) 
 
-app.use('/uploads', requireAuth, async (req, res, next) => {
+app.use('/uploads', async (req, res, next) => {
   try {
     const decodedPath = decodeURIComponent(req.path)
     const fullPath = path.join(__dirname, '../uploads', decodedPath)

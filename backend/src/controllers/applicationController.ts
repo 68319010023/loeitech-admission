@@ -240,8 +240,9 @@ export const checkStatus = async (req: Request, res: Response) => {
         c.cur_name, d.div_name,
         p.total_amount, p.required_amount, p.due_date,
         p.paid_at, p.verified_at, p.slip_sender, p.slip_receiver,
+        p.slip_approved,           
+        p.slip_error_message,
         e.enrolled_at, e.verified_at AS enroll_verified_at,
-        -- ดึง URL รูปที่เคยอัพไว้
         MAX(CASE WHEN doc.doc_type = 'self_house_front'   THEN doc.file_path END) AS self_front_url,
         MAX(CASE WHEN doc.doc_type = 'self_house_back'    THEN doc.file_path END) AS self_back_url,
         MAX(CASE WHEN doc.doc_type = 'father_house_front' THEN doc.file_path END) AS father_front_url,
@@ -256,13 +257,14 @@ export const checkStatus = async (req: Request, res: Response) => {
       LEFT JOIN enrollments e ON e.app_id = a.app_id
       LEFT JOIN documents doc ON doc.app_id = a.app_id
       WHERE a.id_card_number = $1
-        GROUP BY
+      GROUP BY
         a.app_id, a.prefix, a.full_name, a.status, a.created_at,
         a.phone, a.id_card_number, a.address, a.email,
         a.prev_school, a.prev_level, a.prev_year, a.gpa,
         c.cur_name, d.div_name,
         p.total_amount, p.required_amount, p.due_date,
         p.paid_at, p.verified_at, p.slip_sender, p.slip_receiver,
+        p.slip_approved, p.slip_error_message,
         e.enrolled_at, e.verified_at
     `, [idCard])
 
@@ -289,6 +291,8 @@ sendSuccess(res, {
   payment_slip_url: toUrl(row.payment_slip_url),
   slip_sender: row.slip_sender ?? '-',
   slip_receiver: row.slip_receiver ?? '-',
+    slip_approved:     row.slip_approved ?? null,       
+      slip_error_message: row.slip_error_message ?? '', 
 })
 
 

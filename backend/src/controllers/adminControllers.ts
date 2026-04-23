@@ -100,24 +100,31 @@ export const getApplicantDocuments = async (req: Request, res: Response) => {
     const { app_id } = req.params;
     const appId = Array.isArray(app_id) ? app_id[0] : app_id;
     
-    const query = `
-      SELECT 
-        d.doc_id,
-        d.doc_type,
-        d.file_name,
-        d.file_path,
-        d.file_size,
-        d.uploaded_at,
-        a.prefix,
-        a.full_name,
-        a.id_card_number
-      FROM documents d
-      JOIN applicants a ON d.app_id = a.app_id
-      WHERE d.app_id = $1
-      ORDER BY d.uploaded_at ASC
-    `;
+  const query = `
+  SELECT 
+    d.doc_id,
+    d.doc_type,
+    d.file_name,
+    d.file_path,
+    d.file_size,
+    d.uploaded_at,
+    a.prefix,
+    a.full_name,
+    a.id_card_number,
+    a.status,
+    p.slip_approved,
+    p.slip_error_message
+  FROM documents d
+  JOIN applicants a ON d.app_id = a.app_id
+  LEFT JOIN payments p ON p.app_id = a.app_id
+  WHERE d.app_id = $1
+  ORDER BY d.uploaded_at ASC
+`;
     
-    const result = await pool.query(query, [appId]);
+   const result = await pool.query(query, [appId]);
+
+    
+    const firstRow = result.rows[0];
     
     if (result.rows.length === 0) {
       return res.status(404).json({ 
@@ -127,26 +134,30 @@ export const getApplicantDocuments = async (req: Request, res: Response) => {
     }
     
     const applicantInfo = {
-      app_id: appId,
-      prefix: result.rows[0].prefix,
-      full_name: result.rows[0].full_name,
-      id_card_number: result.rows[0].id_card_number
+      app_id:         appId,
+      prefix:         firstRow.prefix,
+      full_name:      firstRow.full_name,
+      id_card_number: firstRow.id_card_number,
+      status:         firstRow.status,
     };
     
     const documents = result.rows.map(row => ({
-      doc_id: row.doc_id,
-      doc_type: row.doc_type,
-      file_name: row.file_name,
-      file_size: row.file_size,
+      doc_id:      row.doc_id,
+      doc_type:    row.doc_type,
+      file_name:   row.file_name,
+      file_size:   row.file_size,
       uploaded_at: row.uploaded_at,
-      file_url: toUrl(row.file_path)
+      file_url:    toUrl(row.file_path)
     }));
     
+    // ✅ เพิ่ม comma หลัง documents และแก้ slip_error_message
     res.json({ 
       success: true, 
       data: {
-        applicant: applicantInfo,
-        documents: documents
+        applicant:          applicantInfo,
+        documents:          documents,
+        slip_approved:      firstRow.slip_approved,
+        slip_error_message: firstRow.slip_error_message ?? '',
       }
     });
     

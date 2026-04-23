@@ -755,10 +755,10 @@ function selectPlan(ap_id: number, cur_id: number) {
 }
 
 async function loadExpenses(curId: number) {
-  console.log('loadExpenses called with curId:', curId)
   try {
+   
     const res = await applicationService.getExpenses(curId)
-    console.log('expenses response:', res.data)
+    console.log('expenses ที่ได้:', res.data)
     expenses.value = res.data.data
     expenses.value.forEach((e: any) => {
       if (!form.expenseOrders[e.exp_id]) {
