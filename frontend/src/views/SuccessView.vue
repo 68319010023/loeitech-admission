@@ -756,6 +756,8 @@ const goBackStep = () => { if (currentStep.value > 0) currentStep.value-- }
 
 const handleNextClick = () => {
 
+  const status = userData.value.status
+
     if (userData.value.status === 'enrolled' && currentStep.value === 3) {
     return
   }
