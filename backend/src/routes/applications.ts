@@ -9,6 +9,7 @@ import {
   getStats,
   checkDuplicateIdCard,
   getPendingApplicants,
+  getApplicants,
 } from '../controllers/applicationController'
 import { ocrIdCard } from '../controllers/ocrController'
 import { upload } from '../middleware/upload'
@@ -39,7 +40,18 @@ router.post('/check-duplicate', checkDuplicateIdCard)
 // ตรวจสอบสถานะ
 router.get('/check/:idCard', checkStatus)
 
+// ดึงข้อมูลผู้สมัครทั้งหมด
+router.get('/applicants', getApplicants)
+
 // สถิติ
 router.get('/stats', getStats)
 
 export default router
+
+import {
+  // ... ของเดิม ...
+  enrollApplication,   // ← เพิ่มตรงนี้
+} from '../controllers/applicationController'
+
+// เพิ่ม route นี้
+router.post('/enroll', enrollApplication)

@@ -12,9 +12,13 @@ import FormData from 'form-data'
 export const verifySlip = async (req: Request, res: Response) => {
   try {
     const file = req.file
+    console.log('📁 file:', file)
+
     if (!file) return sendError(res, 'ไม่พบไฟล์สลิป', 400)
 
     const { idCard } = req.body
+    console.log('🪪 idCard:', idCard)
+
     if (!idCard) return sendError(res, 'ไม่พบเลขบัตรประชาชน', 400)
 
     const applicantResult = await pool.query(`
@@ -24,18 +28,21 @@ export const verifySlip = async (req: Request, res: Response) => {
       WHERE a.id_card_number = $1
     `, [idCard])
 
+    console.log('📊 applicantResult rows:', applicantResult.rows)
+
     if (applicantResult.rows.length === 0) {
       if (fs.existsSync(file.path)) fs.unlinkSync(file.path)
       return sendError(res, 'ไม่พบข้อมูลผู้สมัคร', 404)
     }
 
-    const { app_id, status, total_amount } = applicantResult.rows[0]
+    const { app_id, status } = applicantResult.rows[0]
 
     if (status === 'enrolled') {
       if (fs.existsSync(file.path)) fs.unlinkSync(file.path)
       return sendSuccess(res, { valid: true, message: 'มอบตัวเรียบร้อยแล้ว' })
     }
 
+<<<<<<< Updated upstream
     const formData = new FormData()
     formData.append('files', fs.createReadStream(file.path), file.originalname)
 
@@ -102,48 +109,42 @@ export const verifySlip = async (req: Request, res: Response) => {
     }
 
     // ✅ สลิปผ่าน — save slip_approved = true
+=======
+>>>>>>> Stashed changes
     await pool.query(`
-      UPDATE applicants
-      SET status = 'pending_approve', paid_at = NOW()
-      WHERE app_id = $1
-    `, [app_id])
+  UPDATE applicants
+  SET status = 'pending_approve'
+  WHERE app_id = $1
+`, [app_id])
 
     await pool.query(`
       UPDATE payments
       SET 
-        slip_path          = $1,
-        slip_name          = $2,
-        paid_at            = NOW(),
-        slip_sender        = $3,
-        slip_receiver      = $4,
-        slip_approved      = true,
-        slip_error_message = ''
+        slip_path     = $1,
+        slip_name     = $2,
+        paid_at       = NOW(),
+        slip_sender   = $3,
+        slip_receiver = $4
       WHERE app_id = $5
     `, [
       file.path,
       file.originalname,
-      slipokData.data.sender?.displayName ?? '-',
-      slipokData.data.receiver?.displayName ?? '-',
+      'ทดสอบ',
+      'ทดสอบ',
       app_id
     ])
 
     return sendSuccess(res, {
       valid: true,
-      amount: slipAmount,
-      date: slipokData.data.transDate,
-      sender: slipokData.data.sender?.displayName ?? '-',
-      receiver: slipokData.data.receiver?.displayName ?? '-',
+      amount: 0,
+      date: new Date().toISOString(),
+      sender: 'ทดสอบ',
+      receiver: 'ทดสอบ',
     })
 
   } catch (err: any) {
     if (req.file?.path && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path)
-    const slipokError = err.response?.data
-    if (slipokError?.code) {
-      return sendSuccess(res, {
-        valid: false,
-        message: slipokError.message ?? 'สลิปไม่ถูกต้อง',
-      })
-    }
+    console.error('❌ verifySlip error:', err.message, err.stack)
     sendError(res, 'ตรวจสอบสลิปไม่สำเร็จ', 500, err)
   }
 }
@@ -173,13 +174,15 @@ export const confirmEnrollment = async (req: Request, res: Response) => {
 
     const { app_id, status } = applicant.rows[0]
 
-   
-if (status === 'enrolled' || status === 'paid') {
-  return sendError(res, 'มอบตัวเรียบร้อยแล้ว ไม่สามารถแก้ไขได้', 400)
+    // ✅ ต้องเป็น paid หรือ enrolled เท่านั้น (enrolled = มอบตัวซ้ำได้ แค่ upsert)
+if (status === 'pending_payment') {
+  return sendError(res, 'กรุณารอ admin ยืนยันการชำระเงินก่อน', 400)
 }
 
-await client.query(`
-  UPDATE applicants SET status = 'pending_approve' WHERE app_id = $1
+await pool.query(`
+  UPDATE applicants
+  SET status = 'pending_approve'
+  WHERE app_id = $1
 `, [app_id])
 
     const files = req.files as Record<string, Express.Multer.File[]>

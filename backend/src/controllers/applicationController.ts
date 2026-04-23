@@ -23,7 +23,24 @@ export const getPendingApplicants = async (_req: Request, res: Response) => {
   }
 }
 
-// ดึงหลักสูตรทั้งหมด
+// ดึงข้อมูลผู้สมัครทั้งหมด
+export const getApplicants = async (_req: Request, res: Response) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        a.app_id, a.prefix, a.full_name, a.status, a.created_at,
+        c.cur_shortname, d.div_name
+      FROM applicants a
+      JOIN admission_plan ap ON ap.ap_id = a.ap_id
+      JOIN curriculums c ON c.cur_id = ap.cur_id
+      JOIN divisions d ON d.div_id = ap.div_id
+      ORDER BY a.created_at DESC
+    `)
+    sendSuccess(res, result.rows)
+  } catch (err) {
+    sendError(res, 'ไม่สามารถดึงข้อมูลได้', 500, err)
+  }
+}
 export const getCurriculums = async (_req: Request, res: Response) => {
   try {
     const result = await pool.query(
@@ -403,3 +420,54 @@ export const getStats = async (_req: Request, res: Response) => {
 };
 
 
+export const enrollApplication = async (req: Request, res: Response) => {
+  const client = await pool.connect()
+  try {
+    const { idCard } = req.body
+    if (!idCard) {
+      return sendError(res, 'กรุณาระบุเลขบัตรประชาชน', 400)
+    }
+
+    const findResult = await client.query(
+      `SELECT app_id, status FROM applicants WHERE id_card_number = $1`,
+      [idCard]
+    )
+
+    if (findResult.rows.length === 0) {
+      return sendError(res, 'ไม่พบข้อมูลผู้สมัคร', 404)
+    }
+
+    const application = findResult.rows[0]
+
+    if (application.status === 'enrolled') {
+      return sendError(res, 'มอบตัวแล้ว', 400)
+    }
+
+    await client.query('BEGIN')
+
+    await client.query(
+      `UPDATE applicants 
+       SET status = 'enrolled', updated_at = NOW() 
+       WHERE app_id = $1`,
+      [application.app_id]
+    )
+
+    await client.query(
+      `INSERT INTO enrollments (app_id, enrolled_at)
+       VALUES ($1, NOW())
+       ON CONFLICT (app_id) DO UPDATE SET enrolled_at = NOW()`,
+      [application.app_id]
+    )
+
+    await client.query('COMMIT')
+
+    return sendSuccess(res, { app_id: application.app_id }, 'มอบตัวสำเร็จ')
+
+  } catch (error) {
+    await client.query('ROLLBACK')
+    console.error('enrollApplication error:', error)
+    return sendError(res, 'เกิดข้อผิดพลาด', 500, error)
+  } finally {
+    client.release()
+  }
+}

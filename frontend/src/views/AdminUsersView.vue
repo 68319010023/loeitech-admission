@@ -15,10 +15,22 @@
             </h1>
             <p class="text-gray-600 mt-3 text-lg">เลือกและดาวน์โหลดข้อมูลนักเรียนในรูปแบบไฟล์</p>
           </div>
-          <div class="flex items-center space-x-3">
+          <div class="flex flex-col items-end space-y-3">
             <div class="flex items-center bg-emerald-50 px-4 py-2 rounded-lg">
               <div class="w-3 h-3 bg-emerald-500 rounded-full mr-2 animate-pulse"></div>
               <span class="text-emerald-700 font-medium">ระบบพร้อมใช้งาน</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button v-for="item in exportItems" :key="item.type"
+                @click="selectedExportType = selectedExportType === item.type ? '' : item.type; selectedIds = []" :class="[
+                  'flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold border transition',
+                  selectedExportType === item.type
+                    ? 'bg-green-500 text-white border-green-500'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-green-400'
+                ]">
+                <component :is="item.icon" class="w-4 h-4" />
+                {{ item.label }}
+              </button>
             </div>
           </div>
         </div>
@@ -30,17 +42,17 @@
       <!-- Export Controls Card -->
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-3">
 
-        <!-- Row 1: ชื่อ + ปุ่ม Export -->
+        <!-- Row 1:  Export -->
         <div class="flex items-center justify-between flex-wrap gap-3">
-          <div>
+          <div v-if="selectedExportType">
             <h1 class="text-xl font-bold text-gray-800">ส่งออกข้อมูล</h1>
             <p class="text-sm text-gray-400">วิทยาลัยเทคนิคเลย</p>
           </div>
 
-          <div class="flex items-center gap-2 flex-wrap">
-            <div class="flex items-center gap-1.5 bg-green-50 px-3 py-1.5 rounded-lg">
+          <div class="flex items-center gap-2 flex-wrap" :class="{ 'ml-auto': !selectedExportType }">
+            <div v-if="selectedExportType" class="flex items-center gap-1.5 bg-green-50 px-3 py-1.5 rounded-lg">
               <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span class="text-sm text-green-700 font-semibold">{{ selectedIds.length }} รายการ</span>
+              <span  class="text-sm text-green-700 font-semibold">{{ selectedIds.length }} รายการ</span>
             </div>
 
             <button v-if="selectedExportType === 'students'" @click="exportPDF"
@@ -108,19 +120,7 @@
         </div>
 
         <!-- Row 2: ประเภท -->
-        <p class="text-sm text-gray-500">เลือกประเภทข้อมูลและเลือกรายชื่อที่ต้องการส่งออก</p>
-        <div class="flex gap-2 flex-wrap">
-          <button v-for="item in exportItems" :key="item.type"
-            @click="selectedExportType = selectedExportType === item.type ? '' : item.type; selectedIds = []" :class="[
-              'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition',
-              selectedExportType === item.type
-                ? 'bg-green-500 text-white border-green-500'
-                : 'bg-white text-gray-600 border-gray-200 hover:border-green-400'
-            ]">
-            <component :is="item.icon" class="w-4 h-4" />
-            {{ item.label }}
-          </button>
-        </div>
+        <p v-if="selectedExportType" class="text-sm text-gray-500">เลือกประเภทข้อมูลและเลือกรายชื่อที่ต้องการส่งออก</p>
 
         <!-- Row 3: Filters -->
         <div class="flex flex-col sm:flex-row gap-2">
@@ -250,6 +250,7 @@
                 <th class="px-4 py-3 text-left">สาขาวิชา</th>
                 <th class="px-4 py-3 text-center">สถานะ</th>
                 <th class="px-4 py-3 text-left">เบอร์โทร</th>
+                <th class="px-4 py-3 text-left">ยืนยันสิทธ์</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
@@ -274,16 +275,39 @@
                           'bg-gray-50 text-gray-500 border border-gray-200'
                   ]">
                     {{
-                      row.สถานะ === 'enrolled' ? '✓ มอบตัวแล้ว' :
-                        row.สถานะ === 'paid' ? '✅ พร้อมมอบตัว' :
-                          row.สถานะ === 'pending_approve' ? '⏳ รอตรวจสอบ' : '📋 สมัครใหม่'
+                      row.สถานะ === 'enrolled' ? 'มอบตัวแล้ว' :
+                        row.สถานะ === 'paid' ? 'พร้อมมอบตัว' :
+                          row.สถานะ === 'pending_approve' ? 'รอตรวจสอบ' : 'สมัครใหม่'
                     }}
                   </span>
                 </td>
                 <td class="px-4 py-3 text-gray-600">{{ row.เบอร์โทร || '-' }}</td>
+                <td class="px-4 py-3">
+                  <template v-if="row.สถานะ === 'pending_approve'">
+                    <button 
+                      @click.stop="openInfoModal(row)"
+                      class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg text-xs font-semibold transition-colors">
+                      <User class="w-3 h-3" />
+                      รายละเอียดการสมัคร
+                    </button>
+                  </template>
+                  <button v-else-if="row.สถานะ === 'pending_payment'" 
+                    @click.stop="openInfoModal(row); setTimeout(() => openPaymentSlipOnly(), 500)"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-semibold transition-colors">
+                    <FileText class="w-3 h-3" />
+                    ใบแจ้งชำระเงิน
+                  </button>
+                  <button v-else-if="row.สถานะ === 'enrolled'" 
+                    @click.stop="openInfoModal(row); setTimeout(() => printEnrollmentCert(), 500)"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xs font-semibold transition-colors">
+                    <FileText class="w-3 h-3" />
+                    เอกสารมอบตัว
+                  </button>
+                  <span v-else class="text-gray-400 text-xs">-</span>
+                </td>
               </tr>
               <tr v-if="paginatedData.length === 0">
-                <td colspan="6" class="px-4 py-8 text-center text-gray-400">ไม่พบข้อมูล</td>
+                <td colspan="7" class="px-4 py-8 text-center text-gray-400">ไม่พบข้อมูล</td>
               </tr>
             </tbody>
           </table>
@@ -652,6 +676,10 @@
                 class="px-4 py-2 text-sm text-gray-500 hover:bg-gray-200 rounded-xl transition font-semibold">
                 ปิด
               </button>
+              <button v-if="docModal.status === 'pending_approve'" @click="confirmEnrollmentDirect"
+                class="inline-flex items-center gap-1.5 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl text-sm font-semibold transition mr-2">
+                <User class="w-4 h-4" /> ยืนยันการมอบตัว
+              </button>
               <button v-if="docModal.status === 'pending_approve' || docModal.status === 'paid'"
                 @click="downloadDocModalPDF" :disabled="ocrProgress.running"
                 class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl text-sm font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed">
@@ -715,9 +743,22 @@ const infoModal = ref({
   data: null as any,
 })
 
-const prevLevelLabel = (level: string) => {
-  const map: Record<string, string> = { m3: 'ม.3', m6: 'ม.6', pvc: 'ปวช.' }
-  return map[level] || level || '-'
+const prevLevelLabel = (level: string | undefined) => {
+  if (!level) return '-'
+  const map: Record<string, string> = { 
+    'm3': 'ม.3', 
+    'm6': 'ม.6', 
+    'pvc': 'ปวช.',
+    'ม.3': 'ม.3',
+    'ม.6': 'ม.6',
+    'มัธยมศึกษาปีที่ 3': 'ม.3',
+    'มัธยมศึกษาปีที่ 6': 'ม.6',
+    'ปวช.': 'ปวช.',
+    'ประกาศนียบัตรวิชาชีพ': 'ปวช.',
+    'ม.ต้น': 'ม.3',
+    'ม.ปลาย': 'ม.6'
+  }
+  return map[level] || level
 }
 
 const openInfoModal = async (row: any) => {
@@ -772,6 +813,539 @@ const paymentAmountFilter = ref('')
 const paymentDateFilter = ref('')
 const orderDateFilter = ref('')
 
+// ─── Enroll Student Function ────────────────────────────────
+const enrollStudent = async (student: any) => {
+  try {
+    // ดึงข้อมูลเพิ่มเติมก่อน
+    let fullStudentData = { ...student }
+    try {
+      const res = await api.get(`/applications/check/${student.เลขบัตรประชาชน}`)
+      const d = res.data?.data
+      if (d) {
+        fullStudentData = {
+          ...student,
+          ที่อยู่: d.address || '-',
+          สถานศึกษาเดิม: d.prev_school || '-',
+          วุฒิการศึกษา: d.prev_level || '-',
+          ปีที่จบ: d.prev_year || '-',
+          เกรดเฉลี่ย: d.gpa || '-',
+          ยอดที่ต้องชำระ: d.total_amount || '-',
+          วันที่ชำระ: d.paid_at 
+            ? new Date(d.paid_at).toLocaleDateString('th-TH') 
+            : 'ยังไม่ชำระ',
+        }
+      }
+    } catch (e) {
+      console.warn('โหลดข้อมูลเพิ่มเติมไม่สำเร็จ', e)
+    }
+
+    // ส่ง fullStudentData แทน student
+    const confirmed = await showConfirmDialog('ยืนยันการมอบตัว', fullStudentData)
+    
+    if (!confirmed) return
+    
+    isLoading.value = true
+    await api.post(`/applications/enroll`, { idCard: student.เลขบัตรประชาชน })
+    
+    const index = applicants.value.findIndex(app => app.app_id === student.ลำดับ)
+    if (index !== -1) {
+      applicants.value[index].status = 'enrolled'
+    }
+    
+    await fetchApplicants()
+    
+  } catch (err) {
+    console.error('มอบตัวไม่สำเร็จ:', err)
+    showErrorDialog('มอบตัวไม่สำเร็จ กรุณาลองใหม่')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// ─── Direct Confirm Enrollment Function ────────────────────────────────
+const confirmEnrollmentDirect = async () => {
+  try {
+    isLoading.value = true
+    
+    // ใช้ข้อมูลจาก infoModal แทน docModal เนื่องจาก docModal ไม่มีฟิลด์ data
+    const studentData = infoModal.value.data
+    if (!studentData) return
+    
+    await api.post(`/applications/enroll`, { idCard: studentData.id_card_number })
+    
+    const index = applicants.value.findIndex(app => app.app_id === infoModal.value.appId)
+    if (index !== -1) {
+      applicants.value[index].status = 'enrolled'
+    }
+    
+    // อัพเดทสถานะใน modal ทั้ง infoModal และ docModal
+    infoModal.value.status = 'enrolled'
+    docModal.value.status = 'enrolled'
+    
+    await fetchApplicants()
+    
+    // ปิดทั้งสอง modal กลับไปหน้าเดิม
+    infoModal.value.open = false
+    docModal.value.open = false
+    
+  } catch (err) {
+    console.error('มอบตัวไม่สำเร็จ:', err)
+    showErrorDialog('มอบตัวไม่สำเร็จ กรุณาลองใหม่')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// ─── Custom Dialog Functions ────────────────────────────────
+const showConfirmDialog = (title: string, student: any): Promise<boolean> => {
+  return new Promise((resolve) => {
+    // สร้าง overlay
+    const overlay = document.createElement('div')
+    overlay.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/60'
+    
+    // สร้าง dialog container
+    const dialog = document.createElement('div')
+    dialog.className = 'bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto'
+    
+    dialog.innerHTML = `
+      <div class="space-y-6">
+        <!-- Header -->
+        <div class="text-center space-y-4">
+          <div class="w-16 h-16 rounded-full bg-yellow-100 flex items-center justify-center mx-auto">
+            <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-xl font-bold text-gray-900">${title}</h3>
+            <p class="text-sm text-gray-600 mt-2">กรุณาตรวจสอบข้อมูลก่อนยืนยันการมอบตัว</p>
+          </div>
+        </div>
+
+        <!-- Student Info -->
+        <div class="space-y-4">
+          <!-- ข้อมูลส่วนตัว -->
+          <div class="bg-gray-50 rounded-xl p-6">
+            <h4 class="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
+              <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              ข้อมูลส่วนตัว
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">ชื่อ-สกุล</p>
+                <p class="text-sm font-medium text-gray-900">${student.คำนำหน้า}${student.ชื่อ_นามสกุล}</p>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">เลขบัตรประชาชน</p>
+                <p class="text-sm font-medium text-gray-900">${student.เลขบัตรประชาชน}</p>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">เบอร์โทร</p>
+                <p class="text-sm font-medium text-gray-900">${student.เบอร์โทร || '-'}</p>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">อีเมล</p>
+                <p class="text-sm font-medium text-gray-900">${student.อีเมล || '-'}</p>
+              </div>
+              <div class="md:col-span-2">
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">ที่อยู่</p>
+                <p class="text-sm font-medium text-gray-900">${student.ที่อยู่ || '-'}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- หลักสูตรที่สมัคร -->
+          <div class="bg-blue-50 rounded-xl p-6">
+            <h4 class="text-sm font-bold text-blue-700 mb-4 flex items-center gap-2">
+              <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+              หลักสูตรที่สมัคร
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-1">หลักสูตร</p>
+                <p class="text-sm font-medium text-gray-900">${student.หลักสูตร}</p>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-1">สาขาวิชา</p>
+                <p class="text-sm font-medium text-gray-900">${student.สาขาวิชา}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- ประวัติการศึกษา -->
+          <div class="bg-purple-50 rounded-xl p-6">
+            <h4 class="text-sm font-bold text-purple-700 mb-4 flex items-center gap-2">
+              <svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              ประวัติการศึกษา
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-1">สถานศึกษาเดิม</p>
+                <p class="text-sm font-medium text-gray-900">${student.สถานศึกษาเดิม || '-'}</p>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-1">วุฒิการศึกษา</p>
+                <p class="text-sm font-medium text-gray-900">${prevLevelLabel(student.วุฒิการศึกษา)}</p>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-1">ปีที่จบ</p>
+                <p class="text-sm font-medium text-gray-900">${student.ปีที่จบ || '-'}</p>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-1">เกรดเฉลี่ย (GPA)</p>
+                <p class="text-sm font-medium text-gray-900">${student.เกรดเฉลี่ย || '-'}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- การชำระเงิน -->
+          <div class="bg-green-50 rounded-xl p-6">
+            <h4 class="text-sm font-bold text-green-700 mb-4 flex items-center gap-2">
+              <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              การชำระเงิน
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p class="text-xs font-semibold text-green-400 uppercase tracking-wide mb-1">ยอดที่ต้องชำระ</p>
+                <p class="text-sm font-medium text-gray-900">${student.ยอดที่ต้องชำระ ? `${Number(student.ยอดที่ต้องชำระ).toLocaleString()} บาท` : '-'}</p>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-green-400 uppercase tracking-wide mb-1">วันที่ชำระ</p>
+                <p class="text-sm font-medium text-gray-900">${student.วันที่ชำระ || 'ยังไม่ชำระ'}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- สถานะปัจจุบัน -->
+          <div class="bg-yellow-50 rounded-xl p-4">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-semibold text-yellow-700">สถานะปัจจุบัน</span>
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 border border-yellow-200">
+                รอตรวจสอบ
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Warning Message -->
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <div class="flex items-start gap-3">
+            <div class="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <svg class="w-3 h-3 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-amber-800">การดำเนินการนี้ไม่สามารถย้อนกลับได้</p>
+              <p class="text-xs text-amber-600 mt-1">เมื่อยืนยันการมอบตัวแล้ว สถานะของนักเรียนจะเปลี่ยนเป็น "มอบตัวแล้ว" ทันที</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex gap-3 justify-center">
+          <button id="cancel-btn" class="px-6 py-3 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">
+            ยกเลิก
+          </button>
+          <button id="confirm-btn" class="px-6 py-3 text-sm font-semibold text-white bg-green-500 hover:bg-green-600 rounded-xl transition-colors flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            ยืนยันการมอบตัว
+          </button>
+        </div>
+      </div>
+    `
+    
+    overlay.appendChild(dialog)
+    document.body.appendChild(overlay)
+    
+    // Event listeners
+    const cancelBtn = dialog.querySelector('#cancel-btn')
+    const confirmBtn = dialog.querySelector('#confirm-btn')
+    
+    const cleanup = () => {
+      document.body.removeChild(overlay)
+    }
+    
+    cancelBtn?.addEventListener('click', () => {
+      cleanup()
+      resolve(false)
+    })
+    
+    confirmBtn?.addEventListener('click', () => {
+      cleanup()
+      resolve(true)
+    })
+    
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        cleanup()
+        resolve(false)
+      }
+    })
+  })
+}
+
+const showSuccessDialog = (message: string, student?: any) => {
+  const overlay = document.createElement('div')
+  overlay.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/60'
+  
+  const dialog = document.createElement('div')
+  dialog.className = 'bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto'
+  
+  const currentDate = new Date().toLocaleDateString('th-TH', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+  
+  dialog.innerHTML = `
+    <div class="space-y-6">
+      <!-- Header -->
+      <div class="text-center space-y-4">
+        <div class="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+          <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-2xl font-bold text-gray-900">การมอบตัวสำเร็จแล้ว!</h3>
+          <p class="text-sm text-gray-600 mt-2">${message}</p>
+        </div>
+      </div>
+
+      ${student ? `
+      <!-- Student Info Card -->
+      <div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </div>
+          <div>
+            <h4 class="text-xl font-bold text-gray-900">ข้อมูลนักเรียน</h4>
+            <p class="text-sm text-gray-600">มอบตัวเมื่อ ${currentDate}</p>
+          </div>
+        </div>
+        
+        <div class="space-y-4">
+          <!-- ข้อมูลส่วนตัว -->
+          <div class="bg-white rounded-lg p-4">
+            <h5 class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+              <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              ข้อมูลส่วนตัว
+            </h5>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">ชื่อ-สกุล</p>
+                <p class="text-sm font-medium text-gray-900">${student.คำนำหน้า}${student.ชื่อ_นามสกุล}</p>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">เลขบัตรประชาชน</p>
+                <p class="text-sm font-medium text-gray-900">${student.เลขบัตรประชาชน}</p>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">เบอร์โทร</p>
+                <p class="text-sm font-medium text-gray-900">${student.เบอร์โทร || '-'}</p>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">อีเมล</p>
+                <p class="text-sm font-medium text-gray-900">${student.อีเมล || '-'}</p>
+              </div>
+              <div class="md:col-span-2">
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">ที่อยู่</p>
+                <p class="text-sm font-medium text-gray-900">${student.ที่อยู่ || '-'}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- หลักสูตรที่สมัคร -->
+          <div class="bg-white rounded-lg p-4">
+            <h5 class="text-sm font-bold text-blue-700 mb-3 flex items-center gap-2">
+              <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+              หลักสูตรที่สมัคร
+            </h5>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <p class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-1">หลักสูตร</p>
+                <p class="text-sm font-medium text-gray-900">${student.หลักสูตร}</p>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-1">สาขาวิชา</p>
+                <p class="text-sm font-medium text-gray-900">${student.สาขาวิชา}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- ประวัติการศึกษา -->
+          <div class="bg-white rounded-lg p-4">
+            <h5 class="text-sm font-bold text-purple-700 mb-3 flex items-center gap-2">
+              <svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              ประวัติการศึกษา
+            </h5>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <p class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-1">สถานศึกษาเดิม</p>
+                <p class="text-sm font-medium text-gray-900">${student.สถานศึกษาเดิม || '-'}</p>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-1">วุฒิการศึกษา</p>
+                <p class="text-sm font-medium text-gray-900">${prevLevelLabel(student.วุฒิการศึกษา)}</p>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-1">ปีที่จบ</p>
+                <p class="text-sm font-medium text-gray-900">${student.ปีที่จบ || '-'}</p>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-1">เกรดเฉลี่ย (GPA)</p>
+                <p class="text-sm font-medium text-gray-900">${student.เกรดเฉลี่ย || '-'}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- การชำระเงิน -->
+          <div class="bg-white rounded-lg p-4">
+            <h5 class="text-sm font-bold text-green-700 mb-3 flex items-center gap-2">
+              <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              การชำระเงิน
+            </h5>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <p class="text-xs font-semibold text-green-400 uppercase tracking-wide mb-1">ยอดที่ต้องชำระ</p>
+                <p class="text-sm font-medium text-gray-900">${student.ยอดที่ต้องชำระ ? `${Number(student.ยอดที่ต้องชำระ).toLocaleString()} บาท` : '-'}</p>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-green-400 uppercase tracking-wide mb-1">วันที่ชำระ</p>
+                <p class="text-sm font-medium text-gray-900">${student.วันที่ชำระ || 'ยังไม่ชำระ'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Success Status -->
+      <div class="bg-green-50 border border-green-200 rounded-xl p-4">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-green-800">สถานะ: มอบตัวแล้ว</p>
+            <p class="text-xs text-green-600 mt-1">นักเรียนได้รับการยืนยันสิทธิ์เรียนเรียบร้อยแล้ว</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Next Steps -->
+      <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <div class="flex items-start gap-3">
+          <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-blue-800">ขั้นตอนถัดไป</p>
+            <ul class="text-xs text-blue-600 mt-1 space-y-1">
+              <li>• พิมพ์เอกสารมอบตัวได้ที่ปุ่ม "เอกสารมอบตัว"</li>
+              <li>• นักเรียนสามารถเข้าเรียนได้ในวันเปิดภาคเรียน</li>
+              <li>• ติดต่อฝ่ายวิชาการหากต้องการข้อมูลเพิ่มเติม</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      ` : ''}
+
+      <!-- Action Button -->
+      <div class="text-center">
+        <button id="close-btn" class="px-8 py-3 text-sm font-semibold text-white bg-green-500 hover:bg-green-600 rounded-xl transition-colors inline-flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          ตกลง
+        </button>
+      </div>
+    </div>
+  `
+  
+  overlay.appendChild(dialog)
+  document.body.appendChild(overlay)
+  
+  const closeBtn = dialog.querySelector('#close-btn')
+  
+  const cleanup = () => {
+    document.body.removeChild(overlay)
+  }
+  
+  closeBtn?.addEventListener('click', cleanup)
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      cleanup()
+    }
+  })
+}
+
+const showErrorDialog = (message: string) => {
+  const overlay = document.createElement('div')
+  overlay.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/60'
+  
+  const dialog = document.createElement('div')
+  dialog.className = 'bg-white rounded-2xl shadow-2xl p-6 w-96 mx-4'
+  
+  dialog.innerHTML = `
+    <div class="text-center space-y-4">
+      <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto">
+        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </div>
+      <div>
+        <h3 class="text-lg font-semibold text-gray-900">ผิดพลาด</h3>
+        <p class="text-sm text-gray-600 mt-2">${message}</p>
+      </div>
+      <button id="close-btn" class="px-4 py-2 text-sm font-semibold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-colors">
+        ตกลง
+      </button>
+    </div>
+  `
+  
+  overlay.appendChild(dialog)
+  document.body.appendChild(overlay)
+  
+  const closeBtn = dialog.querySelector('#close-btn')
+  
+  const cleanup = () => {
+    document.body.removeChild(overlay)
+  }
+  
+  closeBtn?.addEventListener('click', cleanup)
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      cleanup()
+    }
+  })
+}
+
 const ocrProgress = ref({
   running: false,
   current: 0,
@@ -786,7 +1360,8 @@ const fetchApplicants = async () => {
   try {
     const res = await apiService.getApplicants()
     if (!res.success) throw new Error(res.message)
-    applicants.value = res.data
+    // ใช้ JSON.parse เพื่อให้ Vue รู้จักการเปลี่ยนแปร
+    applicants.value = JSON.parse(JSON.stringify(res.data))
   } catch (e: any) {
     error.value = e.message || 'โหลดข้อมูลไม่สำเร็จ'
   } finally {
@@ -957,7 +1532,7 @@ const currentData = computed(() =>
         อีเมล: a.email,
         สถานะ: a.status,
         วันที่สมัคร: new Date(a.created_at).toLocaleDateString('th-TH'),
-        enrolled_at: a.enrolled_at ?? null,
+        enrolled_at: a.updated_at ?? null,
         _idFrontUrl: resolveUrl(a.id_front_url),
         _idBackUrl: resolveUrl(a.id_back_url),
         _eduFrontUrl: resolveUrl(a.edu_front_url),
