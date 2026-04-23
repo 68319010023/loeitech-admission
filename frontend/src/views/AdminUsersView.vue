@@ -244,9 +244,7 @@
           <table class="w-full text-sm">
             <thead class="bg-gray-50 text-gray-500">
               <tr>
-                <th class="px-4 py-3 text-center w-10">
-                  <input type="checkbox" @change="toggleAll" :checked="isAllSelected" />
-                </th>
+        
                 <th class="px-4 py-3 text-left">ชื่อ-สกุล</th>
                 <th class="px-4 py-3 text-left">หลักสูตร</th>
                 <th class="px-4 py-3 text-left">สาขาวิชา</th>
@@ -258,13 +256,7 @@
               <tr v-for="row in paginatedData" :key="row.ลำดับ"
                 :class="['cursor-pointer hover:bg-gray-50', selectedIds.includes(row.ลำดับ) ? 'bg-green-50/50' : '']"
                 @click="openInfoModal(row)">
-                <td class="px-4 py-3 text-center" @click.stop>
-                  <input type="checkbox" :value="row.ลำดับ" :checked="selectedIds.includes(row.ลำดับ)" @change="() => {
-                    const idx = selectedIds.indexOf(row.ลำดับ)
-                    if (idx === -1) selectedIds.push(row.ลำดับ)
-                    else selectedIds.splice(idx, 1)
-                  }" />
-                </td>
+             
                 <td class="px-4 py-3 text-gray-800">{{ row.คำนำหน้า }}{{ row.ชื่อ_นามสกุล }}</td>
                 <td class="px-4 py-3 text-gray-500">{{ row.หลักสูตร }}</td>
                 <td class="px-4 py-3">
