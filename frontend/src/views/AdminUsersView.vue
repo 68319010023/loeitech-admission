@@ -2981,21 +2981,21 @@ const exportOrdersListPDF = async () => {
   if (rows.length === 0) return
 
   const fontBase64 = await loadThaiFont()
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
   if (fontBase64) {
     doc.addFileToVFS('THSarabunNew.ttf', fontBase64)
     doc.addFont('THSarabunNew.ttf', 'THSarabun', 'normal')
     doc.addFont('THSarabunNew.ttf', 'THSarabun', 'bold')
   }
 
-  const pageW = 297  // landscape A4
+  const pageW = 210  // portrait A4
   const colW = {
-    no: 16,
-    name: 82,
-    cur: 28,
-    branch: 65,
-    date: 38,
-    amount: 32,
+    no: 15,
+    name: 50,
+    cur: 25,
+    branch: 55,
+    date: 30,
+    amount: 25,
   }
   const totalW = Object.values(colW).reduce((a, b) => a + b, 0)
   const L = (pageW - totalW) / 2
@@ -3071,7 +3071,7 @@ const exportOrdersListPDF = async () => {
 
   f('normal', 15)
   for (const row of rows) {
-    if (y > 180) {
+    if (y > 250) {
       doc.addPage()
       y = 15
     }
@@ -3086,18 +3086,21 @@ const exportOrdersListPDF = async () => {
 
     doc.setTextColor(0, 0, 0)
     // ตัดชื่อยาวเกินไป
+    f('normal', 13)
     const fullName = `${row.คำนำหน้า || ''}${row.ชื่อ_นามสกุล || ''}`
     const nameLines = doc.splitTextToSize(fullName, colW.name - 2)
-    doc.text(nameLines[0], cx + 1, y)
+    doc.text(nameLines[0], cx + colW.name / 2, y, { align: 'center' })
     cx += colW.name
 
     doc.setTextColor(80, 80, 80)
+    f('normal', 13)
     doc.text(row.หลักสูตร || '-', cx + colW.cur / 2, y, { align: 'center' })
     cx += colW.cur
 
     // สาขา — ตัดถ้ายาว
+    f('normal', 13)
     const branchText = doc.splitTextToSize(row.สาขาวิชา || '-', colW.branch - 2)
-    doc.text(branchText[0], cx + 1, y)
+    doc.text(branchText[0], cx + colW.branch / 2, y, { align: 'center' })
     cx += colW.branch
 
     doc.text(row.วันที่ชำระ || '-', cx + colW.date / 2, y, { align: 'center' })
