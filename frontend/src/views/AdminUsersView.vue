@@ -1742,7 +1742,7 @@ const currentData = computed(() =>
         อีเมล: a.email,
         สถานะ: a.status,
         วันที่สมัคร: new Date(a.created_at).toLocaleDateString('th-TH'),
-        enrolled_at: a.updated_at ?? null,
+        enrolled_at: a.enrolled_at ?? null,
         _idFrontUrl: resolveUrl(a.id_front_url),
         _idBackUrl: resolveUrl(a.id_back_url),
         _eduFrontUrl: resolveUrl(a.edu_front_url),
