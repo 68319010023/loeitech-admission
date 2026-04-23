@@ -236,7 +236,7 @@
     </svg>
   </div>
   <div>
-    <p class="text-sm font-semibold text-amber-700">SlipOK ตรวจสอบไม่สำเร็จ</p>
+    <p class="text-sm font-semibold text-amber-700">ตรวจสอบไม่สำเร็จ</p>
     <p class="text-xs text-amber-500 mt-0.5">{{ slipVerifyResult.message }} — Admin จะตรวจสอบสลิปของท่านอีกครั้ง กดถัดไปเพื่อดำเนินการต่อได้</p>
   </div>
 </div>
@@ -737,7 +737,7 @@ const handleSlipUpload = async (event: Event) => {
     if (result.valid) {
       showToast('success', 'อัปโหลดสลิปสำเร็จ ✅', `ยอดโอน ${result.amount?.toLocaleString()} บาท กรุณากดถัดไปเพื่อดำเนินการต่อ`)
    } else {
-  showToast('error', 'SlipOK แจ้งว่าสลิปอาจมีปัญหา ⚠️', result.message || 'Admin จะตรวจสอบอีกครั้ง')
+  showToast('error', 'สลิปอาจมีปัญหา ⚠️', result.message || 'Admin จะตรวจสอบอีกครั้ง')
 }
 
   } catch {

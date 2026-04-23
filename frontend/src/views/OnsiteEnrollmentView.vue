@@ -2,7 +2,7 @@
     <div class="max-w-5xl mx-auto space-y-6">
 
         <!-- Header -->
-        <div class="bg-white rounded-2xl shadow-sm p-6 flex items-center justify-between">
+        <div class="bg-white rounded-2xl shadow-sm p-6 flex items-center justify-between ">
             <div>
                 <h1 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
                     <ClipboardDocumentListIcon class="w-5 h-5 text-emerald-500" />
@@ -34,15 +34,15 @@
 
         <!-- Summary Cards -->
         <div class="grid grid-cols-3 gap-4">
-            <div class="bg-white rounded-2xl shadow-sm p-5">
+            <div class="bg-white rounded-2xl shadow-sm p-5 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                 <p class="text-xs text-gray-400 mb-1">มอบตัวออนไลน์รวม</p>
                 <p class="text-2xl font-bold text-emerald-600">{{ totalOnline }}</p>
             </div>
-            <div class="bg-white rounded-2xl shadow-sm p-5">
+            <div class="bg-white rounded-2xl shadow-sm p-5 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                 <p class="text-xs text-gray-400 mb-1">มอบตัวออนไซต์รวม</p>
                 <p class="text-2xl font-bold text-blue-600">{{ totalOnsite }}</p>
             </div>
-            <div class="bg-white rounded-2xl shadow-sm p-5">
+            <div class="bg-white rounded-2xl shadow-sm p-5 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                 <p class="text-xs text-gray-400 mb-1">มอบตัวรวมทั้งหมด</p>
                 <p class="text-2xl font-bold text-gray-800">{{ totalOnline + totalOnsite }}</p>
             </div>

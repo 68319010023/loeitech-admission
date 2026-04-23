@@ -55,7 +55,7 @@ export const verifySlip = async (req: Request, res: Response) => {
       )
       slipokData = slipokRes.data
     } catch (err: any) {
-      slipokError = err.response?.data?.message ?? 'ไม่สามารถติดต่อ SlipOK ได้'
+      slipokError = err.response?.data?.message ?? 'ไม่สามารถตรวจสอบสลิปได้'
     }
 
     // ❌ SlipOK ติดต่อไม่ได้ หรือ API error

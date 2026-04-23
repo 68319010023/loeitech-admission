@@ -528,7 +528,7 @@
                   </svg>
                 </div>
                 <div>
-                  <p class="text-sm font-semibold text-emerald-700">SlipOK ตรวจสอบผ่าน</p>
+                  <p class="text-sm font-semibold text-emerald-700">ตรวจสอบผ่าน</p>
                   <p class="text-xs text-emerald-500 mt-0.5">ยืนยันการชำระเงินเรียบร้อยแล้ว</p>
                 </div>
                 <div class="ml-auto w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
@@ -543,7 +543,7 @@
                   </svg>
                 </div>
                 <div>
-                  <p class="text-sm font-semibold text-red-700">SlipOK ตรวจสอบไม่ผ่าน</p>
+                  <p class="text-sm font-semibold text-red-700">ตรวจสอบไม่ผ่าน</p>
                   <p class="text-xs text-red-500 mt-0.5">{{ docModal.slipErrorMessage || 'กรุณาตรวจสอบสลิปด้วยตนเอง' }}
                   </p>
                 </div>
@@ -2946,4 +2946,5 @@ const downloadDocModalPDF = async () => {
     ocrProgress.value.running = false
   }
 }
+
 </script>

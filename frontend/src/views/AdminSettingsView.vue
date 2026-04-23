@@ -29,7 +29,7 @@
     <div class="max-w-7xl mx-auto px-6 py-8">
       <!-- Stats Cards -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6  hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"">
           <div class="flex items-center">
             <div class="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
               <AcademicCapIcon class="w-6 h-6 text-emerald-600" />
@@ -40,7 +40,7 @@
             </div>
           </div>
         </div>
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
           <div class="flex items-center">
             <div class="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
               <BuildingOffice2Icon class="w-6 h-6 text-emerald-600" />
@@ -51,7 +51,7 @@
             </div>
           </div>
         </div>
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
           <div class="flex items-center">
             <div class="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
               <CalendarDaysIcon class="w-6 h-6 text-emerald-600" />

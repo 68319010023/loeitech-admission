@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
     <!-- Header Section -->
-    <div class="bg-white shadow-lg border-b border-emerald-100">
+    <div class="bg-white shadow-lg  border-emerald-100">
       <div class="max-w-7xl mx-auto px-6 py-8">
         <div class="flex items-center justify-between">
           <div>
@@ -27,7 +27,7 @@
     <div class="max-w-7xl mx-auto px-6 py-8">
       <!-- Stats Cards -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
           <div class="flex items-center">
             <div class="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
               <UserGroupIcon class="w-6 h-6 text-emerald-600" />
@@ -38,7 +38,7 @@
             </div>
           </div>
         </div>
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
           <div class="flex items-center">
             <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
               <ShieldCheckIcon class="w-6 h-6 text-purple-600" />
@@ -49,7 +49,7 @@
             </div>
           </div>
         </div>
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
           <div class="flex items-center">
             <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
               <UserIcon class="w-6 h-6 text-blue-600" />
