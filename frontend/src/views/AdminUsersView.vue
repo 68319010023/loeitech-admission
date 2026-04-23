@@ -1977,10 +1977,18 @@ async function doExport(rows: any[], isExportAll = false) {
     for (let C = range.s.c; C <= range.e.c; C++) {
       const addr = XLSX.utils.encode_cell({ r: R, c: C })
       const cell = ws[addr]
-      if (cell && typeof cell.v === 'string' && cell.v.startsWith('http') && cell.v.includes('enrollment-cert')) {
-        cell.l = { Target: cell.v }
-        cell.v = '📄 ดาวน์โหลดใบรับรอง'
-        cell.t = 's'
+      if (cell && typeof cell.v === 'string' && cell.v.startsWith('http')) {
+        // ตรวจสอบว่าเป็นใบรับรองหรือรูปภาพอื่นๆ
+        if (cell.v.includes('enrollment-cert')) {
+          cell.l = { Target: cell.v }
+          cell.v = '📄 ดาวน์โหลดใบรับรอง'
+          cell.t = 's'
+        } else {
+          // สำหรับรูปภาพอื่นๆ (บัตรประชาชน, วุฒิการศึกษา, ทะเบียนบ้าน)
+          cell.l = { Target: cell.v }
+          cell.v = '🖼️ ดาวน์โหลดรูปภาพ'
+          cell.t = 's'
+        }
       }
     }
   }
