@@ -5,7 +5,7 @@ import fs from 'fs'
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''
 
 // --- Rate Limiter (per IP) ---
-const OCR_RATE_LIMIT = 3          // max requests per window
+const OCR_RATE_LIMIT = 20         // max requests per window (รองรับ NAT IP ร่วม ~5 เครื่อง)
 const OCR_RATE_WINDOW_MS = 60_000 // 60 seconds
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
 
