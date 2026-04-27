@@ -64,4 +64,6 @@ jobs:
             JWT_SECRET=${{ secrets.JWT_SECRET_TEST }} \
             FRONTEND_URL=https://test-admission.loeitech.ac.th \
             GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
+            SLIPOK_API_KEY=${{ secrets.SLIPOK_API_KEY }} \
+            SLIPOK_BRANCH_ID=${{ secrets.SLIPOK_BRANCH_ID }} \
             bash deploy.sh
