@@ -37,8 +37,8 @@ import {
 import {
   login
 } from '../controllers/authController'
-import { getApplicants, getApplicantDocuments } from '../controllers/adminControllers'
-import { requireAuth } from '../middleware/auth'
+import { getApplicants, getApplicantDocuments, truncateApplicants } from '../controllers/adminControllers'
+import { requireAuth, requireSuperAdmin } from '../middleware/auth'
 
 const router = Router()
 
@@ -86,5 +86,7 @@ router.delete('/users/:id', requireAuth, deleteUser)
 
 router.get('/applicants', requireAuth, getApplicants)
 router.get('/applicants/:app_id/documents', requireAuth, getApplicantDocuments)
+
+router.delete('/truncate-applicants', requireSuperAdmin, truncateApplicants)
 
 export default router

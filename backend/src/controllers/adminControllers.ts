@@ -1,5 +1,7 @@
 import { Request, Response } from 'express'
 import pool from '../config/db'
+import fs from 'fs'
+import path from 'path'
 
 const toUrl = (filePath: string | null) => {
   if (!filePath) return null
@@ -164,5 +166,30 @@ export const getApplicantDocuments = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error fetching applicant documents:', error)
     res.status(500).json({ success: false, message: 'Failed to fetch applicant documents' })
+  }
+}
+
+export const truncateApplicants = async (_req: Request, res: Response) => {
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+    await client.query('TRUNCATE TABLE enrollments, applicant_expenses, payments, documents, applicants RESTART IDENTITY CASCADE')
+    await client.query('COMMIT')
+
+    // ลบไฟล์อัปโหลดทั้งหมด
+    const uploadsDir = path.join(__dirname, '../../uploads')
+    if (fs.existsSync(uploadsDir)) {
+      for (const file of fs.readdirSync(uploadsDir)) {
+        if (file !== '.gitkeep') fs.unlinkSync(path.join(uploadsDir, file))
+      }
+    }
+
+    res.json({ success: true, message: 'ล้างข้อมูลผู้สมัครเรียบร้อยแล้ว' })
+  } catch (error) {
+    await client.query('ROLLBACK')
+    console.error('truncateApplicants error:', error)
+    res.status(500).json({ success: false, message: 'เกิดข้อผิดพลาดในการล้างข้อมูล' })
+  } finally {
+    client.release()
   }
 }

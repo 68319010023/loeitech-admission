@@ -62,6 +62,32 @@
         </div>
       </div>
 
+      <!-- Danger Zone — superadmin only -->
+      <div v-if="authStore.isSuperAdmin" class="bg-white rounded-xl shadow-sm border border-red-200 mb-6">
+        <div class="border-b border-red-100 px-6 py-4 flex items-center gap-3">
+          <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+            <ExclamationTriangleIcon class="w-5 h-5 text-red-600" />
+          </div>
+          <div>
+            <h2 class="text-sm font-semibold text-red-700">Danger Zone</h2>
+            <p class="text-xs text-red-400">การดำเนินการนี้ไม่สามารถย้อนกลับได้</p>
+          </div>
+        </div>
+        <div class="px-6 py-5 flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-800">ล้างข้อมูลผู้สมัครทั้งหมด</p>
+            <p class="text-xs text-gray-500 mt-0.5">ลบข้อมูลผู้สมัคร เอกสาร การชำระเงิน และไฟล์อัปโหลดทั้งหมดออกจากระบบ</p>
+          </div>
+          <button
+            @click="showTruncateModal = true"
+            class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+          >
+            <TrashIcon class="w-4 h-4" />
+            ล้างข้อมูล
+          </button>
+        </div>
+      </div>
+
       <!-- Actions Bar + Table -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
         <!-- Actions Bar -->
@@ -247,6 +273,46 @@
       </div>
     </div>
 
+    <!-- Truncate Confirmation Modal -->
+    <div v-if="showTruncateModal" class="fixed inset-0 bg-gray-900/60 flex items-center justify-center z-50">
+      <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
+        <div class="p-6">
+          <div class="flex items-start gap-4 mb-5">
+            <div class="w-11 h-11 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <ExclamationTriangleIcon class="w-6 h-6 text-red-600" />
+            </div>
+            <div>
+              <p class="text-gray-900 font-semibold">ล้างข้อมูลผู้สมัครทั้งหมด?</p>
+              <p class="text-sm text-gray-500 mt-1">ข้อมูลผู้สมัคร เอกสาร การชำระเงิน และไฟล์อัปโหลดทั้งหมดจะถูกลบถาวร ไม่สามารถกู้คืนได้</p>
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              พิมพ์ <span class="font-bold text-red-600">ยืนยัน</span> เพื่อดำเนินการต่อ
+            </label>
+            <input
+              v-model="truncateConfirmText"
+              type="text"
+              placeholder="ยืนยัน"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+            />
+          </div>
+          <div class="flex gap-3">
+            <button
+              @click="doTruncate"
+              :disabled="truncateConfirmText !== 'ยืนยัน' || isTruncating"
+              class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {{ isTruncating ? 'กำลังล้างข้อมูล...' : 'ล้างข้อมูล' }}
+            </button>
+            <button @click="closeTruncateModal" :disabled="isTruncating" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium">
+              ยกเลิก
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Delete Confirmation Modal -->
     <div v-if="showDeleteModal" class="fixed inset-0 bg-gray-500/50 flex items-center justify-center z-50">
       <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
@@ -287,9 +353,14 @@ import {
   CalendarIcon,
   CogIcon,
   PencilIcon,
-  TrashIcon
+  TrashIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/vue/24/outline'
 import { apiService } from '@/utils/api'
+import { useAuthStore } from '@/stores/auth'
+import api from '@/services/httpClient'
+
+const authStore = useAuthStore()
 
 interface User {
   id: string
@@ -413,6 +484,32 @@ const closeModal = () => {
   showEditModal.value = false
   selectedUser.value = null
   userForm.value = { username: '', password: '', role: '' }
+}
+
+const showTruncateModal = ref(false)
+const truncateConfirmText = ref('')
+const isTruncating = ref(false)
+
+const closeTruncateModal = () => {
+  showTruncateModal.value = false
+  truncateConfirmText.value = ''
+}
+
+const doTruncate = async () => {
+  if (truncateConfirmText.value !== 'ยืนยัน') return
+  isTruncating.value = true
+  try {
+    const token = localStorage.getItem('auth_token')
+    await api.delete('/admin/truncate-applicants', {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    })
+    closeTruncateModal()
+  } catch (error) {
+    console.error('truncate error:', error)
+    alert('เกิดข้อผิดพลาดในการล้างข้อมูล')
+  } finally {
+    isTruncating.value = false
+  }
 }
 
 onMounted(() => {

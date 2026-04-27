@@ -69,7 +69,7 @@ CREATE TABLE public.users (
     created_at    timestamp    DEFAULT now() NULL,
     CONSTRAINT users_pkey PRIMARY KEY (id),
     CONSTRAINT users_username_key UNIQUE (username),
-    CONSTRAINT users_role_check CHECK (role IN ('admin', 'staff'))
+    CONSTRAINT users_role_check CHECK (role IN ('superadmin', 'admin', 'staff'))
 );
 
 
