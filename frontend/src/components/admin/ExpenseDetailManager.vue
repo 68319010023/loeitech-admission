@@ -1,12 +1,54 @@
 <template>
   <div>
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-xl font-semibold text-gray-800">จัดการค่าใช้จ่าย</h2>
-      <button @click="showAddModal = true"
-        class="bg-emerald-500 text-white px-4 py-2 rounded-lg hover:bg-emerald-600 transition-colors">
-        <PlusIcon class="w-5 h-5 inline-block mr-1" />
-        เพิ่มรายการค่าใช้จ่าย
-      </button>
+    <div class="mb-6 space-y-3">
+      <!-- Row 1: หัวข้อ + ปุ่มเพิ่ม -->
+      <div class="flex justify-between items-center">
+        <h2 class="text-2xl font-semibold text-gray-800">จัดการค่าใช้จ่าย</h2>
+        <button @click="showAddModal = true"
+          class="bg-emerald-500 text-white px-4 py-2 rounded-lg hover:bg-emerald-600 transition-colors flex items-center gap-1.5 text-sm font-medium shadow-sm">
+          <PlusIcon class="w-4 h-4" />
+          เพิ่มรายการค่าใช้จ่าย
+        </button>
+      </div>
+
+      <!-- Row 2: Filter tabs -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <!-- Tab buttons -->
+          <div class="flex bg-gray-100 p-1 rounded-xl gap-1">
+            <button v-for="tab in filterTabs" :key="tab.value" @click="selectedFilter = tab.value" :class="[
+              'relative px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 flex items-center gap-1.5',
+              selectedFilter === tab.value
+                ? 'bg-white text-emerald-700 shadow-sm ring-1 ring-emerald-100'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+            ]">
+              <span>{{ tab.label }}</span>
+              <span :class="[
+                'inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold transition-colors',
+                selectedFilter === tab.value
+                  ? 'bg-emerald-100 text-emerald-700'
+                  : 'bg-gray-200 text-gray-500'
+              ]">
+                {{tab.value === 'all'
+                  ? expenses.length
+                  : expenses.filter(e => {
+                    const id = e.curriculum?.cur_id
+                    if (tab.value === 'pavoc') return id === 18
+                    if (tab.value === 'pavas_direct') return id === 20
+                    if (tab.value === 'pavas_m6') return id === 19
+                return false
+                }).length
+                }}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <!-- จำนวนที่กรอง -->
+        <span class="text-xs text-gray-400">
+          แสดง <span class="font-semibold text-gray-600">{{ filteredExpenses.length }}</span> รายการ
+        </span>
+      </div>
     </div>
 
     <!-- Loading State -->
@@ -18,7 +60,7 @@
     </div>
 
     <!-- Table -->
-    <div v-else class="overflow-x-auto">
+    <div v-else class="overflow-x-auto overflow-y-hidden">
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
@@ -36,8 +78,9 @@
             </th>
           </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-          <tr v-if="expenses.length === 0">
+        <tbody class="bg-white divide-y divide-gray-200 overflow-hidden">
+          <tr v-if="filteredExpenses.length === 0">
+
             <td colspan="7" class="px-4 py-16 text-center">
               <div class="flex flex-col items-center gap-3">
                 <div class="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center">
@@ -50,7 +93,8 @@
               </div>
             </td>
           </tr>
-          <tr v-for="(expense, index) in expenses" :key="expense.exp_id" class="hover:bg-gray-50 transition-colors">
+          <tr v-for="(expense, index) in filteredExpenses" :key="selectedFilter + expense.exp_id"
+            class="hover:bg-gray-50 transition-colors row-animate" :style="{ animationDelay: `${index * 40}ms` }">
             <td class="px-4 py-3 text-sm text-gray-900 text-center">
               <div
                 class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-800 rounded-full text-sm font-medium">
@@ -403,7 +447,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick, computed } from 'vue'
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import { apiService } from '@/utils/api'
 
@@ -471,6 +515,31 @@ const toast = ref({
   message: ''
 })
 let toastTimer: ReturnType<typeof setTimeout> | null = null
+
+
+
+const selectedFilter = ref<string>('all')
+
+// ── filter ──────────────────────────────────────────────
+const filteredExpenses = computed(() => {
+  if (selectedFilter.value === 'all') return expenses.value
+
+  return expenses.value.filter(expense => {
+    const curId = expense.curriculum?.cur_id
+
+    if (selectedFilter.value === 'pavoc') return curId === 18
+    if (selectedFilter.value === 'pavas_direct') return curId === 20
+    if (selectedFilter.value === 'pavas_m6') return curId === 19
+
+    return true
+  })
+})
+const filterTabs = [
+  { value: 'all', label: 'ทั้งหมด' },
+  { value: 'pavoc', label: 'ปวช' },
+  { value: 'pavas_direct', label: 'ปวส (สายตรง)' },
+  { value: 'pavas_m6', label: 'ปวส (ม.6)' },
+]
 
 // ── Toast ──────────────────────────────────────────────
 const showToast = (type: 'success' | 'error', title: string, message: string) => {
@@ -581,18 +650,18 @@ const handleSubmit = async () => {
   try {
     // Prepare data for submission
     const submitData: any = { ...formData.value }
-    
+
     // Check image status
     const hasNewImage = Boolean(imagePreview.value && imagePreview.value.trim() !== '')
-    
+
     if (hasNewImage) {
-  submitData.exp_img = imagePreview.value
-} else if (imageExplicitlyCleared.value) {
-  submitData.exp_img = ''
-} else {
-  delete submitData.exp_img
-}
-    
+      submitData.exp_img = imagePreview.value
+    } else if (imageExplicitlyCleared.value) {
+      submitData.exp_img = ''
+    } else {
+      delete submitData.exp_img
+    }
+
     if (showAddModal.value) {
       await apiService.createExpenseDetail(submitData)
       showToast('success', 'เพิ่มรายการสำเร็จ', 'ข้อมูลถูกบันทึกเรียบร้อยแล้ว')
@@ -614,7 +683,7 @@ const handleSubmit = async () => {
 const editExpense = (expense: ExpenseDetail) => {
   // Get curriculum ID from the nested curriculum object
   const curId = expense.curriculum ? Number(expense.curriculum.cur_id) : 0
-  
+
   formData.value = {
     exp_id: expense.exp_id,
     exp_name: expense.exp_name,
@@ -625,15 +694,15 @@ const editExpense = (expense: ExpenseDetail) => {
     payment_type: expense.payment_type || '',
     exp_sizes: expense.exp_sizes ? [...expense.exp_sizes] : []
   }
-  
+
   originalImgUrl.value = expense.exp_img || ''
   originalImagePath.value = expense.exp_img || ''
-  
+
   imagePreview.value = ''
   sizeNumbers.value = { S: '', M: '', L: '', XL: '' }
   showSizeSection.value = expense.exp_sizes ? expense.exp_sizes.length > 0 : false
   imageExplicitlyCleared.value = false
-  
+
   // Use nextTick to ensure DOM updates
   nextTick(() => {
     showEditModal.value = true
@@ -716,5 +785,13 @@ onMounted(() => {
 .toast-leave-to {
   opacity: 0;
   transform: translateX(100%);
+}
+@keyframes rowIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.row-animate {
+  animation: rowIn 0.2s ease both;
 }
 </style>
