@@ -1,4 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+
+function isTokenExpired(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    return payload.exp * 1000 < Date.now()
+  } catch {
+    return true
+  }
+}
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -28,7 +38,8 @@ router.beforeEach((to, _from, next) => {
   const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true'
   const token = localStorage.getItem('auth_token')
 
-  if (!isAuthenticated || !token) {
+  if (!isAuthenticated || !token || isTokenExpired(token)) {
+    useAuthStore().logout()
     return next({ path: '/login', query: { redirect: to.fullPath } })
   }
 

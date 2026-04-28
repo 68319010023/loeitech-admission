@@ -30,6 +30,12 @@ class ApiService {
       const response = await fetch(url, config)
 
       if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem('isAuthenticated')
+          localStorage.removeItem('auth_token')
+          localStorage.removeItem('auth_role')
+          window.location.href = '/login'
+        }
         const errorData = await response.json().catch(() => ({}))
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
       }
