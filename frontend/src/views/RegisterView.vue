@@ -312,7 +312,7 @@
               </div>
 
               <div>
-                <p class="text-sm font-medium text-gray-800">{{ exp.exp_name }}</p>
+                <p class="text-sm font-medium text-gray-800 line-clamp-4 max-w-xs">{{ exp.exp_name }}</p>
                 <p class="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
                   {{ exp.exp_cost.toLocaleString() }} บาท
                   <span class="ml-1 px-1.5 py-0.5 rounded text-xs"
@@ -622,10 +622,11 @@ const API_BASE = (import.meta.env.VITE_API_URL as string) || 'http://localhost:3
 
 function resolveImgUrl(path: string | null | undefined): string {
   if (!path) return ''
-  if (path.startsWith('http')) return path
+  if (path.startsWith('http') || path.startsWith('data:')) return path
 
-  const base = API_BASE.replace('/api', '')
-  console.log('resolveImgUrl base:', base, 'path:', path)
+  const base = (import.meta.env.VITE_API_URL || 'http://localhost:3001/api')
+    .replace(/\/api$/, '')
+
   return `${base}${path}`
 }
 // ข้อมูลจาก API
